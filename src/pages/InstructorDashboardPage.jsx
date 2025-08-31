@@ -17,22 +17,36 @@ import {
   Star,
   ArrowRight,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  DollarSign,
+  Target,
+  Trash2
 } from 'lucide-react'
+import { toast } from 'react-hot-toast'
+import { mockAPI } from '../services/mockData'
+import useAuthStore from '../store/useAuthStore'
 import Progress from '../components/ui/Progress'
 import Button from '../components/ui/Button'
+import Card from '../components/ui/Card'
+import Badge from '../components/ui/Badge'
+import Modal from '../components/ui/Modal'
 
 const InstructorDashboardPage = () => {
+  const { user } = useAuthStore()
   const [courses, setCourses] = useState([])
   const [students, setStudents] = useState([])
   const [recentActivity, setRecentActivity] = useState([])
+  const [assignments, setAssignments] = useState([])
   const [loading, setLoading] = useState(true)
+  const [selectedCourse, setSelectedCourse] = useState(null)
+  const [showCourseModal, setShowCourseModal] = useState(false)
+  const [showStudentsModal, setShowStudentsModal] = useState(false)
   const [stats, setStats] = useState({
     totalCourses: 0,
     totalStudents: 0,
     totalRevenue: 0,
     averageRating: 0,
-    activeStudents: 0
+    publishedCourses: 0
   })
 
   useEffect(() => {
@@ -41,116 +55,92 @@ const InstructorDashboardPage = () => {
 
   const fetchDashboardData = async () => {
     try {
-      // Mock data - replace with actual API calls
-      const mockCourses = [
-        {
-          id: 1,
-          title: 'Advanced React Development',
-          students: 45,
-          rating: 4.8,
-          progress: 75,
-          status: 'active',
-          revenue: 2250,
-          lastUpdated: '2 days ago'
-        },
-        {
-          id: 2,
-          title: 'Data Science Fundamentals',
-          students: 32,
-          rating: 4.6,
-          progress: 60,
-          status: 'active',
-          revenue: 1600,
-          lastUpdated: '1 week ago'
-        },
-        {
-          id: 3,
-          title: 'UI/UX Design Principles',
-          students: 28,
-          rating: 4.9,
-          progress: 85,
-          status: 'active',
-          revenue: 1400,
-          lastUpdated: '3 days ago'
-        }
-      ]
-
-      const mockStudents = [
-        {
-          id: 1,
-          name: 'John Doe',
-          email: 'john@example.com',
-          course: 'Advanced React Development',
-          progress: 80,
-          lastActive: '2 hours ago',
-          status: 'active'
-        },
-        {
-          id: 2,
-          name: 'Jane Smith',
-          email: 'jane@example.com',
-          course: 'Data Science Fundamentals',
-          progress: 65,
-          lastActive: '1 day ago',
-          status: 'active'
-        },
-        {
-          id: 3,
-          name: 'Mike Johnson',
-          email: 'mike@example.com',
-          course: 'UI/UX Design Principles',
-          progress: 90,
-          lastActive: '5 hours ago',
-          status: 'active'
-        }
-      ]
-
-      const mockActivity = [
-        {
-          id: 1,
-          type: 'enrollment',
-          message: 'New student enrolled in Advanced React Development',
-          timestamp: '2 hours ago',
-          course: 'Advanced React Development'
-        },
-        {
-          id: 2,
-          type: 'assignment',
-          message: 'Assignment submitted by John Doe',
-          timestamp: '4 hours ago',
-          course: 'Data Science Fundamentals'
-        },
-        {
-          id: 3,
-          type: 'review',
-          message: 'New 5-star review received',
-          timestamp: '1 day ago',
-          course: 'UI/UX Design Principles'
-        }
-      ]
-
-      setCourses(mockCourses)
-      setStudents(mockStudents)
-      setRecentActivity(mockActivity)
-
-      // Calculate stats
-      const totalRevenue = mockCourses.reduce((sum, course) => sum + course.revenue, 0)
-      const totalStudents = mockCourses.reduce((sum, course) => sum + course.students, 0)
-      const averageRating = mockCourses.reduce((sum, course) => sum + course.rating, 0) / mockCourses.length
-
-      setStats({
-        totalCourses: mockCourses.length,
-        totalStudents,
-        totalRevenue,
-        averageRating: Math.round(averageRating * 10) / 10,
-        activeStudents: mockStudents.filter(s => s.status === 'active').length
-      })
-
+      setLoading(true)
+      
+      // Fetch instructor data
+      const [instructorCourses, activities, instructorStats] = await Promise.all([
+        mockAPI.getCoursesByInstructor(user.id),
+        mockAPI.getRecentActivities(null, 10),
+        mockAPI.getInstructorStats(user.id)
+      ])
+      
+      setCourses(instructorCourses)
+      setRecentActivity(activities.filter(activity => 
+        instructorCourses.some(course => course.id === activity.courseId)
+      ))
+      setStats(instructorStats)
+      
+      // Get students from all courses
+      const allStudents = []
+      for (const course of instructorCourses) {
+        const courseEnrollments = await mockAPI.getCourseEnrollments(course.id)
+        allStudents.push(...courseEnrollments)
+      }
+      setStudents(allStudents)
+      
+      // Get assignments for instructor courses
+      const allAssignments = []
+      for (const course of instructorCourses) {
+        const courseAssignments = await mockAPI.getAssignmentsByCourse(course.id)
+        allAssignments.push(...courseAssignments.map(assignment => ({
+          ...assignment,
+          courseName: course.title
+        })))
+      }
+      setAssignments(allAssignments)
+      
     } catch (error) {
       console.error('Error fetching dashboard data:', error)
+      toast.error('Failed to load dashboard data')
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleCourseAction = async (courseId, action) => {
+    try {
+      switch (action) {
+        case 'edit':
+          toast.info('Course editor coming soon!')
+          break
+        case 'view':
+          toast.info('Course viewer coming soon!')
+          break
+        case 'analytics':
+          const course = courses.find(c => c.id === courseId)
+          setSelectedCourse(course)
+          setShowCourseModal(true)
+          break
+        case 'delete':
+          if (window.confirm('Are you sure you want to delete this course?')) {
+            await mockAPI.deleteCourse(courseId)
+            setCourses(prev => prev.filter(course => course.id !== courseId))
+            toast.success('Course deleted successfully')
+          }
+          break
+        default:
+          break
+      }
+    } catch (error) {
+      toast.error('Action failed. Please try again.')
+    }
+  }
+
+  const handlePublishCourse = async (courseId) => {
+    try {
+      await mockAPI.updateCourse(courseId, { status: 'published' })
+      setCourses(prev => prev.map(course => 
+        course.id === courseId ? { ...course, status: 'published' } : course
+      ))
+      toast.success('Course published successfully!')
+    } catch (error) {
+      toast.error('Failed to publish course')
+    }
+  }
+
+  const viewStudentDetails = (student) => {
+    setSelectedCourse(student)
+    setShowStudentsModal(true)
   }
 
   const getActivityIcon = (type) => {
@@ -161,6 +151,8 @@ const InstructorDashboardPage = () => {
         return <FileText size={16} className="text-blue-600" />
       case 'review':
         return <Star size={16} className="text-yellow-600" />
+      case 'completion':
+        return <CheckCircle size={16} className="text-green-600" />
       default:
         return <Bell size={16} className="text-gray-600" />
     }
@@ -168,15 +160,22 @@ const InstructorDashboardPage = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'active':
-        return 'bg-green-100 text-green-800'
+      case 'published':
+        return 'success'
       case 'draft':
-        return 'bg-yellow-100 text-yellow-800'
+        return 'warning'
       case 'archived':
-        return 'bg-gray-100 text-gray-800'
+        return 'default'
       default:
-        return 'bg-gray-100 text-gray-800'
+        return 'default'
     }
+  }
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(amount)
   }
 
   if (loading) {
@@ -195,17 +194,27 @@ const InstructorDashboardPage = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Welcome back, Instructor!
-          </h1>
-          <p className="text-gray-600">
-            Manage your courses, track student progress, and grow your teaching business.
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                Welcome back, {user?.name}!
+              </h1>
+              <p className="text-gray-600">
+                Manage your courses, track student progress, and grow your teaching business.
+              </p>
+            </div>
+            <Link to="/courses/create">
+              <Button>
+                <Plus size={16} className="mr-2" />
+                Create Course
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <Card className="p-6">
             <div className="flex items-center">
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                 <BookOpen size={24} className="text-blue-600" />
@@ -215,9 +224,9 @@ const InstructorDashboardPage = () => {
                 <p className="text-2xl font-bold text-gray-900">{stats.totalCourses}</p>
               </div>
             </div>
-          </div>
+          </Card>
 
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <Card className="p-6">
             <div className="flex items-center">
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
                 <Users size={24} className="text-green-600" />
@@ -227,59 +236,69 @@ const InstructorDashboardPage = () => {
                 <p className="text-2xl font-bold text-gray-900">{stats.totalStudents}</p>
               </div>
             </div>
-          </div>
+          </Card>
 
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <Card className="p-6">
             <div className="flex items-center">
               <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                <TrendingUp size={24} className="text-purple-600" />
+                <DollarSign size={24} className="text-purple-600" />
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-                <p className="text-2xl font-bold text-gray-900">${stats.totalRevenue}</p>
+                <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.totalRevenue)}</p>
               </div>
             </div>
-          </div>
+          </Card>
 
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <Card className="p-6">
             <div className="flex items-center">
               <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
                 <Star size={24} className="text-yellow-600" />
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Avg Rating</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.averageRating}</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.averageRating.toFixed(1)}</p>
               </div>
             </div>
-          </div>
+          </Card>
 
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <Card className="p-6">
             <div className="flex items-center">
               <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                <Users size={24} className="text-red-600" />
+                <Target size={24} className="text-red-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Active Students</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.activeStudents}</p>
+                <p className="text-sm font-medium text-gray-600">Published</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.publishedCourses}</p>
               </div>
             </div>
-          </div>
+          </Card>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* My Courses */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-              <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-gray-900">My Courses</h2>
-                <Link to="/courses/create">
-                  <Button size="sm">
-                    <Plus size={16} className="mr-2" />
-                    Create Course
+            <Card>
+              <Card.Header className="flex items-center justify-between">
+                <Card.Title>My Courses</Card.Title>
+                <div className="flex space-x-2">
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => toast.info('Course analytics coming soon!')}
+                  >
+                    <BarChart3 size={16} className="mr-1" />
+                    Analytics
                   </Button>
-                </Link>
-              </div>
-              <div className="p-6">
+                  <Link to="/courses/create">
+                    <Button size="sm">
+                      <Plus size={16} className="mr-2" />
+                      Create Course
+                    </Button>
+                  </Link>
+                </div>
+              </Card.Header>
+              <Card.Content>
                 {courses.length === 0 ? (
                   <div className="text-center py-8">
                     <BookOpen size={48} className="mx-auto text-gray-400 mb-4" />
@@ -298,89 +317,118 @@ const InstructorDashboardPage = () => {
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
                             <div className="flex items-center space-x-3 mb-3">
-                              <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center">
-                                <BookOpen size={20} className="text-primary-600" />
+                              <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100">
+                                <img 
+                                  src={course.thumbnail} 
+                                  alt={course.title}
+                                  className="w-full h-full object-cover"
+                                />
                               </div>
                               <div className="flex-1">
-                                <div className="flex items-center space-x-2">
+                                <div className="flex items-center space-x-2 mb-1">
                                   <h3 className="font-medium text-gray-900">{course.title}</h3>
-                                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(course.status)}`}>
+                                  <Badge variant={getStatusColor(course.status)} size="sm">
                                     {course.status}
-                                  </span>
+                                  </Badge>
+                                  {course.isFeatured && (
+                                    <Badge variant="accent" size="sm">Featured</Badge>
+                                  )}
                                 </div>
-                                <div className="flex items-center space-x-4 mt-1 text-sm text-gray-500">
+                                <div className="flex items-center space-x-4 text-sm text-gray-500">
                                   <span className="flex items-center space-x-1">
                                     <Users size={14} />
-                                    <span>{course.students} students</span>
+                                    <span>{course.studentsCount} students</span>
                                   </span>
                                   <span className="flex items-center space-x-1">
                                     <Star size={14} className="text-yellow-500" />
-                                    <span>{course.rating}</span>
+                                    <span>{course.rating} ({course.reviewsCount})</span>
                                   </span>
                                   <span className="flex items-center space-x-1">
-                                    <span>${course.revenue}</span>
+                                    <DollarSign size={14} />
+                                    <span>{formatCurrency(course.price * course.studentsCount)}</span>
                                   </span>
                                 </div>
                               </div>
                             </div>
                             
-                            <div className="ml-13">
-                              <div className="flex items-center justify-between mb-2">
-                                <span className="text-sm text-gray-600">Student Progress</span>
-                                <span className="text-sm font-medium text-gray-900">
-                                  {course.progress}%
+                            <div className="ml-15 space-y-2">
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="text-gray-600">Course Completion Rate</span>
+                                <span className="font-medium text-gray-900">
+                                  {Math.round(Math.random() * 30 + 60)}%
                                 </span>
                               </div>
-                              <Progress value={course.progress} size="sm" />
+                              <Progress value={Math.round(Math.random() * 30 + 60)} size="sm" />
                               
-                              <div className="flex items-center space-x-4 mt-3 text-sm text-gray-500">
+                              <div className="flex items-center justify-between text-sm text-gray-500">
                                 <div className="flex items-center space-x-1">
                                   <Clock size={14} />
-                                  <span>Updated {course.lastUpdated}</span>
+                                  <span>Updated {new Date(course.updatedAt).toLocaleDateString()}</span>
+                                </div>
+                                <div className="flex items-center space-x-1">
+                                  <FileText size={14} />
+                                  <span>{course.lessonsCount} lessons</span>
                                 </div>
                               </div>
                             </div>
                           </div>
                           
                           <div className="flex space-x-2">
-                            <Link to={`/courses/${course.id}/edit`}>
-                              <Button variant="outline" size="sm">
-                                <Edit size={16} />
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleCourseAction(course.id, 'edit')}
+                            >
+                              <Edit size={16} />
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleCourseAction(course.id, 'view')}
+                            >
+                              <Eye size={16} />
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleCourseAction(course.id, 'analytics')}
+                            >
+                              <BarChart3 size={16} />
+                            </Button>
+                            {course.status === 'draft' && (
+                              <Button 
+                                size="sm"
+                                onClick={() => handlePublishCourse(course.id)}
+                              >
+                                Publish
                               </Button>
-                            </Link>
-                            <Link to={`/courses/${course.id}`}>
-                              <Button variant="outline" size="sm">
-                                <Eye size={16} />
-                              </Button>
-                            </Link>
-                            <Link to={`/courses/${course.id}/analytics`}>
-                              <Button variant="outline" size="sm">
-                                <BarChart3 size={16} />
-                              </Button>
-                            </Link>
+                            )}
                           </div>
                         </div>
                       </div>
                     ))}
                   </div>
                 )}
-              </div>
-            </div>
+              </Card.Content>
+            </Card>
           </div>
 
           {/* Right Sidebar */}
           <div className="space-y-6">
             {/* Recent Activity */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-900">Recent Activity</h2>
-              </div>
-              <div className="p-6">
+            <Card>
+              <Card.Header>
+                <Card.Title className="flex items-center">
+                  <Bell size={20} className="mr-2 text-blue-500" />
+                  Recent Activity
+                </Card.Title>
+              </Card.Header>
+              <Card.Content>
                 {recentActivity.length === 0 ? (
                   <p className="text-gray-500 text-center py-4">No recent activity</p>
                 ) : (
                   <div className="space-y-4">
-                    {recentActivity.map((activity) => (
+                    {recentActivity.slice(0, 5).map((activity) => (
                       <div key={activity.id} className="flex items-start space-x-3">
                         <div className="flex-shrink-0 mt-1">
                           {getActivityIcon(activity.type)}
@@ -393,93 +441,245 @@ const InstructorDashboardPage = () => {
                             {activity.message}
                           </p>
                           <p className="text-xs text-gray-500 mt-1">
-                            {activity.timestamp}
+                            {new Date(activity.timestamp).toLocaleDateString()}
                           </p>
                         </div>
                       </div>
                     ))}
                   </div>
                 )}
-              </div>
-            </div>
+              </Card.Content>
+            </Card>
 
             {/* Quick Actions */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-900">Quick Actions</h2>
-              </div>
-              <div className="p-6 space-y-3">
+            <Card>
+              <Card.Header>
+                <Card.Title>Quick Actions</Card.Title>
+              </Card.Header>
+              <Card.Content className="space-y-3">
                 <Link to="/courses/create" className="block">
                   <Button className="w-full justify-start">
                     <Plus size={16} className="mr-2" />
                     Create New Course
                   </Button>
                 </Link>
-                <Link to="/students" className="block">
-                  <Button variant="outline" className="w-full justify-start">
-                    <Users size={16} className="mr-2" />
-                    Manage Students
-                  </Button>
-                </Link>
-                <Link to="/analytics" className="block">
-                  <Button variant="outline" className="w-full justify-start">
-                    <BarChart3 size={16} className="mr-2" />
-                    View Analytics
-                  </Button>
-                </Link>
-                <Link to="/messages" className="block">
-                  <Button variant="outline" className="w-full justify-start">
-                    <MessageSquare size={16} className="mr-2" />
-                    Check Messages
-                  </Button>
-                </Link>
-              </div>
-            </div>
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={() => setShowStudentsModal(true)}
+                >
+                  <Users size={16} className="mr-2" />
+                  Manage Students
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={() => toast.info('Analytics page coming soon!')}
+                >
+                  <BarChart3 size={16} className="mr-2" />
+                  View Analytics
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={() => toast.info('Messages page coming soon!')}
+                >
+                  <MessageSquare size={16} className="mr-2" />
+                  Check Messages
+                </Button>
+              </Card.Content>
+            </Card>
 
             {/* Recent Students */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-900">Recent Students</h2>
-              </div>
-              <div className="p-6">
+            <Card>
+              <Card.Header className="flex items-center justify-between">
+                <Card.Title>Recent Students</Card.Title>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => setShowStudentsModal(true)}
+                >
+                  View All
+                </Button>
+              </Card.Header>
+              <Card.Content>
                 <div className="space-y-3">
-                  {students.slice(0, 3).map((student) => (
-                    <div key={student.id} className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
-                        <span className="text-sm font-medium text-primary-600">
-                          {student.name.charAt(0)}
-                        </span>
+                  {students.slice(0, 5).map((enrollment) => (
+                    <div 
+                      key={enrollment.id} 
+                      className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer"
+                      onClick={() => viewStudentDetails(enrollment)}
+                    >
+                      <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-100">
+                        <img 
+                          src={enrollment.student.avatar} 
+                          alt={enrollment.student.name}
+                          className="w-full h-full object-cover"
+                        />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-900 truncate">
-                          {student.name}
+                          {enrollment.student.name}
                         </p>
                         <p className="text-xs text-gray-500 truncate">
-                          {student.course}
+                          {enrollment.course?.title}
                         </p>
                       </div>
                       <div className="flex items-center space-x-1">
-                        <span className="text-xs text-gray-500">{student.progress}%</span>
+                        <span className="text-xs text-gray-500">{enrollment.progress}%</span>
                         <div className="w-16 bg-gray-200 rounded-full h-1.5">
                           <div 
                             className="bg-primary-600 h-1.5 rounded-full" 
-                            style={{ width: `${student.progress}%` }}
+                            style={{ width: `${enrollment.progress}%` }}
                           ></div>
                         </div>
                       </div>
                     </div>
                   ))}
                 </div>
-                <div className="mt-4 pt-4 border-t border-gray-200">
-                  <Link to="/students" className="text-sm text-primary-600 hover:text-primary-500">
-                    View all students →
-                  </Link>
+              </Card.Content>
+            </Card>
+
+            {/* Pending Assignments */}
+            <Card>
+              <Card.Header>
+                <Card.Title className="flex items-center">
+                  <FileText size={20} className="mr-2 text-orange-500" />
+                  Pending Reviews
+                </Card.Title>
+              </Card.Header>
+              <Card.Content>
+                <div className="space-y-3">
+                  {assignments.slice(0, 3).map((assignment) => (
+                    <div key={assignment.id} className="p-3 bg-orange-50 rounded-lg border border-orange-200">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="text-sm font-medium text-gray-900">{assignment.title}</h4>
+                        <Badge variant="warning" size="sm">{assignment.submissions} submissions</Badge>
+                      </div>
+                      <p className="text-xs text-gray-600 mb-2">{assignment.courseName}</p>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-gray-500">
+                          Due: {new Date(assignment.dueDate).toLocaleDateString()}
+                        </span>
+                        <Button size="sm" variant="outline">
+                          Review
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Card.Content>
+            </Card>
+          </div>
+        </div>
+      </div>
+
+      {/* Course Analytics Modal */}
+      <Modal
+        isOpen={showCourseModal}
+        onClose={() => setShowCourseModal(false)}
+        title={`${selectedCourse?.title} - Analytics`}
+        size="lg"
+      >
+        {selectedCourse && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-center p-4 bg-blue-50 rounded-lg">
+                <div className="text-2xl font-bold text-blue-600">{selectedCourse.studentsCount}</div>
+                <div className="text-sm text-blue-800">Total Students</div>
+              </div>
+              <div className="text-center p-4 bg-green-50 rounded-lg">
+                <div className="text-2xl font-bold text-green-600">{selectedCourse.rating}</div>
+                <div className="text-sm text-green-800">Average Rating</div>
+              </div>
+              <div className="text-center p-4 bg-purple-50 rounded-lg">
+                <div className="text-2xl font-bold text-purple-600">{formatCurrency(selectedCourse.price * selectedCourse.studentsCount)}</div>
+                <div className="text-sm text-purple-800">Total Revenue</div>
+              </div>
+              <div className="text-center p-4 bg-yellow-50 rounded-lg">
+                <div className="text-2xl font-bold text-yellow-600">{selectedCourse.reviewsCount}</div>
+                <div className="text-sm text-yellow-800">Total Reviews</div>
+              </div>
+            </div>
+            
+            <div>
+              <h4 className="font-medium text-gray-900 mb-3">Course Performance</h4>
+              <div className="space-y-3">
+                <div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span>Completion Rate</span>
+                    <span>78%</span>
+                  </div>
+                  <Progress value={78} size="sm" variant="success" />
+                </div>
+                <div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span>Student Satisfaction</span>
+                    <span>92%</span>
+                  </div>
+                  <Progress value={92} size="sm" variant="accent" />
                 </div>
               </div>
             </div>
           </div>
+        )}
+      </Modal>
+
+      {/* Students Management Modal */}
+      <Modal
+        isOpen={showStudentsModal}
+        onClose={() => setShowStudentsModal(false)}
+        title="Student Management"
+        size="lg"
+      >
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h4 className="font-medium text-gray-900">All Students ({students.length})</h4>
+            <Button 
+              size="sm"
+              onClick={() => toast.info('Export functionality coming soon!')}
+            >
+              Export Data
+            </Button>
+          </div>
+          
+          <div className="space-y-3 max-h-96 overflow-y-auto">
+            {students.map((enrollment) => (
+              <div key={enrollment.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100">
+                    <img 
+                      src={enrollment.student.avatar} 
+                      alt={enrollment.student.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-gray-900">{enrollment.student.name}</h4>
+                    <p className="text-sm text-gray-600">{enrollment.student.email}</p>
+                    <div className="flex items-center space-x-2 mt-1">
+                      <Badge variant="info" size="sm">{enrollment.course?.title}</Badge>
+                      <span className="text-xs text-gray-500">
+                        Enrolled {new Date(enrollment.enrolledAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm font-medium text-gray-900">{enrollment.progress}%</div>
+                  <div className="text-xs text-gray-500">Grade: {enrollment.grade}%</div>
+                  <div className="w-20 bg-gray-200 rounded-full h-1.5 mt-1">
+                    <div 
+                      className="bg-primary-600 h-1.5 rounded-full" 
+                      style={{ width: `${enrollment.progress}%` }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      </Modal>
     </div>
   )
 }

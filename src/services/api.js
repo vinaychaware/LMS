@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { mockAPI, mockData } from './mockData'
 import useAuthStore from '../store/useAuthStore'
 
 // Create axios instance
@@ -46,13 +47,24 @@ export const authAPI = {
 
 // Course API calls
 export const courseAPI = {
-  getAll: () => api.get('/courses'),
+  getAll: async () => {
+    // Use mock data for development
+    await mockAPI.delay(800)
+    return { data: mockData.courses }
+  },
   getById: (id) => api.get(`/courses/${id}`),
   create: (courseData) => api.post('/courses', courseData),
   update: (id, courseData) => api.put(`/courses/${id}`, courseData),
   delete: (id) => api.delete(`/courses/${id}`),
   enroll: (courseId) => api.post(`/courses/${courseId}/enroll`),
-  getEnrolled: () => api.get('/courses/enrolled'),
+  getEnrolled: async () => {
+    // Use mock data for development
+    const userId = useAuthStore.getState().user?.id
+    if (!userId) return { data: [] }
+    
+    const enrollments = await mockAPI.getStudentEnrollments(userId)
+    return { data: enrollments }
+  },
   getTeaching: () => api.get('/courses/teaching'),
 }
 
