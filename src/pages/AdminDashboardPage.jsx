@@ -808,4 +808,4 @@ const AdminDashboardPage = () => {
   )
 }
 
-export default InstructorDashboardPage
+export default AdminDashboardPage
