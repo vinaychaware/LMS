@@ -101,10 +101,10 @@ const InstructorDashboardPage = () => {
     try {
       switch (action) {
         case 'edit':
-          toast.info('Course editor coming soon!')
+          toast('Course editor coming soon!')
           break
         case 'view':
-          toast.info('Course viewer coming soon!')
+          toast('Course viewer coming soon!')
           break
         case 'analytics':
           const course = courses.find(c => c.id === courseId)
@@ -285,7 +285,7 @@ const InstructorDashboardPage = () => {
                   <Button 
                     size="sm" 
                     variant="outline"
-                    onClick={() => toast.info('Course analytics coming soon!')}
+                    onClick={() => toast('Course analytics coming soon!')}
                   >
                     <BarChart3 size={16} className="mr-1" />
                     Analytics
@@ -474,7 +474,7 @@ const InstructorDashboardPage = () => {
                 <Button 
                   variant="outline" 
                   className="w-full justify-start"
-                  onClick={() => toast.info('Analytics page coming soon!')}
+                  onClick={() => toast('Analytics page coming soon!')}
                 >
                   <BarChart3 size={16} className="mr-2" />
                   View Analytics
@@ -482,7 +482,7 @@ const InstructorDashboardPage = () => {
                 <Button 
                   variant="outline" 
                   className="w-full justify-start"
-                  onClick={() => toast.info('Messages page coming soon!')}
+                  onClick={() => toast('Messages page coming soon!')}
                 >
                   <MessageSquare size={16} className="mr-2" />
                   Check Messages
@@ -637,7 +637,7 @@ const InstructorDashboardPage = () => {
             <h4 className="font-medium text-gray-900">All Students ({students.length})</h4>
             <Button 
               size="sm"
-              onClick={() => toast.info('Export functionality coming soon!')}
+              onClick={() => toast('Export functionality coming soon!')}
             >
               Export Data
             </Button>
