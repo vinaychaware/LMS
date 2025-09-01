@@ -21,7 +21,21 @@ import {
   Activity,
   Globe,
   Database,
-  Server
+  Server,
+  UserCheck,
+  UserX,
+  BookMarked,
+  FileText,
+  Brain,
+  Award,
+  Clock,
+  Target,
+  PieChart,
+  TrendingDown,
+  PlayCircle,
+  Pause,
+  Play,
+  Square
 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import { mockAPI, mockData } from '../services/mockData'
@@ -30,28 +44,33 @@ import Card from '../components/ui/Card'
 import Badge from '../components/ui/Badge'
 import Modal from '../components/ui/Modal'
 import Input from '../components/ui/Input'
+import Progress from '../components/ui/Progress'
 
 const AdminDashboardPage = () => {
-  const [stats, setStats] = useState({
-    totalUsers: 0,
-    activeUsers: 0,
-    totalCourses: 0,
-    publishedCourses: 0,
-    totalEnrollments: 0,
-    totalRevenue: 0,
-    averageRating: 0
-  })
-  const [recentUsers, setRecentUsers] = useState([])
-  const [recentCourses, setRecentCourses] = useState([])
-  const [systemAlerts, setSystemAlerts] = useState([])
+  const [systemStats, setSystemStats] = useState({})
   const [allUsers, setAllUsers] = useState([])
+  const [allCourses, setAllCourses] = useState([])
+  const [allModules, setAllModules] = useState([])
+  const [systemAlerts, setSystemAlerts] = useState([])
+  const [instructorPermissions, setInstructorPermissions] = useState({})
   const [loading, setLoading] = useState(true)
   const [showUsersModal, setShowUsersModal] = useState(false)
   const [showCoursesModal, setShowCoursesModal] = useState(false)
   const [showSystemModal, setShowSystemModal] = useState(false)
+  const [showPermissionsModal, setShowPermissionsModal] = useState(false)
+  const [showCreateUserModal, setShowCreateUserModal] = useState(false)
   const [selectedUser, setSelectedUser] = useState(null)
+  const [selectedCourse, setSelectedCourse] = useState(null)
   const [userSearchTerm, setUserSearchTerm] = useState('')
   const [userRoleFilter, setUserRoleFilter] = useState('all')
+  const [courseSearchTerm, setCourseSearchTerm] = useState('')
+  const [courseStatusFilter, setCourseStatusFilter] = useState('all')
+  const [newUserData, setNewUserData] = useState({
+    name: '',
+    email: '',
+    role: 'student',
+    instructorId: ''
+  })
 
   useEffect(() => {
     fetchAdminData()
@@ -61,27 +80,24 @@ const AdminDashboardPage = () => {
     try {
       setLoading(true)
       
-      // Fetch system stats
-      const systemStats = await mockAPI.getSystemStats()
-      setStats(systemStats)
+      // Get system analytics
+      const analytics = await mockAPI.getSystemAnalytics()
+      setSystemStats(analytics)
       
-      // Get recent users (last 5)
-      const sortedUsers = [...mockData.users]
-        .sort((a, b) => new Date(b.joinedDate) - new Date(a.joinedDate))
-        .slice(0, 5)
-      setRecentUsers(sortedUsers)
-      
-      // Get recent courses (last 5)
-      const sortedCourses = [...mockData.courses]
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-        .slice(0, 5)
-      setRecentCourses(sortedCourses)
-      
-      // Set system alerts
-      setSystemAlerts(mockData.systemAlerts)
-      
-      // Set all users for management
+      // Get all users
       setAllUsers(mockData.users)
+      
+      // Get all courses
+      setAllCourses(mockData.courses)
+      
+      // Get all modules
+      setAllModules(mockData.modules)
+      
+      // Get system alerts
+      setSystemAlerts(mockData.systemAlerts || [])
+      
+      // Get instructor permissions
+      setInstructorPermissions(mockData.systemSettings.instructorPermissions)
       
     } catch (error) {
       console.error('Error fetching admin data:', error)
@@ -93,33 +109,81 @@ const AdminDashboardPage = () => {
 
   const handleUserAction = async (userId, action) => {
     try {
+      const user = allUsers.find(u => u.id === userId)
+      if (!user) throw new Error('User not found')
+      
       switch (action) {
         case 'activate':
           await mockAPI.updateUser(userId, { isActive: true })
-          setAllUsers(prev => prev.map(user => 
-            user.id === userId ? { ...user, isActive: true } : user
+          setAllUsers(prev => prev.map(u => 
+            u.id === userId ? { ...u, isActive: true } : u
           ))
-          toast.success('User activated successfully')
+          toast.success(`${user.name} activated successfully`)
           break
         case 'deactivate':
           await mockAPI.updateUser(userId, { isActive: false })
-          setAllUsers(prev => prev.map(user => 
-            user.id === userId ? { ...user, isActive: false } : user
+          setAllUsers(prev => prev.map(u => 
+            u.id === userId ? { ...u, isActive: false } : u
           ))
-          toast.success('User deactivated successfully')
+          toast.success(`${user.name} deactivated successfully`)
           break
         case 'verify':
           await mockAPI.updateUser(userId, { isVerified: true })
-          setAllUsers(prev => prev.map(user => 
-            user.id === userId ? { ...user, isVerified: true } : user
+          setAllUsers(prev => prev.map(u => 
+            u.id === userId ? { ...u, isVerified: true } : u
           ))
-          toast.success('User verified successfully')
+          toast.success(`${user.name} verified successfully`)
           break
         case 'delete':
-          if (window.confirm('Are you sure you want to delete this user?')) {
+          if (window.confirm(`Are you sure you want to delete ${user.name}?`)) {
             await mockAPI.deleteUser(userId)
-            setAllUsers(prev => prev.filter(user => user.id !== userId))
-            toast.success('User deleted successfully')
+            setAllUsers(prev => prev.filter(u => u.id !== userId))
+            toast.success(`${user.name} deleted successfully`)
+          }
+          break
+        case 'reset-password':
+          toast.success(`Password reset email sent to ${user.email}`)
+          break
+        default:
+          break
+      }
+    } catch (error) {
+      toast.error('Action failed. Please try again.')
+    }
+  }
+
+  const handleCourseAction = async (courseId, action) => {
+    try {
+      const course = allCourses.find(c => c.id === courseId)
+      if (!course) throw new Error('Course not found')
+      
+      switch (action) {
+        case 'publish':
+          await mockAPI.updateCourse(courseId, { status: 'published' })
+          setAllCourses(prev => prev.map(c => 
+            c.id === courseId ? { ...c, status: 'published' } : c
+          ))
+          toast.success(`${course.title} published successfully`)
+          break
+        case 'archive':
+          await mockAPI.updateCourse(courseId, { status: 'archived' })
+          setAllCourses(prev => prev.map(c => 
+            c.id === courseId ? { ...c, status: 'archived' } : c
+          ))
+          toast.success(`${course.title} archived successfully`)
+          break
+        case 'feature':
+          await mockAPI.updateCourse(courseId, { isFeatured: true })
+          setAllCourses(prev => prev.map(c => 
+            c.id === courseId ? { ...c, isFeatured: true } : c
+          ))
+          toast.success(`${course.title} featured successfully`)
+          break
+        case 'delete':
+          if (window.confirm(`Are you sure you want to delete ${course.title}?`)) {
+            await mockAPI.deleteCourse(courseId)
+            setAllCourses(prev => prev.filter(c => c.id !== courseId))
+            toast.success(`${course.title} deleted successfully`)
           }
           break
         default:
@@ -130,8 +194,81 @@ const AdminDashboardPage = () => {
     }
   }
 
-  const handleBulkAction = (action) => {
-    toast.info(`Bulk ${action} functionality coming soon!`)
+  const updateInstructorPermissions = async (instructorId, permissions) => {
+    try {
+      await mockAPI.updateUserPermissions(instructorId, permissions)
+      setInstructorPermissions(prev => ({
+        ...prev,
+        [instructorId]: { ...prev[instructorId], ...permissions }
+      }))
+      toast.success('Permissions updated successfully')
+    } catch (error) {
+      toast.error('Failed to update permissions')
+    }
+  }
+
+  const assignStudentToInstructor = async (studentId, instructorId) => {
+    try {
+      await mockAPI.assignStudentToInstructor(studentId, instructorId)
+      setAllUsers(prev => prev.map(user => {
+        if (user.id === studentId) {
+          return { ...user, instructorId }
+        }
+        if (user.id === instructorId) {
+          return { 
+            ...user, 
+            students: [...(user.students || []), studentId].filter((id, index, arr) => arr.indexOf(id) === index)
+          }
+        }
+        return user
+      }))
+      toast.success('Student assigned to instructor successfully')
+    } catch (error) {
+      toast.error('Failed to assign student')
+    }
+  }
+
+  const assignCourseToStudent = async (studentId, courseId) => {
+    try {
+      await mockAPI.assignCourseToStudent(studentId, courseId)
+      setAllUsers(prev => prev.map(user => 
+        user.id === studentId 
+          ? { ...user, assignedCourses: [...(user.assignedCourses || []), courseId] }
+          : user
+      ))
+      toast.success('Course assigned to student successfully')
+    } catch (error) {
+      toast.error('Failed to assign course')
+    }
+  }
+
+  const createUser = async () => {
+    try {
+      if (!newUserData.name || !newUserData.email) {
+        toast.error('Name and email are required')
+        return
+      }
+      
+      const userData = {
+        ...newUserData,
+        password: 'TempPass123!', // Temporary password
+        permissions: newUserData.role === 'instructor' ? {
+          canCreateCourses: false,
+          canManageStudents: true,
+          canViewAnalytics: true
+        } : {},
+        assignedCourses: [],
+        students: newUserData.role === 'instructor' ? [] : undefined
+      }
+      
+      const newUser = await mockAPI.createUser(userData)
+      setAllUsers(prev => [...prev, newUser])
+      setNewUserData({ name: '', email: '', role: 'student', instructorId: '' })
+      setShowCreateUserModal(false)
+      toast.success(`${newUser.name} created successfully`)
+    } catch (error) {
+      toast.error('Failed to create user')
+    }
   }
 
   const resolveAlert = (alertId) => {
@@ -171,25 +308,21 @@ const AdminDashboardPage = () => {
     }
   }
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'active':
-        return 'success'
-      case 'pending':
-        return 'warning'
-      case 'suspended':
-        return 'danger'
-      default:
-        return 'default'
-    }
-  }
-
   const filteredUsers = allUsers.filter(user => {
     const matchesSearch = user.name.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
                          user.email.toLowerCase().includes(userSearchTerm.toLowerCase())
     const matchesRole = userRoleFilter === 'all' || user.role === userRoleFilter
     return matchesSearch && matchesRole
   })
+
+  const filteredCourses = allCourses.filter(course => {
+    const matchesSearch = course.title.toLowerCase().includes(courseSearchTerm.toLowerCase())
+    const matchesStatus = courseStatusFilter === 'all' || course.status === courseStatusFilter
+    return matchesSearch && matchesStatus
+  })
+
+  const instructors = allUsers.filter(user => user.role === 'instructor')
+  const students = allUsers.filter(user => user.role === 'student')
 
   if (loading) {
     return (
@@ -208,13 +341,18 @@ const AdminDashboardPage = () => {
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                Admin Dashboard
-              </h1>
-              <p className="text-gray-600">
-                Monitor system performance, manage users, and oversee platform operations.
-              </p>
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                <Shield size={24} className="text-red-600" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">
+                  Admin Dashboard
+                </h1>
+                <p className="text-gray-600">
+                  Complete system control and management.
+                </p>
+              </div>
             </div>
             <div className="flex space-x-2">
               <Button 
@@ -231,12 +369,16 @@ const AdminDashboardPage = () => {
                 <RefreshCw size={16} className="mr-2" />
                 Refresh
               </Button>
+              <Button onClick={() => setShowCreateUserModal(true)}>
+                <UserPlus size={16} className="mr-2" />
+                Add User
+              </Button>
             </div>
           </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6 mb-8">
           <Card className="p-6 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setShowUsersModal(true)}>
             <div className="flex items-center">
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -244,8 +386,8 @@ const AdminDashboardPage = () => {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Users</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.totalUsers.toLocaleString()}</p>
-                <p className="text-xs text-green-600">+{stats.activeUsers} active</p>
+                <p className="text-2xl font-bold text-gray-900">{systemStats.totalUsers}</p>
+                <p className="text-xs text-green-600">{systemStats.activeUsers} active</p>
               </div>
             </div>
           </Card>
@@ -257,8 +399,8 @@ const AdminDashboardPage = () => {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Courses</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.totalCourses}</p>
-                <p className="text-xs text-green-600">+{stats.publishedCourses} published</p>
+                <p className="text-2xl font-bold text-gray-900">{systemStats.totalCourses}</p>
+                <p className="text-xs text-green-600">{allCourses.filter(c => c.status === 'published').length} published</p>
               </div>
             </div>
           </Card>
@@ -266,14 +408,12 @@ const AdminDashboardPage = () => {
           <Card className="p-6">
             <div className="flex items-center">
               <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                <DollarSign size={24} className="text-purple-600" />
+                <BookMarked size={24} className="text-purple-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(stats.totalRevenue)}
-                </p>
-                <p className="text-xs text-green-600">+12% this month</p>
+                <p className="text-sm font-medium text-gray-600">Total Modules</p>
+                <p className="text-2xl font-bold text-gray-900">{systemStats.totalModules}</p>
+                <p className="text-xs text-gray-500">Across all courses</p>
               </div>
             </div>
           </Card>
@@ -281,23 +421,50 @@ const AdminDashboardPage = () => {
           <Card className="p-6">
             <div className="flex items-center">
               <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                <TrendingUp size={24} className="text-yellow-600" />
+                <FileText size={24} className="text-yellow-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Avg Rating</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.averageRating.toFixed(1)}</p>
-                <p className="text-xs text-green-600">+0.2 this week</p>
+                <p className="text-sm font-medium text-gray-600">Total Chapters</p>
+                <p className="text-2xl font-bold text-gray-900">{systemStats.totalChapters}</p>
+                <p className="text-xs text-gray-500">Learning content</p>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-6">
+            <div className="flex items-center">
+              <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
+                <TrendingUp size={24} className="text-indigo-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Completion Rate</p>
+                <p className="text-2xl font-bold text-gray-900">{systemStats.completionRate}%</p>
+                <p className="text-xs text-green-600">+5% this month</p>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-6">
+            <div className="flex items-center">
+              <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                <Award size={24} className="text-red-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Test Average</p>
+                <p className="text-2xl font-bold text-gray-900">{systemStats.averageTestScore}%</p>
+                <p className="text-xs text-green-600">System-wide</p>
               </div>
             </div>
           </Card>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Recent Users */}
-          <div className="lg:col-span-2">
+          {/* Main Content */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* User Management */}
             <Card>
               <Card.Header className="flex items-center justify-between">
-                <Card.Title>Recent Users</Card.Title>
+                <Card.Title>User Management</Card.Title>
                 <div className="flex space-x-2">
                   <Button 
                     size="sm" 
@@ -309,7 +476,7 @@ const AdminDashboardPage = () => {
                   </Button>
                   <Button 
                     size="sm"
-                    onClick={() => toast.info('Add user functionality coming soon!')}
+                    onClick={() => setShowCreateUserModal(true)}
                   >
                     <UserPlus size={16} className="mr-2" />
                     Add User
@@ -317,11 +484,28 @@ const AdminDashboardPage = () => {
                 </div>
               </Card.Header>
               <Card.Content>
-                <div className="space-y-4">
-                  {recentUsers.map((user) => (
-                    <div key={user.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:shadow-sm transition-shadow">
+                <div className="grid grid-cols-3 gap-4 mb-4">
+                  <div className="text-center p-3 bg-blue-50 rounded-lg">
+                    <div className="text-xl font-bold text-blue-600">{students.length}</div>
+                    <div className="text-sm text-blue-800">Students</div>
+                  </div>
+                  <div className="text-center p-3 bg-green-50 rounded-lg">
+                    <div className="text-xl font-bold text-green-600">{instructors.length}</div>
+                    <div className="text-sm text-green-800">Instructors</div>
+                  </div>
+                  <div className="text-center p-3 bg-purple-50 rounded-lg">
+                    <div className="text-xl font-bold text-purple-600">
+                      {allUsers.filter(u => u.isActive).length}
+                    </div>
+                    <div className="text-sm text-purple-800">Active Users</div>
+                  </div>
+                </div>
+                
+                <div className="space-y-3">
+                  {allUsers.slice(0, 5).map((user) => (
+                    <div key={user.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
                       <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100">
+                        <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-100">
                           <img 
                             src={user.avatar} 
                             alt={user.name}
@@ -329,42 +513,85 @@ const AdminDashboardPage = () => {
                           />
                         </div>
                         <div>
-                          <h3 className="font-medium text-gray-900">{user.name}</h3>
-                          <p className="text-sm text-gray-500">{user.email}</p>
-                          <div className="flex items-center space-x-2 mt-1">
-                            <Badge variant="info" size="sm">{user.role}</Badge>
-                            <span className="text-xs text-gray-500">
-                              Joined {new Date(user.joinedDate).toLocaleDateString()}
-                            </span>
-                          </div>
+                          <h4 className="text-sm font-medium text-gray-900">{user.name}</h4>
+                          <p className="text-xs text-gray-600">{user.email}</p>
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
+                        <Badge variant="info" size="sm">{user.role}</Badge>
                         <Badge variant={user.isActive ? 'success' : 'danger'} size="sm">
                           {user.isActive ? 'Active' : 'Inactive'}
                         </Badge>
-                        <Badge variant={user.isVerified ? 'success' : 'warning'} size="sm">
-                          {user.isVerified ? 'Verified' : 'Unverified'}
-                        </Badge>
-                        <div className="flex space-x-1">
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => {
-                              setSelectedUser(user)
-                              setShowUsersModal(true)
-                            }}
-                          >
-                            <Edit size={14} />
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleUserAction(user.id, user.isActive ? 'deactivate' : 'activate')}
-                          >
-                            {user.isActive ? <XCircle size={14} /> : <CheckCircle size={14} />}
-                          </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Card.Content>
+            </Card>
+
+            {/* Course Management */}
+            <Card>
+              <Card.Header className="flex items-center justify-between">
+                <Card.Title>Course Management</Card.Title>
+                <div className="flex space-x-2">
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => setShowCoursesModal(true)}
+                  >
+                    <Eye size={16} className="mr-1" />
+                    View All
+                  </Button>
+                  <Button 
+                    size="sm"
+                    onClick={() => toast('Course builder coming soon!')}
+                  >
+                    <Plus size={16} className="mr-2" />
+                    Create Course
+                  </Button>
+                </div>
+              </Card.Header>
+              <Card.Content>
+                <div className="grid grid-cols-3 gap-4 mb-4">
+                  <div className="text-center p-3 bg-green-50 rounded-lg">
+                    <div className="text-xl font-bold text-green-600">
+                      {allCourses.filter(c => c.status === 'published').length}
+                    </div>
+                    <div className="text-sm text-green-800">Published</div>
+                  </div>
+                  <div className="text-center p-3 bg-yellow-50 rounded-lg">
+                    <div className="text-xl font-bold text-yellow-600">
+                      {allCourses.filter(c => c.status === 'draft').length}
+                    </div>
+                    <div className="text-sm text-yellow-800">Draft</div>
+                  </div>
+                  <div className="text-center p-3 bg-blue-50 rounded-lg">
+                    <div className="text-xl font-bold text-blue-600">{allModules.length}</div>
+                    <div className="text-sm text-blue-800">Total Modules</div>
+                  </div>
+                </div>
+                
+                <div className="space-y-3">
+                  {allCourses.slice(0, 5).map((course) => (
+                    <div key={course.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 rounded-lg overflow-hidden bg-gray-100">
+                          <img 
+                            src={course.thumbnail} 
+                            alt={course.title}
+                            className="w-full h-full object-cover"
+                          />
                         </div>
+                        <div>
+                          <h4 className="text-sm font-medium text-gray-900">{course.title}</h4>
+                          <p className="text-xs text-gray-600">by {course.instructor.name}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Badge variant={course.status === 'published' ? 'success' : 'warning'} size="sm">
+                          {course.status}
+                        </Badge>
+                        <span className="text-xs text-gray-500">{course.enrolledStudents.length} students</span>
                       </div>
                     </div>
                   ))}
@@ -423,51 +650,66 @@ const AdminDashboardPage = () => {
               </Card.Content>
             </Card>
 
-            {/* Quick Actions */}
+            {/* Instructor Permissions */}
             <Card>
-              <Card.Header>
-                <Card.Title>Quick Actions</Card.Title>
+              <Card.Header className="flex items-center justify-between">
+                <Card.Title className="flex items-center">
+                  <Settings size={20} className="mr-2 text-purple-500" />
+                  Instructor Control
+                </Card.Title>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => setShowPermissionsModal(true)}
+                >
+                  Manage
+                </Button>
               </Card.Header>
-              <Card.Content className="space-y-3">
-                <Button 
-                  className="w-full justify-start"
-                  onClick={() => toast.info('Create user functionality coming soon!')}
-                >
-                  <UserPlus size={16} className="mr-2" />
-                  Create New User
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start"
-                  onClick={() => setShowCoursesModal(true)}
-                >
-                  <BookOpen size={16} className="mr-2" />
-                  Review Courses
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start"
-                  onClick={() => toast.info('Analytics page coming soon!')}
-                >
-                  <BarChart3 size={16} className="mr-2" />
-                  View Analytics
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start"
-                  onClick={() => toast.info('Settings page coming soon!')}
-                >
-                  <Settings size={16} className="mr-2" />
-                  System Settings
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start"
-                  onClick={() => toast.info('Backup functionality coming soon!')}
-                >
-                  <Download size={16} className="mr-2" />
-                  Export Data
-                </Button>
+              <Card.Content>
+                <div className="space-y-3">
+                  {instructors.map((instructor) => {
+                    const permissions = instructorPermissions[instructor.id] || {}
+                    const studentCount = instructor.students?.length || 0
+                    
+                    return (
+                      <div key={instructor.id} className="p-3 border border-gray-200 rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="text-sm font-medium text-gray-900">{instructor.name}</h4>
+                          <div className="flex items-center space-x-1">
+                            {permissions.canCreateCourses && (
+                              <Badge variant="success" size="sm">Create</Badge>
+                            )}
+                            <Badge variant="info" size="sm">{studentCount} students</Badge>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-gray-500">
+                            {permissions.assignedCourses?.length || 0} courses assigned
+                          </span>
+                          <div className="flex space-x-1">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => {
+                                setSelectedUser(instructor)
+                                setShowPermissionsModal(true)
+                              }}
+                            >
+                              <Settings size={12} />
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant={instructor.isActive ? 'outline' : 'default'}
+                              onClick={() => handleUserAction(instructor.id, instructor.isActive ? 'deactivate' : 'activate')}
+                            >
+                              {instructor.isActive ? <Pause size={12} /> : <Play size={12} />}
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
               </Card.Content>
             </Card>
 
@@ -490,12 +732,12 @@ const AdminDashboardPage = () => {
                     <Badge variant="success" size="sm">Online</Badge>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">File Storage</span>
-                    <Badge variant="success" size="sm">Available</Badge>
+                    <span className="text-sm text-gray-600">AI Interview Portal</span>
+                    <Badge variant="success" size="sm">Connected</Badge>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Email Service</span>
-                    <Badge variant="warning" size="sm">Slow</Badge>
+                    <span className="text-sm text-gray-600">File Storage</span>
+                    <Badge variant="warning" size="sm">75% Full</Badge>
                   </div>
                   <Button 
                     variant="outline" 
@@ -542,7 +784,7 @@ const AdminDashboardPage = () => {
             </select>
             <Button 
               variant="outline"
-              onClick={() => handleBulkAction('export')}
+              onClick={() => toast('Export functionality coming soon!')}
             >
               <Download size={16} className="mr-1" />
               Export
@@ -572,6 +814,11 @@ const AdminDashboardPage = () => {
                       <Badge variant={user.isVerified ? 'success' : 'warning'} size="sm">
                         {user.isVerified ? 'Verified' : 'Unverified'}
                       </Badge>
+                      {user.role === 'student' && user.instructorId && (
+                        <Badge variant="default" size="sm">
+                          Under: {allUsers.find(u => u.id === user.instructorId)?.name}
+                        </Badge>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -589,9 +836,16 @@ const AdminDashboardPage = () => {
                       size="sm"
                       onClick={() => handleUserAction(user.id, 'verify')}
                     >
-                      <Shield size={14} />
+                      <UserCheck size={14} />
                     </Button>
                   )}
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleUserAction(user.id, 'reset-password')}
+                  >
+                    <Shield size={14} />
+                  </Button>
                   <Button 
                     variant="outline" 
                     size="sm"
@@ -602,34 +856,6 @@ const AdminDashboardPage = () => {
                 </div>
               </div>
             ))}
-          </div>
-
-          {/* Bulk Actions */}
-          <div className="border-t pt-4">
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-600">Bulk Actions:</span>
-              <Button 
-                size="sm" 
-                variant="outline"
-                onClick={() => handleBulkAction('activate')}
-              >
-                Activate Selected
-              </Button>
-              <Button 
-                size="sm" 
-                variant="outline"
-                onClick={() => handleBulkAction('deactivate')}
-              >
-                Deactivate Selected
-              </Button>
-              <Button 
-                size="sm" 
-                variant="outline"
-                onClick={() => handleBulkAction('verify')}
-              >
-                Verify Selected
-              </Button>
-            </div>
           </div>
         </div>
       </Modal>
@@ -642,28 +868,29 @@ const AdminDashboardPage = () => {
         size="xl"
       >
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h4 className="font-medium text-gray-900">All Courses ({mockData.courses.length})</h4>
-            <div className="flex space-x-2">
-              <Button 
-                size="sm" 
-                variant="outline"
-                onClick={() => toast.info('Export functionality coming soon!')}
-              >
-                <Download size={16} className="mr-1" />
-                Export
-              </Button>
-              <Button 
-                size="sm"
-                onClick={() => toast.info('Course approval system coming soon!')}
-              >
-                Review Pending
-              </Button>
+          <div className="flex items-center space-x-4">
+            <div className="flex-1">
+              <Input
+                placeholder="Search courses..."
+                value={courseSearchTerm}
+                onChange={(e) => setCourseSearchTerm(e.target.value)}
+                className="w-full"
+              />
             </div>
+            <select
+              value={courseStatusFilter}
+              onChange={(e) => setCourseStatusFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+            >
+              <option value="all">All Status</option>
+              <option value="published">Published</option>
+              <option value="draft">Draft</option>
+              <option value="archived">Archived</option>
+            </select>
           </div>
           
           <div className="space-y-3 max-h-96 overflow-y-auto">
-            {mockData.courses.map((course) => (
+            {filteredCourses.map((course) => (
               <div key={course.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
                 <div className="flex items-center space-x-3">
                   <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100">
@@ -677,32 +904,222 @@ const AdminDashboardPage = () => {
                     <h4 className="font-medium text-gray-900">{course.title}</h4>
                     <p className="text-sm text-gray-600">by {course.instructor.name}</p>
                     <div className="flex items-center space-x-2 mt-1">
-                      <Badge variant={getStatusColor(course.status)} size="sm">
+                      <Badge variant={course.status === 'published' ? 'success' : 'warning'} size="sm">
                         {course.status}
                       </Badge>
                       <Badge variant="info" size="sm">{course.category}</Badge>
                       <span className="text-xs text-gray-500">
-                        {course.studentsCount} students
+                        {course.enrolledStudents.length} students
                       </span>
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm font-medium text-gray-900">
-                    {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(course.price)}
-                  </span>
-                  <div className="flex space-x-1">
-                    <Button variant="outline" size="sm">
-                      <Eye size={14} />
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      <Edit size={14} />
-                    </Button>
-                  </div>
+                <div className="flex space-x-1">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleCourseAction(course.id, 'view')}
+                  >
+                    <Eye size={14} />
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleCourseAction(course.id, course.status === 'published' ? 'archive' : 'publish')}
+                  >
+                    {course.status === 'published' ? <Square size={14} /> : <PlayCircle size={14} />}
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleCourseAction(course.id, 'feature')}
+                  >
+                    <Star size={14} />
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleCourseAction(course.id, 'delete')}
+                  >
+                    <Trash2 size={14} />
+                  </Button>
                 </div>
               </div>
             ))}
           </div>
+        </div>
+      </Modal>
+
+      {/* Create User Modal */}
+      <Modal
+        isOpen={showCreateUserModal}
+        onClose={() => setShowCreateUserModal(false)}
+        title="Create New User"
+        size="md"
+      >
+        <div className="space-y-4">
+          <Input
+            label="Full Name"
+            value={newUserData.name}
+            onChange={(e) => setNewUserData(prev => ({ ...prev, name: e.target.value }))}
+            placeholder="Enter full name"
+          />
+          
+          <Input
+            label="Email Address"
+            type="email"
+            value={newUserData.email}
+            onChange={(e) => setNewUserData(prev => ({ ...prev, email: e.target.value }))}
+            placeholder="Enter email address"
+          />
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Role</label>
+            <select
+              value={newUserData.role}
+              onChange={(e) => setNewUserData(prev => ({ ...prev, role: e.target.value }))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+            >
+              <option value="student">Student</option>
+              <option value="instructor">Instructor</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+          
+          {newUserData.role === 'student' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Assign to Instructor</label>
+              <select
+                value={newUserData.instructorId}
+                onChange={(e) => setNewUserData(prev => ({ ...prev, instructorId: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+              >
+                <option value="">Select Instructor</option>
+                {instructors.map(instructor => (
+                  <option key={instructor.id} value={instructor.id}>{instructor.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          
+          <div className="flex space-x-3 pt-4">
+            <Button 
+              variant="outline" 
+              className="flex-1"
+              onClick={() => setShowCreateUserModal(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              className="flex-1"
+              onClick={createUser}
+            >
+              Create User
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Permissions Management Modal */}
+      <Modal
+        isOpen={showPermissionsModal}
+        onClose={() => setShowPermissionsModal(false)}
+        title="Instructor Permissions"
+        size="lg"
+      >
+        <div className="space-y-6">
+          {instructors.map((instructor) => {
+            const permissions = instructorPermissions[instructor.id] || {}
+            
+            return (
+              <div key={instructor.id} className="p-4 border border-gray-200 rounded-lg">
+                <div className="flex items-center space-x-3 mb-4">
+                  <img 
+                    src={instructor.avatar} 
+                    alt={instructor.name}
+                    className="w-10 h-10 rounded-full object-cover"
+                  />
+                  <div>
+                    <h4 className="font-medium text-gray-900">{instructor.name}</h4>
+                    <p className="text-sm text-gray-600">{instructor.email}</p>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={permissions.canCreateCourses || false}
+                      onChange={(e) => updateInstructorPermissions(instructor.id, { 
+                        canCreateCourses: e.target.checked 
+                      })}
+                      className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                    />
+                    <span className="text-sm text-gray-700">Can Create Courses</span>
+                  </label>
+                  
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={permissions.canEditCourses || false}
+                      onChange={(e) => updateInstructorPermissions(instructor.id, { 
+                        canEditCourses: e.target.checked 
+                      })}
+                      className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                    />
+                    <span className="text-sm text-gray-700">Can Edit Courses</span>
+                  </label>
+                  
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={permissions.canManageTests || false}
+                      onChange={(e) => updateInstructorPermissions(instructor.id, { 
+                        canManageTests: e.target.checked 
+                      })}
+                      className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                    />
+                    <span className="text-sm text-gray-700">Can Manage Tests</span>
+                  </label>
+                  
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={permissions.canViewAllStudents || false}
+                      onChange={(e) => updateInstructorPermissions(instructor.id, { 
+                        canViewAllStudents: e.target.checked 
+                      })}
+                      className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                    />
+                    <span className="text-sm text-gray-700">Can View All Students</span>
+                  </label>
+                </div>
+                
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Assigned Courses</label>
+                  <div className="flex flex-wrap gap-2">
+                    {allCourses.map(course => (
+                      <label key={course.id} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={permissions.assignedCourses?.includes(course.id) || false}
+                          onChange={(e) => {
+                            const currentCourses = permissions.assignedCourses || []
+                            const newCourses = e.target.checked 
+                              ? [...currentCourses, course.id]
+                              : currentCourses.filter(id => id !== course.id)
+                            updateInstructorPermissions(instructor.id, { assignedCourses: newCourses })
+                          }}
+                          className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                        />
+                        <span className="text-sm text-gray-700">{course.title}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )
+          )}
         </div>
       </Modal>
 
@@ -723,7 +1140,7 @@ const AdminDashboardPage = () => {
                   <Database size={20} className="text-green-600" />
                   <div>
                     <div className="font-medium text-green-900">Database</div>
-                    <div className="text-sm text-green-700">Healthy</div>
+                    <div className="text-sm text-green-700">Healthy • 45ms avg response</div>
                   </div>
                 </div>
               </div>
@@ -732,7 +1149,16 @@ const AdminDashboardPage = () => {
                   <Server size={20} className="text-green-600" />
                   <div>
                     <div className="font-medium text-green-900">API Server</div>
-                    <div className="text-sm text-green-700">Online</div>
+                    <div className="text-sm text-green-700">Online • 99.9% uptime</div>
+                  </div>
+                </div>
+              </div>
+              <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                <div className="flex items-center space-x-2">
+                  <Brain size={20} className="text-green-600" />
+                  <div>
+                    <div className="font-medium text-green-900">AI Interview Portal</div>
+                    <div className="text-sm text-green-700">Connected • 12 sessions today</div>
                   </div>
                 </div>
               </div>
@@ -740,17 +1166,8 @@ const AdminDashboardPage = () => {
                 <div className="flex items-center space-x-2">
                   <Globe size={20} className="text-yellow-600" />
                   <div>
-                    <div className="font-medium text-yellow-900">CDN</div>
-                    <div className="text-sm text-yellow-700">Slow</div>
-                  </div>
-                </div>
-              </div>
-              <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                <div className="flex items-center space-x-2">
-                  <Shield size={20} className="text-green-600" />
-                  <div>
-                    <div className="font-medium text-green-900">Security</div>
-                    <div className="text-sm text-green-700">Protected</div>
+                    <div className="font-medium text-yellow-900">File Storage</div>
+                    <div className="text-sm text-yellow-700">75% Full • 2.3GB used</div>
                   </div>
                 </div>
               </div>
@@ -764,42 +1181,79 @@ const AdminDashboardPage = () => {
               <div>
                 <div className="flex justify-between text-sm mb-1">
                   <span>CPU Usage</span>
-                  <span>45%</span>
+                  <span>35%</span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-blue-600 h-2 rounded-full" style={{ width: '45%' }}></div>
+                  <div className="bg-green-600 h-2 rounded-full" style={{ width: '35%' }}></div>
                 </div>
               </div>
               <div>
                 <div className="flex justify-between text-sm mb-1">
                   <span>Memory Usage</span>
-                  <span>67%</span>
+                  <span>58%</span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-yellow-600 h-2 rounded-full" style={{ width: '67%' }}></div>
+                  <div className="bg-yellow-600 h-2 rounded-full" style={{ width: '58%' }}></div>
                 </div>
               </div>
               <div>
                 <div className="flex justify-between text-sm mb-1">
-                  <span>Disk Usage</span>
-                  <span>23%</span>
+                  <span>Active Sessions</span>
+                  <span>24 users</span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-green-600 h-2 rounded-full" style={{ width: '23%' }}></div>
+                  <div className="bg-blue-600 h-2 rounded-full" style={{ width: '60%' }}></div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Recent Logs */}
+          {/* Recent System Logs */}
           <div>
             <h4 className="font-medium text-gray-900 mb-3">Recent System Logs</h4>
             <div className="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm max-h-40 overflow-y-auto">
-              <div>[2024-01-20 10:30:15] INFO: User login successful - student@demo.com</div>
-              <div>[2024-01-20 10:28:42] INFO: Course created - "Advanced JavaScript"</div>
-              <div>[2024-01-20 10:25:33] WARN: High memory usage detected - 67%</div>
-              <div>[2024-01-20 10:20:18] INFO: Payment processed - $99.99</div>
-              <div>[2024-01-20 10:15:07] INFO: Database backup completed</div>
+              <div>[2024-01-20 10:30:15] INFO: Student completed module test - score: 85%</div>
+              <div>[2024-01-20 10:28:42] INFO: New course created - "Advanced JavaScript"</div>
+              <div>[2024-01-20 10:25:33] INFO: AI Interview session completed - student ID: 4</div>
+              <div>[2024-01-20 10:20:18] INFO: Instructor permissions updated - instructor ID: 2</div>
+              <div>[2024-01-20 10:15:07] INFO: Database backup completed successfully</div>
+              <div>[2024-01-20 10:10:33] WARN: High memory usage detected - 75%</div>
+              <div>[2024-01-20 10:05:12] INFO: Student assigned to course - course ID: 1</div>
+            </div>
+          </div>
+
+          {/* System Controls */}
+          <div>
+            <h4 className="font-medium text-gray-900 mb-3">System Controls</h4>
+            <div className="grid grid-cols-2 gap-3">
+              <Button 
+                variant="outline"
+                onClick={() => toast('Backup initiated successfully!')}
+              >
+                <Download size={16} className="mr-2" />
+                Backup System
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={() => toast('Maintenance mode toggled!')}
+              >
+                <Settings size={16} className="mr-2" />
+                Maintenance Mode
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={() => toast('Cache cleared successfully!')}
+              >
+                <RefreshCw size={16} className="mr-2" />
+                Clear Cache
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={() => toast('System restart scheduled!')}
+              >
+                <Server size={16} className="mr-2" />
+                Restart Services
+              </Button>
             </div>
           </div>
         </div>

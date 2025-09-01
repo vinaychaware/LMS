@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { 
   BookOpen, 
   Users, 
@@ -20,103 +20,175 @@ import {
   AlertCircle,
   DollarSign,
   Target,
-  Trash2
+  Trash2,
+  Settings,
+  UserCheck,
+  BookMarked,
+  Brain,
+  PlayCircle,
+  PieChart,
+  TrendingDown,
+  Activity,
+  Filter,
+  Search,
+  Download
 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
-import { mockAPI } from '../services/mockData'
+import { mockAPI, mockData } from '../services/mockData'
 import useAuthStore from '../store/useAuthStore'
 import Progress from '../components/ui/Progress'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 import Badge from '../components/ui/Badge'
 import Modal from '../components/ui/Modal'
+import Input from '../components/ui/Input'
 
 const InstructorDashboardPage = () => {
   const { user } = useAuthStore()
-  const [courses, setCourses] = useState([])
-  const [students, setStudents] = useState([])
-  const [recentActivity, setRecentActivity] = useState([])
-  const [assignments, setAssignments] = useState([])
+  const navigate = useNavigate()
+  const [assignedCourses, setAssignedCourses] = useState([])
+  const [myStudents, setMyStudents] = useState([])
+  const [courseModules, setCourseModules] = useState({})
+  const [studentProgress, setStudentProgress] = useState({})
+  const [testResults, setTestResults] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedCourse, setSelectedCourse] = useState(null)
+  const [selectedStudent, setSelectedStudent] = useState(null)
   const [showCourseModal, setShowCourseModal] = useState(false)
-  const [showStudentsModal, setShowStudentsModal] = useState(false)
+  const [showStudentModal, setShowStudentModal] = useState(false)
+  const [showCreateCourseModal, setShowCreateCourseModal] = useState(false)
+  const [showAnalyticsModal, setShowAnalyticsModal] = useState(false)
+  const [studentSearchTerm, setStudentSearchTerm] = useState('')
+  const [courseFilter, setCourseFilter] = useState('all')
   const [stats, setStats] = useState({
     totalCourses: 0,
     totalStudents: 0,
-    totalRevenue: 0,
-    averageRating: 0,
-    publishedCourses: 0
+    activeStudents: 0,
+    averageProgress: 0,
+    totalModules: 0,
+    totalChapters: 0,
+    testsGraded: 0,
+    averageTestScore: 0
   })
 
   useEffect(() => {
-    fetchDashboardData()
+    fetchInstructorData()
   }, [])
 
-  const fetchDashboardData = async () => {
+  const fetchInstructorData = async () => {
     try {
       setLoading(true)
       
-      // Fetch instructor data
-      const [instructorCourses, activities, instructorStats] = await Promise.all([
-        mockAPI.getCoursesByInstructor(user.id),
-        mockAPI.getRecentActivities(null, 10),
-        mockAPI.getInstructorStats(user.id)
-      ])
+      // Get instructor's assigned courses
+      const courses = await mockAPI.getCoursesByInstructor(user.id)
+      setAssignedCourses(courses)
       
-      setCourses(instructorCourses)
-      setRecentActivity(activities.filter(activity => 
-        instructorCourses.some(course => course.id === activity.courseId)
-      ))
-      setStats(instructorStats)
-      
-      // Get students from all courses
-      const allStudents = []
-      for (const course of instructorCourses) {
-        const courseEnrollments = await mockAPI.getCourseEnrollments(course.id)
-        allStudents.push(...courseEnrollments)
+      // Get modules for each course
+      const modulesData = {}
+      for (const course of courses) {
+        const modules = await mockAPI.getCourseModules(course.id)
+        modulesData[course.id] = modules
       }
-      setStudents(allStudents)
+      setCourseModules(modulesData)
       
-      // Get assignments for instructor courses
-      const allAssignments = []
-      for (const course of instructorCourses) {
-        const courseAssignments = await mockAPI.getAssignmentsByCourse(course.id)
-        allAssignments.push(...courseAssignments.map(assignment => ({
-          ...assignment,
-          courseName: course.title
-        })))
+      // Get instructor's students
+      const instructor = mockData.users.find(u => u.id === user.id)
+      const students = mockData.users.filter(u => 
+        instructor.students.includes(u.id)
+      )
+      setMyStudents(students)
+      
+      // Get student progress data
+      const progressData = {}
+      for (const student of students) {
+        for (const courseId of student.assignedCourses) {
+          const progress = await mockAPI.getStudentProgress(student.id, courseId)
+          if (!progressData[student.id]) progressData[student.id] = {}
+          progressData[student.id][courseId] = progress
+        }
       }
-      setAssignments(allAssignments)
+      setStudentProgress(progressData)
+      
+      // Get test results
+      const allTestResults = mockData.testResults.filter(result => 
+        students.some(student => student.id === result.studentId)
+      )
+      setTestResults(allTestResults)
+      
+      // Calculate instructor stats
+      const totalModules = Object.values(modulesData).flat().length
+      const totalChapters = courses.reduce((sum, course) => sum + course.totalChapters, 0)
+      const activeStudents = students.filter(s => s.isActive).length
+      const avgProgress = students.length > 0 ? 
+        students.reduce((sum, student) => {
+          const studentCourses = student.assignedCourses
+          const studentAvg = studentCourses.reduce((courseSum, courseId) => {
+            const progress = progressData[student.id]?.[courseId]
+            return courseSum + (progress?.overallProgress || 0)
+          }, 0) / studentCourses.length
+          return sum + studentAvg
+        }, 0) / students.length : 0
+      
+      const testScores = allTestResults.map(result => result.score)
+      const avgTestScore = testScores.length > 0 ? testScores.reduce((a, b) => a + b, 0) / testScores.length : 0
+      
+      setStats({
+        totalCourses: courses.length,
+        totalStudents: students.length,
+        activeStudents,
+        averageProgress: Math.round(avgProgress),
+        totalModules,
+        totalChapters,
+        testsGraded: allTestResults.length,
+        averageTestScore: Math.round(avgTestScore)
+      })
       
     } catch (error) {
-      console.error('Error fetching dashboard data:', error)
+      console.error('Error fetching instructor data:', error)
       toast.error('Failed to load dashboard data')
     } finally {
       setLoading(false)
     }
   }
 
+  const viewCourseDetails = (course) => {
+    setSelectedCourse(course)
+    setShowCourseModal(true)
+  }
+
+  const viewStudentDetails = (student) => {
+    setSelectedStudent(student)
+    setShowStudentModal(true)
+  }
+
+  const createNewCourse = () => {
+    const instructor = mockData.users.find(u => u.id === user.id)
+    if (!instructor.permissions.canCreateCourses) {
+      toast.error('You do not have permission to create courses. Contact admin.')
+      return
+    }
+    setShowCreateCourseModal(true)
+  }
+
   const handleCourseAction = async (courseId, action) => {
     try {
       switch (action) {
         case 'edit':
-          toast('Course editor coming soon!')
+          toast.info('Course editor coming soon!')
           break
         case 'view':
-          toast('Course viewer coming soon!')
+          const course = assignedCourses.find(c => c.id === courseId)
+          viewCourseDetails(course)
           break
         case 'analytics':
-          const course = courses.find(c => c.id === courseId)
-          setSelectedCourse(course)
-          setShowCourseModal(true)
+          setSelectedCourse(assignedCourses.find(c => c.id === courseId))
+          setShowAnalyticsModal(true)
           break
-        case 'delete':
-          if (window.confirm('Are you sure you want to delete this course?')) {
-            await mockAPI.deleteCourse(courseId)
-            setCourses(prev => prev.filter(course => course.id !== courseId))
-            toast.success('Course deleted successfully')
-          }
+        case 'students':
+          const courseStudents = myStudents.filter(student => 
+            student.assignedCourses.includes(courseId)
+          )
+          toast.info(`${courseStudents.length} students enrolled in this course`)
           break
         default:
           break
@@ -126,64 +198,34 @@ const InstructorDashboardPage = () => {
     }
   }
 
-  const handlePublishCourse = async (courseId) => {
-    try {
-      await mockAPI.updateCourse(courseId, { status: 'published' })
-      setCourses(prev => prev.map(course => 
-        course.id === courseId ? { ...course, status: 'published' } : course
-      ))
-      toast.success('Course published successfully!')
-    } catch (error) {
-      toast.error('Failed to publish course')
-    }
+  const getStudentCourseProgress = (studentId, courseId) => {
+    const progress = studentProgress[studentId]?.[courseId]
+    if (!progress) return 0
+    return progress.overallProgress || 0
   }
 
-  const viewStudentDetails = (student) => {
-    setSelectedCourse(student)
-    setShowStudentsModal(true)
+  const getStudentStatus = (student) => {
+    const recentActivity = new Date(student.lastLogin)
+    const daysSinceActivity = Math.floor((new Date() - recentActivity) / (1000 * 60 * 60 * 24))
+    
+    if (daysSinceActivity === 0) return { status: 'online', color: 'success' }
+    if (daysSinceActivity <= 3) return { status: 'recent', color: 'warning' }
+    return { status: 'inactive', color: 'danger' }
   }
 
-  const getActivityIcon = (type) => {
-    switch (type) {
-      case 'enrollment':
-        return <Users size={16} className="text-green-600" />
-      case 'assignment':
-        return <FileText size={16} className="text-blue-600" />
-      case 'review':
-        return <Star size={16} className="text-yellow-600" />
-      case 'completion':
-        return <CheckCircle size={16} className="text-green-600" />
-      default:
-        return <Bell size={16} className="text-gray-600" />
-    }
-  }
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'published':
-        return 'success'
-      case 'draft':
-        return 'warning'
-      case 'archived':
-        return 'default'
-      default:
-        return 'default'
-    }
-  }
-
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount)
-  }
+  const filteredStudents = myStudents.filter(student => {
+    const matchesSearch = student.name.toLowerCase().includes(studentSearchTerm.toLowerCase()) ||
+                         student.email.toLowerCase().includes(studentSearchTerm.toLowerCase())
+    const matchesCourse = courseFilter === 'all' || student.assignedCourses.includes(courseFilter)
+    return matchesSearch && matchesCourse
+  })
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading dashboard...</p>
+          <p className="mt-4 text-gray-600">Loading instructor dashboard...</p>
         </div>
       </div>
     )
@@ -195,33 +237,46 @@ const InstructorDashboardPage = () => {
         {/* Welcome Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                Welcome back, {user?.name}!
-              </h1>
-              <p className="text-gray-600">
-                Manage your courses, track student progress, and grow your teaching business.
-              </p>
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center">
+                <BookOpen size={24} className="text-primary-600" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">
+                  Instructor Dashboard
+                </h1>
+                <p className="text-gray-600">
+                  Manage your courses and track student progress.
+                </p>
+              </div>
             </div>
-            <Link to="/courses/create">
-              <Button>
+            <div className="flex space-x-2">
+              <Button 
+                variant="outline"
+                onClick={() => setShowAnalyticsModal(true)}
+              >
+                <BarChart3 size={16} className="mr-2" />
+                Analytics
+              </Button>
+              <Button onClick={createNewCourse}>
                 <Plus size={16} className="mr-2" />
                 Create Course
               </Button>
-            </Link>
+            </div>
           </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card className="p-6">
             <div className="flex items-center">
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                 <BookOpen size={24} className="text-blue-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Courses</p>
+                <p className="text-sm font-medium text-gray-600">My Courses</p>
                 <p className="text-2xl font-bold text-gray-900">{stats.totalCourses}</p>
+                <p className="text-xs text-gray-500">{stats.totalModules} modules, {stats.totalChapters} chapters</p>
               </div>
             </div>
           </Card>
@@ -232,8 +287,9 @@ const InstructorDashboardPage = () => {
                 <Users size={24} className="text-green-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Students</p>
+                <p className="text-sm font-medium text-gray-600">My Students</p>
                 <p className="text-2xl font-bold text-gray-900">{stats.totalStudents}</p>
+                <p className="text-xs text-gray-500">{stats.activeStudents} active</p>
               </div>
             </div>
           </Card>
@@ -241,11 +297,12 @@ const InstructorDashboardPage = () => {
           <Card className="p-6">
             <div className="flex items-center">
               <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                <DollarSign size={24} className="text-purple-600" />
+                <TrendingUp size={24} className="text-purple-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-                <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.totalRevenue)}</p>
+                <p className="text-sm font-medium text-gray-600">Avg Progress</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.averageProgress}%</p>
+                <p className="text-xs text-gray-500">Across all students</p>
               </div>
             </div>
           </Card>
@@ -253,23 +310,12 @@ const InstructorDashboardPage = () => {
           <Card className="p-6">
             <div className="flex items-center">
               <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                <Star size={24} className="text-yellow-600" />
+                <Award size={24} className="text-yellow-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Avg Rating</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.averageRating.toFixed(1)}</p>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="p-6">
-            <div className="flex items-center">
-              <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                <Target size={24} className="text-red-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Published</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.publishedCourses}</p>
+                <p className="text-sm font-medium text-gray-600">Test Average</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.averageTestScore}%</p>
+                <p className="text-xs text-gray-500">{stats.testsGraded} tests graded</p>
               </div>
             </div>
           </Card>
@@ -285,128 +331,131 @@ const InstructorDashboardPage = () => {
                   <Button 
                     size="sm" 
                     variant="outline"
-                    onClick={() => toast('Course analytics coming soon!')}
+                    onClick={() => setShowAnalyticsModal(true)}
                   >
                     <BarChart3 size={16} className="mr-1" />
                     Analytics
                   </Button>
-                  <Link to="/courses/create">
-                    <Button size="sm">
-                      <Plus size={16} className="mr-2" />
-                      Create Course
-                    </Button>
-                  </Link>
+                  <Button size="sm" onClick={createNewCourse}>
+                    <Plus size={16} className="mr-2" />
+                    Create Course
+                  </Button>
                 </div>
               </Card.Header>
               <Card.Content>
-                {courses.length === 0 ? (
+                {assignedCourses.length === 0 ? (
                   <div className="text-center py-8">
                     <BookOpen size={48} className="mx-auto text-gray-400 mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No courses created yet</h3>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No courses assigned yet</h3>
                     <p className="text-gray-600 mb-4">
-                      Start sharing your knowledge by creating your first course.
+                      Contact admin to get courses assigned or create your own.
                     </p>
-                    <Link to="/courses/create">
-                      <Button>Create Your First Course</Button>
-                    </Link>
+                    <Button onClick={createNewCourse}>
+                      Create Your First Course
+                    </Button>
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {courses.map((course) => (
-                      <div key={course.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-3 mb-3">
-                              <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100">
-                                <img 
-                                  src={course.thumbnail} 
-                                  alt={course.title}
-                                  className="w-full h-full object-cover"
-                                />
-                              </div>
-                              <div className="flex-1">
-                                <div className="flex items-center space-x-2 mb-1">
-                                  <h3 className="font-medium text-gray-900">{course.title}</h3>
-                                  <Badge variant={getStatusColor(course.status)} size="sm">
-                                    {course.status}
-                                  </Badge>
-                                  {course.isFeatured && (
-                                    <Badge variant="accent" size="sm">Featured</Badge>
-                                  )}
+                    {assignedCourses.map((course) => {
+                      const modules = courseModules[course.id] || []
+                      const enrolledStudents = myStudents.filter(student => 
+                        student.assignedCourses.includes(course.id)
+                      )
+                      const avgProgress = enrolledStudents.length > 0 ? 
+                        enrolledStudents.reduce((sum, student) => 
+                          sum + getStudentCourseProgress(student.id, course.id), 0
+                        ) / enrolledStudents.length : 0
+                      
+                      return (
+                        <div key={course.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-3 mb-3">
+                                <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100">
+                                  <img 
+                                    src={course.thumbnail} 
+                                    alt={course.title}
+                                    className="w-full h-full object-cover"
+                                  />
                                 </div>
-                                <div className="flex items-center space-x-4 text-sm text-gray-500">
-                                  <span className="flex items-center space-x-1">
-                                    <Users size={14} />
-                                    <span>{course.studentsCount} students</span>
-                                  </span>
-                                  <span className="flex items-center space-x-1">
-                                    <Star size={14} className="text-yellow-500" />
-                                    <span>{course.rating} ({course.reviewsCount})</span>
-                                  </span>
-                                  <span className="flex items-center space-x-1">
-                                    <DollarSign size={14} />
-                                    <span>{formatCurrency(course.price * course.studentsCount)}</span>
-                                  </span>
+                                <div className="flex-1">
+                                  <div className="flex items-center space-x-2 mb-1">
+                                    <h3 className="font-medium text-gray-900">{course.title}</h3>
+                                    <Badge variant={course.status === 'published' ? 'success' : 'warning'} size="sm">
+                                      {course.status}
+                                    </Badge>
+                                  </div>
+                                  <div className="flex items-center space-x-4 text-sm text-gray-500">
+                                    <span className="flex items-center space-x-1">
+                                      <Users size={14} />
+                                      <span>{enrolledStudents.length} students</span>
+                                    </span>
+                                    <span className="flex items-center space-x-1">
+                                      <BookMarked size={14} />
+                                      <span>{modules.length} modules</span>
+                                    </span>
+                                    <span className="flex items-center space-x-1">
+                                      <Clock size={14} />
+                                      <span>{course.estimatedDuration}</span>
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              <div className="ml-15 space-y-2">
+                                <div className="flex items-center justify-between text-sm">
+                                  <span className="text-gray-600">Average Student Progress</span>
+                                  <span className="font-medium text-gray-900">{Math.round(avgProgress)}%</span>
+                                </div>
+                                <Progress value={avgProgress} size="sm" />
+                                
+                                <div className="flex items-center justify-between text-sm text-gray-500">
+                                  <div className="flex items-center space-x-1">
+                                    <Activity size={14} />
+                                    <span>Updated {new Date(course.updatedAt).toLocaleDateString()}</span>
+                                  </div>
+                                  <div className="flex items-center space-x-1">
+                                    <FileText size={14} />
+                                    <span>{course.totalChapters} chapters</span>
+                                  </div>
                                 </div>
                               </div>
                             </div>
                             
-                            <div className="ml-15 space-y-2">
-                              <div className="flex items-center justify-between text-sm">
-                                <span className="text-gray-600">Course Completion Rate</span>
-                                <span className="font-medium text-gray-900">
-                                  {Math.round(Math.random() * 30 + 60)}%
-                                </span>
-                              </div>
-                              <Progress value={Math.round(Math.random() * 30 + 60)} size="sm" />
-                              
-                              <div className="flex items-center justify-between text-sm text-gray-500">
-                                <div className="flex items-center space-x-1">
-                                  <Clock size={14} />
-                                  <span>Updated {new Date(course.updatedAt).toLocaleDateString()}</span>
-                                </div>
-                                <div className="flex items-center space-x-1">
-                                  <FileText size={14} />
-                                  <span>{course.lessonsCount} lessons</span>
-                                </div>
-                              </div>
+                            <div className="flex space-x-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleCourseAction(course.id, 'edit')}
+                              >
+                                <Edit size={16} />
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleCourseAction(course.id, 'view')}
+                              >
+                                <Eye size={16} />
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleCourseAction(course.id, 'students')}
+                              >
+                                <Users size={16} />
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleCourseAction(course.id, 'analytics')}
+                              >
+                                <BarChart3 size={16} />
+                              </Button>
                             </div>
                           </div>
-                          
-                          <div className="flex space-x-2">
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => handleCourseAction(course.id, 'edit')}
-                            >
-                              <Edit size={16} />
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => handleCourseAction(course.id, 'view')}
-                            >
-                              <Eye size={16} />
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => handleCourseAction(course.id, 'analytics')}
-                            >
-                              <BarChart3 size={16} />
-                            </Button>
-                            {course.status === 'draft' && (
-                              <Button 
-                                size="sm"
-                                onClick={() => handlePublishCourse(course.id)}
-                              >
-                                Publish
-                              </Button>
-                            )}
-                          </div>
                         </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 )}
               </Card.Content>
@@ -415,37 +464,112 @@ const InstructorDashboardPage = () => {
 
           {/* Right Sidebar */}
           <div className="space-y-6">
-            {/* Recent Activity */}
+            {/* Student Progress Overview */}
+            <Card>
+              <Card.Header className="flex items-center justify-between">
+                <Card.Title className="flex items-center">
+                  <Users size={20} className="mr-2 text-green-500" />
+                  Student Progress
+                </Card.Title>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => setShowStudentModal(true)}
+                >
+                  View All
+                </Button>
+              </Card.Header>
+              <Card.Content>
+                {myStudents.length === 0 ? (
+                  <p className="text-gray-500 text-center py-4">No students assigned</p>
+                ) : (
+                  <div className="space-y-3">
+                    {myStudents.slice(0, 5).map((student) => {
+                      const studentStatus = getStudentStatus(student)
+                      const avgProgress = student.assignedCourses.reduce((sum, courseId) => 
+                        sum + getStudentCourseProgress(student.id, courseId), 0
+                      ) / student.assignedCourses.length
+                      
+                      return (
+                        <div 
+                          key={student.id} 
+                          className="flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer"
+                          onClick={() => viewStudentDetails(student)}
+                        >
+                          <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 relative">
+                            <img 
+                              src={student.avatar} 
+                              alt={student.name}
+                              className="w-full h-full object-cover"
+                            />
+                            <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${
+                              studentStatus.color === 'success' ? 'bg-green-500' : 
+                              studentStatus.color === 'warning' ? 'bg-yellow-500' : 'bg-gray-400'
+                            }`}></div>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 truncate">
+                              {student.name}
+                            </p>
+                            <p className="text-xs text-gray-500 truncate">
+                              {student.assignedCourses.length} courses assigned
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-sm font-medium text-gray-900">{Math.round(avgProgress)}%</div>
+                            <div className="w-16 bg-gray-200 rounded-full h-1.5 mt-1">
+                              <div 
+                                className="bg-primary-600 h-1.5 rounded-full" 
+                                style={{ width: `${avgProgress}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </Card.Content>
+            </Card>
+
+            {/* Recent Test Results */}
             <Card>
               <Card.Header>
                 <Card.Title className="flex items-center">
-                  <Bell size={20} className="mr-2 text-blue-500" />
-                  Recent Activity
+                  <FileText size={20} className="mr-2 text-orange-500" />
+                  Recent Test Results
                 </Card.Title>
               </Card.Header>
               <Card.Content>
-                {recentActivity.length === 0 ? (
-                  <p className="text-gray-500 text-center py-4">No recent activity</p>
+                {testResults.length === 0 ? (
+                  <p className="text-gray-500 text-center py-4">No test results yet</p>
                 ) : (
-                  <div className="space-y-4">
-                    {recentActivity.slice(0, 5).map((activity) => (
-                      <div key={activity.id} className="flex items-start space-x-3">
-                        <div className="flex-shrink-0 mt-1">
-                          {getActivityIcon(activity.type)}
+                  <div className="space-y-3">
+                    {testResults.slice(0, 5).map((result) => {
+                      const student = myStudents.find(s => s.id === result.studentId)
+                      const course = assignedCourses.find(c => c.id === result.courseId)
+                      
+                      return (
+                        <div key={result.id} className="p-3 bg-gray-50 rounded-lg">
+                          <div className="flex items-center justify-between mb-1">
+                            <h4 className="text-sm font-medium text-gray-900">
+                              {student?.name}
+                            </h4>
+                            <Badge 
+                              variant={result.passed ? 'success' : 'danger'} 
+                              size="sm"
+                            >
+                              {result.score}%
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-gray-600">{course?.title}</p>
+                          <p className="text-xs text-gray-500">
+                            {result.testType === 'module' ? 'Module Test' : 'Course Test'} • 
+                            {new Date(result.submittedAt).toLocaleDateString()}
+                          </p>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900">
-                            {activity.course}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            {activity.message}
-                          </p>
-                          <p className="text-xs text-gray-500 mt-1">
-                            {new Date(activity.timestamp).toLocaleDateString()}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 )}
               </Card.Content>
@@ -457,16 +581,17 @@ const InstructorDashboardPage = () => {
                 <Card.Title>Quick Actions</Card.Title>
               </Card.Header>
               <Card.Content className="space-y-3">
-                <Link to="/courses/create" className="block">
-                  <Button className="w-full justify-start">
-                    <Plus size={16} className="mr-2" />
-                    Create New Course
-                  </Button>
-                </Link>
+                <Button 
+                  className="w-full justify-start"
+                  onClick={createNewCourse}
+                >
+                  <Plus size={16} className="mr-2" />
+                  Create New Course
+                </Button>
                 <Button 
                   variant="outline" 
                   className="w-full justify-start"
-                  onClick={() => setShowStudentsModal(true)}
+                  onClick={() => setShowStudentModal(true)}
                 >
                   <Users size={16} className="mr-2" />
                   Manage Students
@@ -474,7 +599,15 @@ const InstructorDashboardPage = () => {
                 <Button 
                   variant="outline" 
                   className="w-full justify-start"
-                  onClick={() => toast('Analytics page coming soon!')}
+                  onClick={() => toast('Test management coming soon!')}
+                >
+                  <FileText size={16} className="mr-2" />
+                  Manage Tests
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={() => setShowAnalyticsModal(true)}
                 >
                   <BarChart3 size={16} className="mr-2" />
                   View Analytics
@@ -482,201 +615,277 @@ const InstructorDashboardPage = () => {
                 <Button 
                   variant="outline" 
                   className="w-full justify-start"
-                  onClick={() => toast('Messages page coming soon!')}
+                  onClick={() => toast('Messages coming soon!')}
                 >
                   <MessageSquare size={16} className="mr-2" />
-                  Check Messages
+                  Student Messages
                 </Button>
-              </Card.Content>
-            </Card>
-
-            {/* Recent Students */}
-            <Card>
-              <Card.Header className="flex items-center justify-between">
-                <Card.Title>Recent Students</Card.Title>
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={() => setShowStudentsModal(true)}
-                >
-                  View All
-                </Button>
-              </Card.Header>
-              <Card.Content>
-                <div className="space-y-3">
-                  {students.slice(0, 5).map((enrollment) => (
-                    <div 
-                      key={enrollment.id} 
-                      className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer"
-                      onClick={() => viewStudentDetails(enrollment)}
-                    >
-                      <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-100">
-                        <img 
-                          src={enrollment.student.avatar} 
-                          alt={enrollment.student.name}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">
-                          {enrollment.student.name}
-                        </p>
-                        <p className="text-xs text-gray-500 truncate">
-                          {enrollment.course?.title}
-                        </p>
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        <span className="text-xs text-gray-500">{enrollment.progress}%</span>
-                        <div className="w-16 bg-gray-200 rounded-full h-1.5">
-                          <div 
-                            className="bg-primary-600 h-1.5 rounded-full" 
-                            style={{ width: `${enrollment.progress}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </Card.Content>
-            </Card>
-
-            {/* Pending Assignments */}
-            <Card>
-              <Card.Header>
-                <Card.Title className="flex items-center">
-                  <FileText size={20} className="mr-2 text-orange-500" />
-                  Pending Reviews
-                </Card.Title>
-              </Card.Header>
-              <Card.Content>
-                <div className="space-y-3">
-                  {assignments.slice(0, 3).map((assignment) => (
-                    <div key={assignment.id} className="p-3 bg-orange-50 rounded-lg border border-orange-200">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="text-sm font-medium text-gray-900">{assignment.title}</h4>
-                        <Badge variant="warning" size="sm">{assignment.submissions} submissions</Badge>
-                      </div>
-                      <p className="text-xs text-gray-600 mb-2">{assignment.courseName}</p>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-gray-500">
-                          Due: {new Date(assignment.dueDate).toLocaleDateString()}
-                        </span>
-                        <Button size="sm" variant="outline">
-                          Review
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
               </Card.Content>
             </Card>
           </div>
         </div>
       </div>
 
-      {/* Course Analytics Modal */}
+      {/* Course Details Modal */}
       <Modal
         isOpen={showCourseModal}
         onClose={() => setShowCourseModal(false)}
-        title={`${selectedCourse?.title} - Analytics`}
+        title={selectedCourse?.title}
         size="lg"
       >
         {selectedCourse && (
           <div className="space-y-6">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="text-center p-4 bg-blue-50 rounded-lg">
-                <div className="text-2xl font-bold text-blue-600">{selectedCourse.studentsCount}</div>
-                <div className="text-sm text-blue-800">Total Students</div>
-              </div>
-              <div className="text-center p-4 bg-green-50 rounded-lg">
-                <div className="text-2xl font-bold text-green-600">{selectedCourse.rating}</div>
-                <div className="text-sm text-green-800">Average Rating</div>
-              </div>
-              <div className="text-center p-4 bg-purple-50 rounded-lg">
-                <div className="text-2xl font-bold text-purple-600">{formatCurrency(selectedCourse.price * selectedCourse.studentsCount)}</div>
-                <div className="text-sm text-purple-800">Total Revenue</div>
-              </div>
-              <div className="text-center p-4 bg-yellow-50 rounded-lg">
-                <div className="text-2xl font-bold text-yellow-600">{selectedCourse.reviewsCount}</div>
-                <div className="text-sm text-yellow-800">Total Reviews</div>
+            <div className="flex items-center space-x-4">
+              <img 
+                src={selectedCourse.thumbnail} 
+                alt={selectedCourse.title}
+                className="w-20 h-20 rounded-lg object-cover"
+              />
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">{selectedCourse.title}</h3>
+                <p className="text-gray-600">{selectedCourse.description}</p>
+                <div className="flex items-center space-x-2 mt-2">
+                  <Badge variant="info">{selectedCourse.level}</Badge>
+                  <Badge variant="default">{selectedCourse.category}</Badge>
+                  <Badge variant={selectedCourse.status === 'published' ? 'success' : 'warning'}>
+                    {selectedCourse.status}
+                  </Badge>
+                </div>
               </div>
             </div>
             
-            <div>
-              <h4 className="font-medium text-gray-900 mb-3">Course Performance</h4>
-              <div className="space-y-3">
-                <div>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span>Completion Rate</span>
-                    <span>78%</span>
-                  </div>
-                  <Progress value={78} size="sm" variant="success" />
-                </div>
-                <div>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span>Student Satisfaction</span>
-                    <span>92%</span>
-                  </div>
-                  <Progress value={92} size="sm" variant="accent" />
-                </div>
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <div className="p-3 bg-blue-50 rounded-lg">
+                <div className="text-xl font-bold text-blue-600">{selectedCourse.totalModules}</div>
+                <div className="text-sm text-blue-800">Modules</div>
               </div>
+              <div className="p-3 bg-green-50 rounded-lg">
+                <div className="text-xl font-bold text-green-600">{selectedCourse.totalChapters}</div>
+                <div className="text-sm text-green-800">Chapters</div>
+              </div>
+              <div className="p-3 bg-purple-50 rounded-lg">
+                <div className="text-xl font-bold text-purple-600">
+                  {myStudents.filter(s => s.assignedCourses.includes(selectedCourse.id)).length}
+                </div>
+                <div className="text-sm text-purple-800">Students</div>
+              </div>
+            </div>
+
+            <div>
+              <h4 className="font-medium text-gray-900 mb-3">Course Modules</h4>
+              <div className="space-y-2">
+                {(courseModules[selectedCourse.id] || []).map((module, index) => (
+                  <div key={module.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
+                        <span className="text-sm font-medium text-primary-600">{index + 1}</span>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-900">{module.title}</h4>
+                        <p className="text-xs text-gray-500">{module.totalChapters} chapters • {module.estimatedDuration}</p>
+                      </div>
+                    </div>
+                    <Button variant="outline" size="sm">
+                      <Edit size={14} />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex space-x-3">
+              <Button 
+                className="flex-1"
+                onClick={() => {
+                  setShowCourseModal(false)
+                  toast.info('Course editor coming soon!')
+                }}
+              >
+                <Edit size={16} className="mr-2" />
+                Edit Course
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={() => {
+                  setShowCourseModal(false)
+                  handleCourseAction(selectedCourse.id, 'analytics')
+                }}
+              >
+                <BarChart3 size={16} className="mr-2" />
+                Analytics
+              </Button>
             </div>
           </div>
         )}
       </Modal>
 
-      {/* Students Management Modal */}
+      {/* Student Management Modal */}
       <Modal
-        isOpen={showStudentsModal}
-        onClose={() => setShowStudentsModal(false)}
+        isOpen={showStudentModal}
+        onClose={() => setShowStudentModal(false)}
         title="Student Management"
-        size="lg"
+        size="xl"
       >
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h4 className="font-medium text-gray-900">All Students ({students.length})</h4>
+          {/* Search and Filters */}
+          <div className="flex items-center space-x-4">
+            <div className="flex-1">
+              <Input
+                placeholder="Search students..."
+                value={studentSearchTerm}
+                onChange={(e) => setStudentSearchTerm(e.target.value)}
+                className="w-full"
+              />
+            </div>
+            <select
+              value={courseFilter}
+              onChange={(e) => setCourseFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+            >
+              <option value="all">All Courses</option>
+              {assignedCourses.map(course => (
+                <option key={course.id} value={course.id}>{course.title}</option>
+              ))}
+            </select>
             <Button 
-              size="sm"
+              variant="outline"
               onClick={() => toast('Export functionality coming soon!')}
             >
-              Export Data
+              <Download size={16} className="mr-1" />
+              Export
             </Button>
           </div>
-          
+
+          {/* Students List */}
           <div className="space-y-3 max-h-96 overflow-y-auto">
-            {students.map((enrollment) => (
-              <div key={enrollment.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100">
-                    <img 
-                      src={enrollment.student.avatar} 
-                      alt={enrollment.student.name}
-                      className="w-full h-full object-cover"
-                    />
+            {filteredStudents.map((student) => {
+              const studentStatus = getStudentStatus(student)
+              const avgProgress = student.assignedCourses.reduce((sum, courseId) => 
+                sum + getStudentCourseProgress(student.id, courseId), 0
+              ) / student.assignedCourses.length
+              
+              return (
+                <div key={student.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:shadow-sm transition-shadow">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 relative">
+                      <img 
+                        src={student.avatar} 
+                        alt={student.name}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${
+                        studentStatus.color === 'success' ? 'bg-green-500' : 
+                        studentStatus.color === 'warning' ? 'bg-yellow-500' : 'bg-gray-400'
+                      }`}></div>
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-gray-900">{student.name}</h4>
+                      <p className="text-sm text-gray-600">{student.email}</p>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <Badge variant={studentStatus.color} size="sm">
+                          {studentStatus.status}
+                        </Badge>
+                        <span className="text-xs text-gray-500">
+                          {student.assignedCourses.length} courses
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="font-medium text-gray-900">{enrollment.student.name}</h4>
-                    <p className="text-sm text-gray-600">{enrollment.student.email}</p>
-                    <div className="flex items-center space-x-2 mt-1">
-                      <Badge variant="info" size="sm">{enrollment.course?.title}</Badge>
-                      <span className="text-xs text-gray-500">
-                        Enrolled {new Date(enrollment.enrolledAt).toLocaleDateString()}
-                      </span>
+                  <div className="text-right">
+                    <div className="text-sm font-medium text-gray-900">{Math.round(avgProgress)}%</div>
+                    <div className="text-xs text-gray-500">Average Progress</div>
+                    <div className="w-20 bg-gray-200 rounded-full h-1.5 mt-1">
+                      <div 
+                        className="bg-primary-600 h-1.5 rounded-full" 
+                        style={{ width: `${avgProgress}%` }}
+                      ></div>
                     </div>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="text-sm font-medium text-gray-900">{enrollment.progress}%</div>
-                  <div className="text-xs text-gray-500">Grade: {enrollment.grade}%</div>
-                  <div className="w-20 bg-gray-200 rounded-full h-1.5 mt-1">
-                    <div 
-                      className="bg-primary-600 h-1.5 rounded-full" 
-                      style={{ width: `${enrollment.progress}%` }}
-                    ></div>
+              )
+            })}
+          </div>
+        </div>
+      </Modal>
+
+      {/* Analytics Modal */}
+      <Modal
+        isOpen={showAnalyticsModal}
+        onClose={() => setShowAnalyticsModal(false)}
+        title="Instructor Analytics"
+        size="xl"
+      >
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center p-4 bg-blue-50 rounded-lg">
+              <div className="text-2xl font-bold text-blue-600">{stats.totalCourses}</div>
+              <div className="text-sm text-blue-800">Total Courses</div>
+            </div>
+            <div className="text-center p-4 bg-green-50 rounded-lg">
+              <div className="text-2xl font-bold text-green-600">{stats.totalStudents}</div>
+              <div className="text-sm text-green-800">Total Students</div>
+            </div>
+            <div className="text-center p-4 bg-purple-50 rounded-lg">
+              <div className="text-2xl font-bold text-purple-600">{stats.averageProgress}%</div>
+              <div className="text-sm text-purple-800">Avg Progress</div>
+            </div>
+            <div className="text-center p-4 bg-yellow-50 rounded-lg">
+              <div className="text-2xl font-bold text-yellow-600">{stats.averageTestScore}%</div>
+              <div className="text-sm text-yellow-800">Test Average</div>
+            </div>
+          </div>
+          
+          <div>
+            <h4 className="font-medium text-gray-900 mb-3">Course Performance</h4>
+            <div className="space-y-3">
+              {assignedCourses.map(course => {
+                const enrolledStudents = myStudents.filter(student => 
+                  student.assignedCourses.includes(course.id)
+                )
+                const avgProgress = enrolledStudents.length > 0 ? 
+                  enrolledStudents.reduce((sum, student) => 
+                    sum + getStudentCourseProgress(student.id, course.id), 0
+                  ) / enrolledStudents.length : 0
+                
+                return (
+                  <div key={course.id} className="p-3 border border-gray-200 rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-medium text-gray-900">{course.title}</h4>
+                      <span className="text-sm text-gray-600">{enrolledStudents.length} students</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm mb-1">
+                      <span className="text-gray-600">Average Progress</span>
+                      <span className="font-medium">{Math.round(avgProgress)}%</span>
+                    </div>
+                    <Progress value={avgProgress} size="sm" />
                   </div>
-                </div>
-              </div>
-            ))}
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Create Course Modal */}
+      <Modal
+        isOpen={showCreateCourseModal}
+        onClose={() => setShowCreateCourseModal(false)}
+        title="Create New Course"
+        size="lg"
+      >
+        <div className="space-y-4">
+          <p className="text-gray-600">
+            Create a new course with modules and chapters. You can add content after creation.
+          </p>
+          <div className="text-center py-8">
+            <BookOpen size={48} className="mx-auto text-gray-400 mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Course Builder</h3>
+            <p className="text-gray-600 mb-4">
+              Full course creation interface coming soon!
+            </p>
+            <Button onClick={() => navigate('/courses/create')}>
+              Go to Course Builder
+            </Button>
           </div>
         </div>
       </Modal>

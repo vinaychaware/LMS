@@ -10,6 +10,7 @@ import StudentDashboardPage from './pages/StudentDashboardPage'
 import InstructorDashboardPage from './pages/InstructorDashboardPage'
 import CreateCoursePage from './pages/CreateCoursePage'
 import AdminDashboardPage from './pages/AdminDashboardPage'
+import CourseViewerPage from './pages/CourseViewerPage'
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
@@ -87,6 +88,15 @@ const App = () => {
           element={
             <ProtectedRoute allowedRoles={['instructor']}>
               <InstructorDashboardPage />
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/courses/:courseId" 
+          element={
+            <ProtectedRoute allowedRoles={['student']}>
+              <CourseViewerPage />
             </ProtectedRoute>
           } 
         />
