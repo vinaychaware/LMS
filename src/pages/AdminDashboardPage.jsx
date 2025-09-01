@@ -5,8 +5,8 @@ import Input from '../components/ui/Input';
 import Badge from '../components/ui/Badge';
 import Modal from '../components/ui/Modal';
 import Tabs from '../components/ui/Tabs';
-import { useAuthStore } from '../store/useAuthStore';
-import { api } from '../services/api';
+import useAuthStore from '../store/useAuthStore';
+import api from '../services/api';
 import toast from 'react-hot-toast';
 
 export default function AdminDashboardPage() {
