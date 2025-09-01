@@ -216,8 +216,8 @@ const LoginPage = () => {
                 variant="outline"
                 className="w-full"
                 onClick={() => {
-                  setValue('email', 'student@demo.com')
-                  setValue('password', 'Student123')
+                  document.querySelector('input[name="email"]').value = 'student@demo.com'
+                  document.querySelector('input[name="password"]').value = 'Student123'
                   toast.success('Demo student credentials filled! Click Sign in.')
                 }}
               >
@@ -229,8 +229,8 @@ const LoginPage = () => {
                 variant="outline"
                 className="w-full"
                 onClick={() => {
-                  setValue('email', 'instructor@demo.com')
-                  setValue('password', 'Instructor123')
+                  document.querySelector('input[name="email"]').value = 'instructor@demo.com'
+                  document.querySelector('input[name="password"]').value = 'Instructor123'
                   toast.success('Demo instructor credentials filled! Click Sign in.')
                 }}
               >
@@ -242,8 +242,8 @@ const LoginPage = () => {
                 variant="outline"
                 className="w-full"
                 onClick={() => {
-                  setValue('email', 'admin@demo.com')
-                  setValue('password', 'Admin123')
+                  document.querySelector('input[name="email"]').value = 'admin@demo.com'
+                  document.querySelector('input[name="password"]').value = 'Admin123'
                   toast.success('Demo admin credentials filled! Click Sign in.')
                 }}
               >

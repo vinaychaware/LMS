@@ -1,17 +1,22 @@
-// Mock data service for development
+// Enhanced mock data service for LMS with Course → Module → Chapter hierarchy
 export const mockData = {
-  // Users data
+  // Users data with proper hierarchy
   users: [
     {
       id: '1',
-      name: 'John Student',
-      email: 'student@demo.com',
-      role: 'student',
-      avatar: 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150',
+      name: 'System Admin',
+      email: 'admin@demo.com',
+      role: 'admin',
+      avatar: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=150',
       isActive: true,
       isVerified: true,
-      joinedDate: '2024-01-15',
-      lastLogin: '2024-01-20T10:30:00Z'
+      joinedDate: '2024-01-01',
+      lastLogin: '2024-01-20T08:00:00Z',
+      permissions: {
+        canCreateCourses: true,
+        canManageUsers: true,
+        canManageSystem: true
+      }
     },
     {
       id: '2',
@@ -22,18 +27,40 @@ export const mockData = {
       isActive: true,
       isVerified: true,
       joinedDate: '2024-01-10',
-      lastLogin: '2024-01-20T09:15:00Z'
+      lastLogin: '2024-01-20T09:15:00Z',
+      assignedBy: '1', // Admin ID
+      permissions: {
+        canCreateCourses: true, // Admin-controlled
+        canManageStudents: true,
+        canViewAnalytics: true
+      },
+      assignedCourses: ['1', '2'], // Course IDs
+      students: ['3', '4', '5'] // Student IDs under this instructor
     },
     {
       id: '3',
-      name: 'Admin User',
-      email: 'admin@demo.com',
-      role: 'admin',
-      avatar: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=150',
+      name: 'John Student',
+      email: 'student@demo.com',
+      role: 'student',
+      avatar: 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150',
       isActive: true,
       isVerified: true,
-      joinedDate: '2024-01-01',
-      lastLogin: '2024-01-20T08:00:00Z'
+      joinedDate: '2024-01-15',
+      lastLogin: '2024-01-20T10:30:00Z',
+      instructorId: '2', // Assigned under instructor
+      assignedCourses: ['1'], // Courses assigned by instructor
+      progress: {
+        '1': { // Course ID
+          currentModule: '1',
+          currentChapter: '2',
+          completedChapters: ['1-1', '1-2'],
+          completedModules: [],
+          moduleTestResults: {},
+          courseTestResult: null,
+          aiInterviewResult: null,
+          overallProgress: 25
+        }
+      }
     },
     {
       id: '4',
@@ -44,447 +71,791 @@ export const mockData = {
       isActive: true,
       isVerified: true,
       joinedDate: '2024-01-18',
-      lastLogin: '2024-01-19T16:45:00Z'
+      lastLogin: '2024-01-19T16:45:00Z',
+      instructorId: '2',
+      assignedCourses: ['1', '2'],
+      progress: {
+        '1': {
+          currentModule: '2',
+          currentChapter: '1',
+          completedChapters: ['1-1', '1-2', '1-3'],
+          completedModules: ['1'],
+          moduleTestResults: { '1': { score: 85, passed: true, attemptedAt: '2024-01-19' } },
+          courseTestResult: null,
+          aiInterviewResult: null,
+          overallProgress: 60
+        }
+      }
     },
     {
       id: '5',
       name: 'Michael Brown',
       email: 'michael@example.com',
-      role: 'instructor',
+      role: 'student',
       avatar: 'https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=150',
       isActive: true,
-      isVerified: false,
+      isVerified: true,
       joinedDate: '2024-01-16',
-      lastLogin: '2024-01-19T14:20:00Z'
+      lastLogin: '2024-01-19T14:20:00Z',
+      instructorId: '2',
+      assignedCourses: ['2'],
+      progress: {
+        '2': {
+          currentModule: '1',
+          currentChapter: '1',
+          completedChapters: [],
+          completedModules: [],
+          moduleTestResults: {},
+          courseTestResult: null,
+          aiInterviewResult: null,
+          overallProgress: 5
+        }
+      }
     }
   ],
 
-  // Courses data
+  // Courses with proper hierarchy
   courses: [
     {
       id: '1',
       title: 'Complete Web Development Bootcamp',
-      description: 'Learn web development from scratch with this comprehensive bootcamp covering HTML, CSS, JavaScript, and modern frameworks.',
+      description: 'Master web development from frontend to backend with hands-on projects and real-world applications.',
       instructor: {
         id: '2',
         name: 'Sarah Instructor',
         avatar: 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=150'
       },
       thumbnail: 'https://images.pexels.com/photos/11035380/pexels-photo-11035380.jpeg?auto=compress&cs=tinysrgb&w=400',
-      price: 99.99,
-      originalPrice: 149.99,
-      category: 'programming',
+      category: 'Programming',
       level: 'beginner',
-      duration: '40 hours',
-      lessonsCount: 45,
-      studentsCount: 234,
-      rating: 4.8,
-      reviewsCount: 89,
       status: 'published',
-      isFeatured: true,
+      isActive: true,
+      createdBy: '1', // Admin
+      assignedInstructors: ['2'],
+      enrolledStudents: ['3', '4'],
+      totalModules: 3,
+      totalChapters: 9,
+      estimatedDuration: '40 hours',
       createdAt: '2024-01-10',
-      updatedAt: '2024-01-19'
+      updatedAt: '2024-01-19',
+      courseTest: {
+        id: 'ct-1',
+        title: 'Web Development Final Assessment',
+        questions: 50,
+        duration: 120, // minutes
+        passingScore: 70,
+        maxAttempts: 2
+      }
     },
     {
       id: '2',
       title: 'Advanced JavaScript Concepts',
-      description: 'Deep dive into advanced JavaScript concepts including closures, prototypes, async programming, and design patterns.',
+      description: 'Deep dive into advanced JavaScript concepts, design patterns, and modern ES6+ features.',
       instructor: {
         id: '2',
         name: 'Sarah Instructor',
         avatar: 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=150'
       },
       thumbnail: 'https://images.pexels.com/photos/4164418/pexels-photo-4164418.jpeg?auto=compress&cs=tinysrgb&w=400',
-      price: 79.99,
-      originalPrice: 99.99,
-      category: 'programming',
+      category: 'Programming',
       level: 'advanced',
-      duration: '25 hours',
-      lessonsCount: 28,
-      studentsCount: 156,
-      rating: 4.9,
-      reviewsCount: 67,
       status: 'published',
-      isFeatured: false,
+      isActive: true,
+      createdBy: '1',
+      assignedInstructors: ['2'],
+      enrolledStudents: ['4', '5'],
+      totalModules: 2,
+      totalChapters: 6,
+      estimatedDuration: '25 hours',
       createdAt: '2024-01-12',
-      updatedAt: '2024-01-18'
-    },
-    {
-      id: '3',
-      title: 'UI/UX Design Fundamentals',
-      description: 'Learn the principles of user interface and user experience design with hands-on projects.',
-      instructor: {
-        id: '5',
-        name: 'Michael Brown',
-        avatar: 'https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=150'
-      },
-      thumbnail: 'https://images.pexels.com/photos/196644/pexels-photo-196644.jpeg?auto=compress&cs=tinysrgb&w=400',
-      price: 89.99,
-      category: 'design',
-      level: 'intermediate',
-      duration: '30 hours',
-      lessonsCount: 35,
-      studentsCount: 189,
-      rating: 4.7,
-      reviewsCount: 45,
-      status: 'published',
-      isFeatured: true,
-      createdAt: '2024-01-14',
-      updatedAt: '2024-01-17'
+      updatedAt: '2024-01-18',
+      courseTest: {
+        id: 'ct-2',
+        title: 'Advanced JavaScript Final Test',
+        questions: 40,
+        duration: 90,
+        passingScore: 75,
+        maxAttempts: 2
+      }
     }
   ],
 
-  // Enrollments data
-  enrollments: [
+  // Modules within courses
+  modules: [
+    // Course 1 Modules
     {
       id: '1',
-      studentId: '1',
       courseId: '1',
-      progress: 65,
-      enrolledAt: '2024-01-16',
-      lastAccessed: '2024-01-19',
-      status: 'active',
-      completedLessons: 29,
-      totalLessons: 45,
-      timeSpent: 1200, // minutes
-      grade: 87
+      title: 'Frontend Fundamentals',
+      description: 'Learn HTML, CSS, and basic JavaScript',
+      order: 1,
+      estimatedDuration: '15 hours',
+      totalChapters: 3,
+      isActive: true,
+      moduleTest: {
+        id: 'mt-1',
+        title: 'Frontend Fundamentals Test',
+        questions: 20,
+        duration: 45,
+        passingScore: 70,
+        maxAttempts: 3
+      }
     },
     {
       id: '2',
-      studentId: '1',
-      courseId: '3',
-      progress: 40,
-      enrolledAt: '2024-01-18',
-      lastAccessed: '2024-01-19',
-      status: 'active',
-      completedLessons: 14,
-      totalLessons: 35,
-      timeSpent: 800,
-      grade: 92
+      courseId: '1',
+      title: 'Backend Development',
+      description: 'Server-side programming with Node.js and databases',
+      order: 2,
+      estimatedDuration: '20 hours',
+      totalChapters: 4,
+      isActive: true,
+      moduleTest: {
+        id: 'mt-2',
+        title: 'Backend Development Test',
+        questions: 25,
+        duration: 60,
+        passingScore: 70,
+        maxAttempts: 3
+      }
     },
     {
       id: '3',
+      courseId: '1',
+      title: 'Full Stack Integration',
+      description: 'Connecting frontend and backend, deployment',
+      order: 3,
+      estimatedDuration: '5 hours',
+      totalChapters: 2,
+      isActive: true,
+      moduleTest: {
+        id: 'mt-3',
+        title: 'Full Stack Integration Test',
+        questions: 15,
+        duration: 30,
+        passingScore: 70,
+        maxAttempts: 3
+      }
+    },
+    // Course 2 Modules
+    {
+      id: '4',
+      courseId: '2',
+      title: 'Advanced JavaScript Features',
+      description: 'ES6+, async programming, and modern JavaScript',
+      order: 1,
+      estimatedDuration: '15 hours',
+      totalChapters: 3,
+      isActive: true,
+      moduleTest: {
+        id: 'mt-4',
+        title: 'Advanced JavaScript Features Test',
+        questions: 30,
+        duration: 60,
+        passingScore: 75,
+        maxAttempts: 2
+      }
+    },
+    {
+      id: '5',
+      courseId: '2',
+      title: 'JavaScript Design Patterns',
+      description: 'Common design patterns and best practices',
+      order: 2,
+      estimatedDuration: '10 hours',
+      totalChapters: 3,
+      isActive: true,
+      moduleTest: {
+        id: 'mt-5',
+        title: 'Design Patterns Test',
+        questions: 25,
+        duration: 45,
+        passingScore: 75,
+        maxAttempts: 2
+      }
+    }
+  ],
+
+  // Chapters within modules
+  chapters: [
+    // Module 1 Chapters (Frontend Fundamentals)
+    {
+      id: '1-1',
+      moduleId: '1',
+      courseId: '1',
+      title: 'HTML Fundamentals',
+      description: 'Learn HTML structure, semantic elements, and best practices',
+      content: 'HTML (HyperText Markup Language) is the standard markup language...',
+      order: 1,
+      estimatedDuration: '5 hours',
+      videoUrl: 'https://example.com/videos/html-fundamentals.mp4',
+      resources: [
+        { type: 'pdf', title: 'HTML Reference Guide', url: '/resources/html-guide.pdf' },
+        { type: 'link', title: 'MDN HTML Documentation', url: 'https://developer.mozilla.org/en-US/docs/Web/HTML' }
+      ],
+      isActive: true
+    },
+    {
+      id: '1-2',
+      moduleId: '1',
+      courseId: '1',
+      title: 'CSS Styling and Layout',
+      description: 'Master CSS for styling and responsive layouts',
+      content: 'CSS (Cascading Style Sheets) is used for styling HTML elements...',
+      order: 2,
+      estimatedDuration: '6 hours',
+      videoUrl: 'https://example.com/videos/css-fundamentals.mp4',
+      resources: [
+        { type: 'pdf', title: 'CSS Flexbox Guide', url: '/resources/flexbox-guide.pdf' },
+        { type: 'codepen', title: 'CSS Examples', url: 'https://codepen.io/examples' }
+      ],
+      isActive: true
+    },
+    {
+      id: '1-3',
+      moduleId: '1',
+      courseId: '1',
+      title: 'JavaScript Basics',
+      description: 'Introduction to JavaScript programming',
+      content: 'JavaScript is a high-level programming language...',
+      order: 3,
+      estimatedDuration: '4 hours',
+      videoUrl: 'https://example.com/videos/js-basics.mp4',
+      resources: [
+        { type: 'pdf', title: 'JavaScript Cheat Sheet', url: '/resources/js-cheatsheet.pdf' }
+      ],
+      isActive: true
+    },
+    // Module 2 Chapters (Backend Development)
+    {
+      id: '2-1',
+      moduleId: '2',
+      courseId: '1',
+      title: 'Node.js Introduction',
+      description: 'Server-side JavaScript with Node.js',
+      content: 'Node.js is a JavaScript runtime built on Chrome\'s V8 engine...',
+      order: 1,
+      estimatedDuration: '5 hours',
+      videoUrl: 'https://example.com/videos/nodejs-intro.mp4',
+      resources: [],
+      isActive: true
+    },
+    {
+      id: '2-2',
+      moduleId: '2',
+      courseId: '1',
+      title: 'Express.js Framework',
+      description: 'Building web applications with Express.js',
+      content: 'Express.js is a minimal and flexible Node.js web application framework...',
+      order: 2,
+      estimatedDuration: '6 hours',
+      videoUrl: 'https://example.com/videos/express-intro.mp4',
+      resources: [],
+      isActive: true
+    },
+    {
+      id: '2-3',
+      moduleId: '2',
+      courseId: '1',
+      title: 'Database Integration',
+      description: 'Working with databases in Node.js applications',
+      content: 'Learn how to integrate databases with your Node.js applications...',
+      order: 3,
+      estimatedDuration: '6 hours',
+      videoUrl: 'https://example.com/videos/database-integration.mp4',
+      resources: [],
+      isActive: true
+    },
+    {
+      id: '2-4',
+      moduleId: '2',
+      courseId: '1',
+      title: 'API Development',
+      description: 'Creating RESTful APIs with Express.js',
+      content: 'REST APIs are the backbone of modern web applications...',
+      order: 4,
+      estimatedDuration: '3 hours',
+      videoUrl: 'https://example.com/videos/api-development.mp4',
+      resources: [],
+      isActive: true
+    }
+  ],
+
+  // Module Tests
+  moduleTests: [
+    {
+      id: 'mt-1',
+      moduleId: '1',
+      courseId: '1',
+      title: 'Frontend Fundamentals Test',
+      description: 'Test your knowledge of HTML, CSS, and basic JavaScript',
+      questions: 20,
+      duration: 45, // minutes
+      passingScore: 70,
+      maxAttempts: 3,
+      isActive: true,
+      questions: [
+        {
+          id: 'q1',
+          type: 'multiple-choice',
+          question: 'What does HTML stand for?',
+          options: [
+            'HyperText Markup Language',
+            'High Tech Modern Language',
+            'Home Tool Markup Language',
+            'Hyperlink and Text Markup Language'
+          ],
+          correctAnswer: 0,
+          points: 5
+        },
+        {
+          id: 'q2',
+          type: 'multiple-choice',
+          question: 'Which CSS property is used for changing text color?',
+          options: ['color', 'text-color', 'font-color', 'text-style'],
+          correctAnswer: 0,
+          points: 5
+        }
+        // More questions would be added here
+      ]
+    },
+    {
+      id: 'mt-2',
+      moduleId: '2',
+      courseId: '1',
+      title: 'Backend Development Test',
+      description: 'Assess your backend development skills',
+      questions: 25,
+      duration: 60,
+      passingScore: 70,
+      maxAttempts: 3,
+      isActive: true
+    }
+  ],
+
+  // Course Tests
+  courseTests: [
+    {
+      id: 'ct-1',
+      courseId: '1',
+      title: 'Web Development Final Assessment',
+      description: 'Comprehensive test covering all course modules',
+      questions: 50,
+      duration: 120,
+      passingScore: 70,
+      maxAttempts: 2,
+      isActive: true,
+      prerequisite: 'all-modules-completed'
+    }
+  ],
+
+  // Test Results
+  testResults: [
+    {
+      id: 'tr-1',
+      studentId: '4',
+      testId: 'mt-1',
+      testType: 'module',
+      moduleId: '1',
+      courseId: '1',
+      score: 85,
+      totalQuestions: 20,
+      correctAnswers: 17,
+      passed: true,
+      attemptNumber: 1,
+      timeSpent: 35, // minutes
+      submittedAt: '2024-01-19T14:30:00Z',
+      answers: [
+        { questionId: 'q1', selectedAnswer: 0, isCorrect: true },
+        { questionId: 'q2', selectedAnswer: 0, isCorrect: true }
+      ]
+    }
+  ],
+
+  // AI Interview Results
+  aiInterviewResults: [
+    {
+      id: 'ai-1',
       studentId: '4',
       courseId: '1',
-      progress: 85,
-      enrolledAt: '2024-01-15',
-      lastAccessed: '2024-01-19',
-      status: 'active',
-      completedLessons: 38,
-      totalLessons: 45,
-      timeSpent: 1800,
-      grade: 94
+      overallScore: 88,
+      technicalScore: 85,
+      communicationScore: 90,
+      problemSolvingScore: 87,
+      feedback: 'Excellent understanding of web development concepts. Strong communication skills.',
+      interviewDuration: 45, // minutes
+      completedAt: '2024-01-20T10:00:00Z',
+      questions: [
+        {
+          question: 'Explain the difference between let, const, and var in JavaScript',
+          answer: 'Student provided comprehensive answer...',
+          score: 9
+        }
+      ],
+      recommendation: 'Ready for junior developer positions'
     }
   ],
 
-  // Assignments data
-  assignments: [
-    {
-      id: '1',
-      title: 'Build a Portfolio Website',
-      courseId: '1',
-      dueDate: '2024-01-25',
-      points: 100,
-      submissions: 15,
-      status: 'active',
-      type: 'project'
+  // System settings and permissions
+  systemSettings: {
+    instructorPermissions: {
+      '2': {
+        canCreateCourses: true,
+        canEditCourses: true,
+        canDeleteCourses: false,
+        canManageTests: true,
+        canViewAllStudents: false,
+        assignedCourses: ['1', '2']
+      }
     },
-    {
-      id: '2',
-      title: 'JavaScript Functions Quiz',
-      courseId: '2',
-      dueDate: '2024-01-23',
-      points: 50,
-      submissions: 8,
-      status: 'active',
-      type: 'quiz'
+    courseVisibility: {
+      '1': { instructors: ['2'], students: ['3', '4'] },
+      '2': { instructors: ['2'], students: ['4', '5'] }
     },
-    {
-      id: '3',
-      title: 'Design System Creation',
-      courseId: '3',
-      dueDate: '2024-01-28',
-      points: 150,
-      submissions: 12,
-      status: 'active',
-      type: 'project'
+    aiInterviewSettings: {
+      enabled: true,
+      apiEndpoint: 'https://api.ai-interview.com/v1',
+      defaultDuration: 45,
+      questionTypes: ['technical', 'behavioral', 'problem-solving']
     }
-  ],
-
-  // Payments data
-  payments: [
-    {
-      id: '1',
-      userId: '1',
-      courseId: '1',
-      amount: 99.99,
-      currency: 'USD',
-      status: 'completed',
-      method: 'stripe',
-      transactionId: 'txn_1234567890',
-      createdAt: '2024-01-16',
-      processedAt: '2024-01-16'
-    },
-    {
-      id: '2',
-      userId: '1',
-      courseId: '3',
-      amount: 89.99,
-      currency: 'USD',
-      status: 'completed',
-      method: 'paypal',
-      transactionId: 'txn_0987654321',
-      createdAt: '2024-01-18',
-      processedAt: '2024-01-18'
-    }
-  ],
+  },
 
   // Analytics data
   analytics: {
-    userGrowth: [
-      { date: '2024-01-01', users: 100 },
-      { date: '2024-01-08', users: 125 },
-      { date: '2024-01-15', users: 150 },
-      { date: '2024-01-22', users: 180 }
-    ],
-    courseCreation: [
-      { date: '2024-01-01', courses: 10 },
-      { date: '2024-01-08', courses: 12 },
-      { date: '2024-01-15', courses: 15 },
-      { date: '2024-01-22', courses: 18 }
-    ],
-    revenue: [
-      { date: '2024-01-01', amount: 1000 },
-      { date: '2024-01-08', amount: 1500 },
-      { date: '2024-01-15', amount: 2200 },
-      { date: '2024-01-22', amount: 3100 }
-    ]
-  },
-
-  // Notifications/Activity data
-  activities: [
-    {
-      id: '1',
-      type: 'enrollment',
-      message: 'New student enrolled in Complete Web Development Bootcamp',
-      courseId: '1',
-      userId: '4',
-      timestamp: '2024-01-19T14:30:00Z'
+    systemOverview: {
+      totalUsers: 5,
+      totalCourses: 2,
+      totalModules: 5,
+      totalChapters: 7,
+      activeStudents: 3,
+      activeInstructors: 1,
+      completionRate: 65,
+      averageTestScore: 82
     },
-    {
-      id: '2',
-      type: 'assignment',
-      message: 'Assignment submitted by Emily Johnson',
-      courseId: '1',
-      userId: '4',
-      assignmentId: '1',
-      timestamp: '2024-01-19T12:15:00Z'
+    instructorAnalytics: {
+      '2': {
+        totalStudents: 3,
+        activeCourses: 2,
+        averageStudentProgress: 43,
+        totalTestsGraded: 5,
+        studentSatisfaction: 4.8
+      }
     },
-    {
-      id: '3',
-      type: 'review',
-      message: 'New 5-star review received for Advanced JavaScript Concepts',
-      courseId: '2',
-      userId: '1',
-      timestamp: '2024-01-19T10:45:00Z'
-    },
-    {
-      id: '4',
-      type: 'completion',
-      message: 'Student completed UI/UX Design Fundamentals',
-      courseId: '3',
-      userId: '4',
-      timestamp: '2024-01-18T16:20:00Z'
+    studentAnalytics: {
+      '3': {
+        coursesEnrolled: 1,
+        chaptersCompleted: 2,
+        modulesCompleted: 0,
+        averageTestScore: 0,
+        timeSpent: 120, // minutes
+        lastActivity: '2024-01-20T10:30:00Z'
+      },
+      '4': {
+        coursesEnrolled: 2,
+        chaptersCompleted: 3,
+        modulesCompleted: 1,
+        averageTestScore: 85,
+        timeSpent: 300,
+        lastActivity: '2024-01-19T16:45:00Z'
+      }
     }
-  ],
-
-  // System alerts
-  systemAlerts: [
-    {
-      id: '1',
-      type: 'warning',
-      title: 'High Server Load',
-      message: 'Server response time is above normal. Monitoring closely.',
-      timestamp: '2024-01-19T15:30:00Z',
-      resolved: false
-    },
-    {
-      id: '2',
-      type: 'info',
-      title: 'Course Review Pending',
-      message: 'New course submission requires admin approval.',
-      timestamp: '2024-01-19T12:00:00Z',
-      resolved: false
-    },
-    {
-      id: '3',
-      type: 'success',
-      title: 'Backup Completed',
-      message: 'Daily system backup completed successfully.',
-      timestamp: '2024-01-19T02:00:00Z',
-      resolved: true
-    }
-  ]
+  }
 }
 
-// API simulation functions
+// Enhanced API simulation functions
 export const mockAPI = {
-  // Simulate API delay
   delay: (ms = 1000) => new Promise(resolve => setTimeout(resolve, ms)),
 
-  // Get user data
-  getUser: async (id) => {
-    await mockAPI.delay(500)
-    return mockData.users.find(user => user.id === id)
-  },
-
-  // Get courses by instructor
+  // Course Management
   getCoursesByInstructor: async (instructorId) => {
     await mockAPI.delay(800)
-    return mockData.courses.filter(course => course.instructor.id === instructorId)
+    return mockData.courses.filter(course => 
+      course.assignedInstructors.includes(instructorId)
+    )
   },
 
-  // Get student enrollments
-  getStudentEnrollments: async (studentId) => {
-    await mockAPI.delay(800)
-    const enrollments = mockData.enrollments.filter(enrollment => enrollment.studentId === studentId)
-    return enrollments.map(enrollment => {
-      const course = mockData.courses.find(course => course.id === enrollment.courseId)
-      return {
-        ...enrollment,
-        course
-      }
-    })
-  },
-
-  // Get course enrollments (for instructors)
-  getCourseEnrollments: async (courseId) => {
+  getCourseModules: async (courseId) => {
     await mockAPI.delay(600)
-    const enrollments = mockData.enrollments.filter(enrollment => enrollment.courseId === courseId)
-    return enrollments.map(enrollment => {
-      const student = mockData.users.find(user => user.id === enrollment.studentId)
-      return {
-        ...enrollment,
-        student
-      }
-    })
+    return mockData.modules.filter(module => module.courseId === courseId)
+      .sort((a, b) => a.order - b.order)
   },
 
-  // Get assignments by course
-  getAssignmentsByCourse: async (courseId) => {
-    await mockAPI.delay(600)
-    return mockData.assignments.filter(assignment => assignment.courseId === courseId)
-  },
-
-  // Get recent activities
-  getRecentActivities: async (userId = null, limit = 10) => {
+  getModuleChapters: async (moduleId) => {
     await mockAPI.delay(500)
-    let activities = mockData.activities
+    return mockData.chapters.filter(chapter => chapter.moduleId === moduleId)
+      .sort((a, b) => a.order - b.order)
+  },
+
+  // Student Progress Management
+  getStudentProgress: async (studentId, courseId = null) => {
+    await mockAPI.delay(600)
+    const student = mockData.users.find(user => user.id === studentId)
+    if (!student) throw new Error('Student not found')
     
-    if (userId) {
-      activities = activities.filter(activity => activity.userId === userId)
+    if (courseId) {
+      return student.progress[courseId] || null
+    }
+    return student.progress
+  },
+
+  updateChapterProgress: async (studentId, courseId, moduleId, chapterId) => {
+    await mockAPI.delay(500)
+    const student = mockData.users.find(user => user.id === studentId)
+    if (!student.progress[courseId]) {
+      student.progress[courseId] = {
+        currentModule: moduleId,
+        currentChapter: chapterId,
+        completedChapters: [],
+        completedModules: [],
+        moduleTestResults: {},
+        courseTestResult: null,
+        aiInterviewResult: null,
+        overallProgress: 0
+      }
     }
     
-    return activities
-      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-      .slice(0, limit)
-      .map(activity => {
-        const course = mockData.courses.find(course => course.id === activity.courseId)
-        const user = mockData.users.find(user => user.id === activity.userId)
-        return {
-          ...activity,
-          course: course?.title,
-          user: user?.name
+    const progress = student.progress[courseId]
+    if (!progress.completedChapters.includes(chapterId)) {
+      progress.completedChapters.push(chapterId)
+    }
+    
+    // Check if module is completed
+    const module = mockData.modules.find(m => m.id === moduleId)
+    const moduleChapters = mockData.chapters.filter(c => c.moduleId === moduleId)
+    const completedModuleChapters = progress.completedChapters.filter(chId => 
+      moduleChapters.some(ch => ch.id === chId)
+    )
+    
+    if (completedModuleChapters.length === moduleChapters.length && 
+        !progress.completedModules.includes(moduleId)) {
+      // Module completed, unlock test
+      progress.moduleTestUnlocked = moduleId
+    }
+    
+    return progress
+  },
+
+  // Test Management
+  getModuleTest: async (moduleId) => {
+    await mockAPI.delay(500)
+    return mockData.moduleTests.find(test => test.moduleId === moduleId)
+  },
+
+  getCourseTest: async (courseId) => {
+    await mockAPI.delay(500)
+    return mockData.courseTests.find(test => test.courseId === courseId)
+  },
+
+  submitModuleTest: async (studentId, testId, answers) => {
+    await mockAPI.delay(1000)
+    const test = mockData.moduleTests.find(t => t.id === testId)
+    if (!test) throw new Error('Test not found')
+    
+    // Calculate score
+    let correctAnswers = 0
+    const totalQuestions = test.questions.length || test.questions
+    
+    if (Array.isArray(test.questions)) {
+      answers.forEach(answer => {
+        const question = test.questions.find(q => q.id === answer.questionId)
+        if (question && question.correctAnswer === answer.selectedAnswer) {
+          correctAnswers++
         }
       })
+    } else {
+      // Mock scoring for simplified tests
+      correctAnswers = Math.floor(Math.random() * totalQuestions * 0.3) + Math.floor(totalQuestions * 0.7)
+    }
+    
+    const score = Math.round((correctAnswers / totalQuestions) * 100)
+    const passed = score >= test.passingScore
+    
+    const result = {
+      id: `tr-${Date.now()}`,
+      studentId,
+      testId,
+      testType: 'module',
+      moduleId: test.moduleId,
+      courseId: test.courseId,
+      score,
+      totalQuestions,
+      correctAnswers,
+      passed,
+      attemptNumber: 1,
+      timeSpent: Math.floor(Math.random() * test.duration),
+      submittedAt: new Date().toISOString(),
+      answers
+    }
+    
+    mockData.testResults.push(result)
+    
+    // Update student progress
+    const student = mockData.users.find(user => user.id === studentId)
+    if (student.progress[test.courseId]) {
+      student.progress[test.courseId].moduleTestResults[test.moduleId] = {
+        score,
+        passed,
+        attemptedAt: new Date().toISOString()
+      }
+      
+      if (passed && !student.progress[test.courseId].completedModules.includes(test.moduleId)) {
+        student.progress[test.courseId].completedModules.push(test.moduleId)
+      }
+    }
+    
+    return result
   },
 
-  // Get system stats
-  getSystemStats: async () => {
+  submitCourseTest: async (studentId, testId, answers) => {
+    await mockAPI.delay(1500)
+    const test = mockData.courseTests.find(t => t.id === testId)
+    if (!test) throw new Error('Test not found')
+    
+    const totalQuestions = test.questions
+    const correctAnswers = Math.floor(Math.random() * totalQuestions * 0.3) + Math.floor(totalQuestions * 0.7)
+    const score = Math.round((correctAnswers / totalQuestions) * 100)
+    const passed = score >= test.passingScore
+    
+    const result = {
+      id: `ctr-${Date.now()}`,
+      studentId,
+      testId,
+      testType: 'course',
+      courseId: test.courseId,
+      score,
+      totalQuestions,
+      correctAnswers,
+      passed,
+      attemptNumber: 1,
+      timeSpent: Math.floor(Math.random() * test.duration),
+      submittedAt: new Date().toISOString(),
+      answers
+    }
+    
+    mockData.testResults.push(result)
+    
+    // Update student progress
+    const student = mockData.users.find(user => user.id === studentId)
+    if (student.progress[test.courseId]) {
+      student.progress[test.courseId].courseTestResult = {
+        score,
+        passed,
+        attemptedAt: new Date().toISOString()
+      }
+      
+      if (passed) {
+        student.progress[test.courseId].overallProgress = 100
+        student.progress[test.courseId].aiInterviewUnlocked = true
+      }
+    }
+    
+    return result
+  },
+
+  // AI Interview Integration
+  startAIInterview: async (studentId, courseId) => {
+    await mockAPI.delay(2000)
+    // Simulate AI interview session start
+    return {
+      sessionId: `ai-session-${Date.now()}`,
+      studentId,
+      courseId,
+      startedAt: new Date().toISOString(),
+      estimatedDuration: 45,
+      status: 'in-progress'
+    }
+  },
+
+  completeAIInterview: async (sessionId, responses) => {
+    await mockAPI.delay(3000)
+    // Simulate AI interview completion and scoring
+    const overallScore = Math.floor(Math.random() * 20) + 80 // 80-100
+    const technicalScore = Math.floor(Math.random() * 25) + 75
+    const communicationScore = Math.floor(Math.random() * 30) + 70
+    const problemSolvingScore = Math.floor(Math.random() * 20) + 80
+    
+    const result = {
+      id: `ai-${Date.now()}`,
+      sessionId,
+      overallScore,
+      technicalScore,
+      communicationScore,
+      problemSolvingScore,
+      feedback: 'Great performance! Shows strong understanding of concepts and good communication skills.',
+      interviewDuration: 42,
+      completedAt: new Date().toISOString(),
+      recommendation: overallScore >= 85 ? 'Ready for intermediate positions' : 'Continue practicing fundamentals',
+      certificateEligible: overallScore >= 70
+    }
+    
+    mockData.aiInterviewResults.push(result)
+    return result
+  },
+
+  // Admin Functions
+  createUser: async (userData) => {
     await mockAPI.delay(800)
-    return {
-      totalUsers: mockData.users.length,
-      activeUsers: mockData.users.filter(user => user.isActive).length,
-      totalCourses: mockData.courses.length,
-      publishedCourses: mockData.courses.filter(course => course.status === 'published').length,
-      totalEnrollments: mockData.enrollments.length,
-      totalRevenue: mockData.payments
-        .filter(payment => payment.status === 'completed')
-        .reduce((sum, payment) => sum + payment.amount, 0),
-      averageRating: mockData.courses.reduce((sum, course) => sum + course.rating, 0) / mockData.courses.length
+    const newUser = {
+      id: String(mockData.users.length + 1),
+      ...userData,
+      isActive: true,
+      isVerified: false,
+      joinedDate: new Date().toISOString(),
+      lastLogin: null,
+      progress: {}
     }
+    mockData.users.push(newUser)
+    return newUser
   },
 
-  // Get instructor stats
-  getInstructorStats: async (instructorId) => {
-    await mockAPI.delay(600)
-    const instructorCourses = mockData.courses.filter(course => course.instructor.id === instructorId)
-    const totalStudents = instructorCourses.reduce((sum, course) => sum + course.studentsCount, 0)
-    const totalRevenue = mockData.payments
-      .filter(payment => 
-        payment.status === 'completed' && 
-        instructorCourses.some(course => course.id === payment.courseId)
-      )
-      .reduce((sum, payment) => sum + payment.amount, 0)
-    
-    return {
-      totalCourses: instructorCourses.length,
-      totalStudents,
-      totalRevenue,
-      averageRating: instructorCourses.reduce((sum, course) => sum + course.rating, 0) / instructorCourses.length || 0,
-      publishedCourses: instructorCourses.filter(course => course.status === 'published').length
-    }
-  },
-
-  // Get student stats
-  getStudentStats: async (studentId) => {
-    await mockAPI.delay(600)
-    const studentEnrollments = mockData.enrollments.filter(enrollment => enrollment.studentId === studentId)
-    const totalLessons = studentEnrollments.reduce((sum, enrollment) => sum + enrollment.totalLessons, 0)
-    const completedLessons = studentEnrollments.reduce((sum, enrollment) => sum + enrollment.completedLessons, 0)
-    
-    return {
-      totalCourses: studentEnrollments.length,
-      completedLessons,
-      totalLessons,
-      averageGrade: studentEnrollments.reduce((sum, enrollment) => sum + enrollment.grade, 0) / studentEnrollments.length || 0,
-      certificates: studentEnrollments.filter(enrollment => enrollment.progress === 100).length,
-      totalTimeSpent: studentEnrollments.reduce((sum, enrollment) => sum + enrollment.timeSpent, 0)
-    }
-  },
-
-  // Update user
-  updateUser: async (id, userData) => {
+  updateUserPermissions: async (userId, permissions) => {
     await mockAPI.delay(500)
-    const userIndex = mockData.users.findIndex(user => user.id === id)
-    if (userIndex !== -1) {
-      mockData.users[userIndex] = { ...mockData.users[userIndex], ...userData }
-      return mockData.users[userIndex]
+    const user = mockData.users.find(u => u.id === userId)
+    if (user) {
+      user.permissions = { ...user.permissions, ...permissions }
+      return user
     }
     throw new Error('User not found')
   },
 
-  // Delete user
-  deleteUser: async (id) => {
+  assignStudentToInstructor: async (studentId, instructorId) => {
     await mockAPI.delay(500)
-    const userIndex = mockData.users.findIndex(user => user.id === id)
-    if (userIndex !== -1) {
-      mockData.users.splice(userIndex, 1)
-      return true
+    const student = mockData.users.find(u => u.id === studentId)
+    const instructor = mockData.users.find(u => u.id === instructorId)
+    
+    if (student && instructor) {
+      student.instructorId = instructorId
+      if (!instructor.students.includes(studentId)) {
+        instructor.students.push(studentId)
+      }
+      return { student, instructor }
     }
     throw new Error('User not found')
   },
 
-  // Create course
+  assignCourseToStudent: async (studentId, courseId) => {
+    await mockAPI.delay(500)
+    const student = mockData.users.find(u => u.id === studentId)
+    if (student) {
+      if (!student.assignedCourses.includes(courseId)) {
+        student.assignedCourses.push(courseId)
+      }
+      return student
+    }
+    throw new Error('Student not found')
+  },
+
+  // Course Management
   createCourse: async (courseData) => {
-    await mockAPI.delay(1000)
+    await mockAPI.delay(1200)
     const newCourse = {
       id: String(mockData.courses.length + 1),
       ...courseData,
-      studentsCount: 0,
-      rating: 0,
-      reviewsCount: 0,
+      totalModules: 0,
+      totalChapters: 0,
+      enrolledStudents: [],
       status: 'draft',
+      isActive: true,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     }
@@ -492,29 +863,93 @@ export const mockAPI = {
     return newCourse
   },
 
-  // Update course
-  updateCourse: async (id, courseData) => {
-    await mockAPI.delay(500)
-    const courseIndex = mockData.courses.findIndex(course => course.id === id)
-    if (courseIndex !== -1) {
-      mockData.courses[courseIndex] = { 
-        ...mockData.courses[courseIndex], 
-        ...courseData,
-        updatedAt: new Date().toISOString()
-      }
-      return mockData.courses[courseIndex]
+  createModule: async (moduleData) => {
+    await mockAPI.delay(800)
+    const newModule = {
+      id: String(mockData.modules.length + 1),
+      ...moduleData,
+      totalChapters: 0,
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     }
-    throw new Error('Course not found')
+    mockData.modules.push(newModule)
+    return newModule
   },
 
-  // Delete course
-  deleteCourse: async (id) => {
-    await mockAPI.delay(500)
-    const courseIndex = mockData.courses.findIndex(course => course.id === id)
-    if (courseIndex !== -1) {
-      mockData.courses.splice(courseIndex, 1)
-      return true
+  createChapter: async (chapterData) => {
+    await mockAPI.delay(600)
+    const newChapter = {
+      id: `${chapterData.moduleId}-${mockData.chapters.filter(c => c.moduleId === chapterData.moduleId).length + 1}`,
+      ...chapterData,
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     }
-    throw new Error('Course not found')
+    mockData.chapters.push(newChapter)
+    return newChapter
+  },
+
+  // Analytics
+  getSystemAnalytics: async () => {
+    await mockAPI.delay(1000)
+    return mockData.analytics.systemOverview
+  },
+
+  getInstructorAnalytics: async (instructorId) => {
+    await mockAPI.delay(800)
+    return mockData.analytics.instructorAnalytics[instructorId] || {}
+  },
+
+  getStudentAnalytics: async (studentId) => {
+    await mockAPI.delay(600)
+    return mockData.analytics.studentAnalytics[studentId] || {}
+  },
+
+  // Utility functions
+  checkModuleTestEligibility: (studentId, moduleId) => {
+    const student = mockData.users.find(u => u.id === studentId)
+    if (!student) return false
+    
+    const module = mockData.modules.find(m => m.id === moduleId)
+    if (!module) return false
+    
+    const moduleChapters = mockData.chapters.filter(c => c.moduleId === moduleId)
+    const studentProgress = student.progress[module.courseId]
+    
+    if (!studentProgress) return false
+    
+    // Check if all chapters in module are completed
+    const completedModuleChapters = studentProgress.completedChapters.filter(chId => 
+      moduleChapters.some(ch => ch.id === chId)
+    )
+    
+    return completedModuleChapters.length === moduleChapters.length
+  },
+
+  checkCourseTestEligibility: (studentId, courseId) => {
+    const student = mockData.users.find(u => u.id === studentId)
+    if (!student) return false
+    
+    const courseModules = mockData.modules.filter(m => m.courseId === courseId)
+    const studentProgress = student.progress[courseId]
+    
+    if (!studentProgress) return false
+    
+    // Check if all modules are completed and tests passed
+    return courseModules.every(module => 
+      studentProgress.completedModules.includes(module.id) &&
+      studentProgress.moduleTestResults[module.id]?.passed
+    )
+  },
+
+  checkAIInterviewEligibility: (studentId, courseId) => {
+    const student = mockData.users.find(u => u.id === studentId)
+    if (!student) return false
+    
+    const studentProgress = student.progress[courseId]
+    if (!studentProgress) return false
+    
+    return studentProgress.courseTestResult?.passed === true
   }
 }
