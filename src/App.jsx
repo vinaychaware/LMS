@@ -1,10 +1,8 @@
-import React from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import useAuthStore from './store/useAuthStore'
 import Navbar from './components/layout/Navbar'
 import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/LoginPage'
-import RegisterPage from './pages/RegisterPage'
 import CourseCatalogPage from './pages/CourseCatalogPage'
 import StudentDashboardPage from './pages/StudentDashboardPage'
 import InstructorDashboardPage from './pages/InstructorDashboardPage'
@@ -72,14 +70,7 @@ const App = () => {
             </PublicRoute>
           } 
         />
-        <Route 
-          path="/register" 
-          element={
-            <PublicRoute>
-              <RegisterPage />
-            </PublicRoute>
-          } 
-        />
+      
         
         {/* Protected Routes */}
         <Route 
@@ -94,7 +85,7 @@ const App = () => {
         <Route 
           path="/instructor" 
           element={
-            <ProtectedRoute allowedRoles={['instructor']}>
+            <ProtectedRoute allowedRoles={['instructor','admin']}>
               <InstructorDashboardPage />
             </ProtectedRoute>
           } 
@@ -103,7 +94,7 @@ const App = () => {
         <Route 
           path="/courses/:courseId" 
           element={
-            <ProtectedRoute allowedRoles={['student']}>
+            <ProtectedRoute allowedRoles={['student','instructor','admin']}>
               <CourseViewerPage />
             </ProtectedRoute>
           } 
@@ -112,7 +103,7 @@ const App = () => {
         <Route 
           path="/courses/create" 
           element={
-            <ProtectedRoute allowedRoles={['instructor']}>
+            <ProtectedRoute allowedRoles={['instructor','admin']}>
               <CreateCoursePage />
             </ProtectedRoute>
           } 

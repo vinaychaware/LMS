@@ -258,10 +258,10 @@ const InstructorDashboardPage = () => {
                 <BarChart3 size={16} className="mr-2" />
                 Analytics
               </Button>
-              <Button onClick={createNewCourse}>
+             <Link to="/courses/create"> <Button onClick={createNewCourse}>
                 <Plus size={16} className="mr-2" />
                 Create Course
-              </Button>
+              </Button></Link>
             </div>
           </div>
         </div>
@@ -336,10 +336,10 @@ const InstructorDashboardPage = () => {
                     <BarChart3 size={16} className="mr-1" />
                     Analytics
                   </Button>
-                  <Button size="sm" onClick={createNewCourse}>
+                     <Link to="/courses/create">  <Button size="sm" onClick={createNewCourse}>
                     <Plus size={16} className="mr-2" />
                     Create Course
-                  </Button>
+                  </Button></Link>
                 </div>
               </Card.Header>
               <Card.Content>
@@ -350,9 +350,9 @@ const InstructorDashboardPage = () => {
                     <p className="text-gray-600 mb-4">
                       Contact admin to get courses assigned or create your own.
                     </p>
-                    <Button onClick={createNewCourse}>
+                       <Link to="/courses/create">  <Button onClick={createNewCourse}>
                       Create Your First Course
-                    </Button>
+                    </Button></Link>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -581,13 +581,13 @@ const InstructorDashboardPage = () => {
                 <Card.Title>Quick Actions</Card.Title>
               </Card.Header>
               <Card.Content className="space-y-3">
-                <Button 
+                   <Link to="/courses/create">  <Button 
                   className="w-full justify-start"
                   onClick={createNewCourse}
                 >
                   <Plus size={16} className="mr-2" />
                   Create New Course
-                </Button>
+                </Button></Link>
                 <Button 
                   variant="outline" 
                   className="w-full justify-start"

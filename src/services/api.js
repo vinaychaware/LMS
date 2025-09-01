@@ -4,7 +4,7 @@ import useAuthStore from '../store/useAuthStore'
 
 // Create axios instance
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000/api',
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -39,7 +39,7 @@ api.interceptors.response.use(
 // Auth API calls
 export const authAPI = {
   login: (credentials) => api.post('/auth/login', credentials),
-  register: (userData) => api.post('/auth/register', userData),
+  // register: (userData) => api.post('/auth/register', userData),
   logout: () => api.post('/auth/logout'),
   refresh: () => api.post('/auth/refresh'),
   profile: () => api.get('/auth/profile'),

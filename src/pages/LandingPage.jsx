@@ -51,7 +51,7 @@ const LandingPage = () => {
                   <ArrowRight size={20} className="ml-2 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
-              <Link to="/register">
+              <Link to="/login">
                 <Button variant="outline" size="lg">
                   Get Started Free
                 </Button>
