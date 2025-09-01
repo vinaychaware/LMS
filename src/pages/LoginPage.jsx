@@ -12,16 +12,19 @@ const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [loginAttempts, setLoginAttempts] = useState(0)
   const [isLocked, setIsLocked] = useState(false)
+  const [lockTimer, setLockTimer] = useState(0) // countdown
+
   const { login } = useAuthStore()
   const navigate = useNavigate()
   
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm()
 
-  // Mock user database for demo purposes
+  // Mock user database
   const mockUsers = [
     {
       email: 'student@demo.com',
@@ -43,6 +46,23 @@ const LoginPage = () => {
     }
   ]
 
+  const startLockTimer = () => {
+    setIsLocked(true)
+    setLockTimer(15 * 60) // 15 minutes in seconds
+
+    const interval = setInterval(() => {
+      setLockTimer(prev => {
+        if (prev <= 1) {
+          clearInterval(interval)
+          setIsLocked(false)
+          setLoginAttempts(0)
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+  }
+
   const onSubmit = async (data) => {
     if (isLocked) {
       toast.error('Account temporarily locked. Please try again later.')
@@ -50,44 +70,30 @@ const LoginPage = () => {
     }
 
     setIsLoading(true)
-    
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
+    await new Promise(resolve => setTimeout(resolve, 1000)) // simulate API
+
     try {
-      // Find user in mock database
-      const user = mockUsers.find(u => 
-        u.email.toLowerCase() === data.email.toLowerCase() && 
-        u.password === data.password
+      const user = mockUsers.find(
+        u => u.email.toLowerCase() === data.email.toLowerCase() && u.password === data.password
       )
       
       if (user) {
-        // Create mock token
         const token = `mock-token-${user.role}-${Date.now()}`
-        
-        login(user, token)
+        login(user, token) // Zustand store
         setLoginAttempts(0)
         toast.success(`Welcome back, ${user.name}!`)
         
-        // Redirect based on user role
-        if (user.role === 'admin') {
-          navigate('/admin')
-        } else if (user.role === 'instructor') {
-          navigate('/instructor')
-        } else {
-          navigate('/dashboard')
-        }
+        // Redirect
+        if (user.role === 'admin') navigate('/admin')
+        else if (user.role === 'instructor') navigate('/instructor')
+        else navigate('/dashboard')
       } else {
         const newAttempts = loginAttempts + 1
         setLoginAttempts(newAttempts)
         
         if (newAttempts >= 5) {
-          setIsLocked(true)
           toast.error('Too many failed attempts. Account locked for 15 minutes.')
-          setTimeout(() => {
-            setIsLocked(false)
-            setLoginAttempts(0)
-          }, 15 * 60 * 1000)
+          startLockTimer()
         } else {
           toast.error('Invalid email or password. Please try again.')
         }
@@ -112,10 +118,7 @@ const LoginPage = () => {
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
           Or{' '}
-          <Link
-            to="/register"
-            className="font-medium text-primary-600 hover:text-primary-500"
-          >
+          <Link to="/register" className="font-medium text-primary-600 hover:text-primary-500">
             create a new account
           </Link>
         </p>
@@ -179,25 +182,17 @@ const LoginPage = () => {
               </div>
 
               <div className="text-sm">
-                <Link
-                  to="/forgot-password"
-                  className="font-medium text-primary-600 hover:text-primary-500"
-                >
+                <Link to="/forgot-password" className="font-medium text-primary-600 hover:text-primary-500">
                   Forgot your password?
                 </Link>
               </div>
             </div>
 
             <div>
-              <Button
-                type="submit"
-                className="w-full"
-                loading={isLoading}
-                disabled={isLoading || isLocked}
-              >
-                {isLocked ? 'Account Locked' : 'Sign in'}
+              <Button type="submit" className="w-full" loading={isLoading} disabled={isLoading || isLocked}>
+                {isLocked ? `Locked (${Math.floor(lockTimer / 60)}m ${lockTimer % 60}s)` : 'Sign in'}
               </Button>
-              {loginAttempts > 0 && (
+              {loginAttempts > 0 && !isLocked && (
                 <p className="text-sm text-red-600 text-center mt-2">
                   Failed attempts: {loginAttempts}/5
                 </p>
@@ -205,6 +200,7 @@ const LoginPage = () => {
             </div>
           </form>
 
+          {/* Quick Demo Login */}
           <div className="mt-6">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">

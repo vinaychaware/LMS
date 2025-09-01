@@ -11,6 +11,10 @@ import InstructorDashboardPage from './pages/InstructorDashboardPage'
 import CreateCoursePage from './pages/CreateCoursePage'
 import AdminDashboardPage from './pages/AdminDashboardPage'
 
+// ✅ Import Terms & Privacy pages
+import Terms from './pages/TermsPage'
+import Privacy from './pages/PrivacyPage'
+
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   const { isAuthenticated, userRole } = useAuthStore()
@@ -53,6 +57,10 @@ const App = () => {
         {/* Public Routes */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/courses" element={<CourseCatalogPage />} />
+
+        {/* Legal Pages */}
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/privacy" element={<Privacy />} />
         
         {/* Auth Routes */}
         <Route 
