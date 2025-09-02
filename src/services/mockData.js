@@ -74,14 +74,17 @@ export const mockData = {
         canManageAllUsers: true,
         canManageSystem: true,
         canViewAllData: true,
-        canCreateAdmins: true
+        canCreateAdmins: true,
+        canCreateCourses: true,
+        canCreateTests: true,
+        canManageTests: true
       }
     },
     // College Admins
     {
       id: '1',
       name: 'Dr. Sarah Johnson',
-      email: 'admin@techuniversity.edu',
+      email: 'admin@demo.com',
       role: 'admin',
       avatar: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=150',
       isActive: true,
@@ -95,7 +98,9 @@ export const mockData = {
         canManageUsers: true,
         canManageCollegeCourses: true,
         canAssignInstructors: true,
-        canViewCollegeAnalytics: true
+        canViewCollegeAnalytics: true,
+        canCreateTests: true,
+        canManageTests: true
       }
     },
     {
@@ -115,7 +120,9 @@ export const mockData = {
         canManageUsers: true,
         canManageCollegeCourses: true,
         canAssignInstructors: true,
-        canViewCollegeAnalytics: true
+        canViewCollegeAnalytics: true,
+        canCreateTests: true,
+        canManageTests: true
       }
     },
     {
@@ -135,7 +142,9 @@ export const mockData = {
         canManageUsers: true,
         canManageCollegeCourses: true,
         canAssignInstructors: true,
-        canViewCollegeAnalytics: true
+        canViewCollegeAnalytics: true,
+        canCreateTests: true,
+        canManageTests: true
       }
     },
     // Instructors
@@ -155,7 +164,8 @@ export const mockData = {
         canCreateCourses: true,
         canManageStudents: true,
         canViewAnalytics: true,
-        canCreateTests: true
+        canCreateTests: true,
+        canManageTests: true
       },
       assignedCourses: ['1', '2'],
       students: ['3', '4', '5']
@@ -173,10 +183,11 @@ export const mockData = {
       collegeId: '2',
       assignedBy: '11',
       permissions: {
-        canCreateCourses: false, // Disabled by admin
+        canCreateCourses: true,
         canManageStudents: true,
         canViewAnalytics: true,
-        canCreateTests: false
+        canCreateTests: true,
+        canManageTests: true
       },
       assignedCourses: ['3'],
       students: ['13', '14']
@@ -197,7 +208,8 @@ export const mockData = {
         canCreateCourses: true,
         canManageStudents: true,
         canViewAnalytics: true,
-        canCreateTests: true
+        canCreateTests: true,
+        canManageTests: true
       },
       assignedCourses: ['4'],
       students: ['23', '24']
@@ -949,6 +961,55 @@ export const mockData = {
     }
   ],
 
+  // Tests data
+  tests: [
+    {
+      id: 'mt-1',
+      type: 'module',
+      moduleId: '1',
+      courseId: '1',
+      title: 'Frontend Fundamentals Test',
+      description: 'Test your knowledge of HTML, CSS, and basic JavaScript',
+      questions: 20,
+      duration: 45,
+      passingScore: 70,
+      maxAttempts: 3,
+      createdBy: '2',
+      isActive: true,
+      createdAt: '2024-01-10T00:00:00Z'
+    },
+    {
+      id: 'ct-1',
+      type: 'course',
+      courseId: '1',
+      title: 'Web Development Final Assessment',
+      description: 'Comprehensive test covering all web development concepts',
+      questions: 50,
+      duration: 120,
+      passingScore: 70,
+      maxAttempts: 2,
+      createdBy: '2',
+      isActive: true,
+      createdAt: '2024-01-10T00:00:00Z'
+    }
+  ],
+
+  // Test results
+  testResults: [
+    {
+      id: 'tr-1',
+      studentId: '4',
+      testId: 'mt-1',
+      courseId: '1',
+      moduleId: '1',
+      testType: 'module',
+      score: 85,
+      passed: true,
+      attemptedAt: '2024-01-19T14:00:00Z',
+      submittedAt: '2024-01-19T14:45:00Z'
+    }
+  ],
+
   // System analytics and metrics
   systemAnalytics: {
     overview: {
@@ -1142,6 +1203,16 @@ export const mockAPI = {
     return student.progress
   },
 
+  getStudentEnrollments: async (studentId) => {
+    await mockAPI.delay(600)
+    const student = mockData.users.find(user => user.id === studentId)
+    if (!student) return []
+    
+    return mockData.courses.filter(course => 
+      student.assignedCourses.includes(course.id)
+    )
+  },
+
   updateChapterProgress: async (studentId, courseId, moduleId, chapterId) => {
     await mockAPI.delay(500)
     const student = mockData.users.find(user => user.id === studentId)
@@ -1192,6 +1263,49 @@ export const mockAPI = {
   },
 
   // Test Management
+  getAllTests: async () => {
+    await mockAPI.delay(600)
+    return mockData.tests
+  },
+
+  getTestsByCreator: async (creatorId) => {
+    await mockAPI.delay(500)
+    return mockData.tests.filter(test => test.createdBy === creatorId)
+  },
+
+  createTest: async (testData) => {
+    await mockAPI.delay(800)
+    const newTest = {
+      id: `test-${Date.now()}`,
+      ...testData,
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }
+    mockData.tests.push(newTest)
+    return newTest
+  },
+
+  updateTest: async (testId, updates) => {
+    await mockAPI.delay(600)
+    const test = mockData.tests.find(t => t.id === testId)
+    if (test) {
+      Object.assign(test, updates, { updatedAt: new Date().toISOString() })
+      return test
+    }
+    throw new Error('Test not found')
+  },
+
+  deleteTest: async (testId) => {
+    await mockAPI.delay(500)
+    const index = mockData.tests.findIndex(t => t.id === testId)
+    if (index !== -1) {
+      mockData.tests.splice(index, 1)
+      return true
+    }
+    throw new Error('Test not found')
+  },
+
   getModuleTest: async (moduleId) => {
     await mockAPI.delay(500)
     const module = mockData.modules.find(m => m.id === moduleId)
@@ -1254,6 +1368,7 @@ export const mockAPI = {
       }
     }
     
+    mockData.testResults.push(result)
     return result
   },
 
@@ -1300,6 +1415,7 @@ export const mockAPI = {
       }
     }
     
+    mockData.testResults.push(result)
     return result
   },
 
@@ -1338,6 +1454,46 @@ export const mockAPI = {
     }
     
     return result
+  },
+
+  // Course Management APIs
+  createCourse: async (courseData) => {
+    await mockAPI.delay(1000)
+    const newCourse = {
+      id: String(Date.now()),
+      ...courseData,
+      status: 'draft',
+      isActive: true,
+      enrolledStudents: [],
+      totalModules: 0,
+      totalChapters: 0,
+      rating: 0,
+      reviewCount: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }
+    mockData.courses.push(newCourse)
+    return newCourse
+  },
+
+  updateCourse: async (courseId, updates) => {
+    await mockAPI.delay(600)
+    const course = mockData.courses.find(c => c.id === courseId)
+    if (course) {
+      Object.assign(course, updates, { updatedAt: new Date().toISOString() })
+      return course
+    }
+    throw new Error('Course not found')
+  },
+
+  deleteCourse: async (courseId) => {
+    await mockAPI.delay(500)
+    const index = mockData.courses.findIndex(c => c.id === courseId)
+    if (index !== -1) {
+      mockData.courses.splice(index, 1)
+      return true
+    }
+    throw new Error('Course not found')
   },
 
   // Utility functions
