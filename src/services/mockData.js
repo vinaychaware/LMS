@@ -1119,6 +1119,36 @@ export const mockAPI = {
     return mockData.courses.filter(course => course.collegeId === collegeId)
   },
 
+  // Enhanced admin APIs
+  getAdminDashboardData: async (adminId) => {
+    await mockAPI.delay(800)
+    const admin = mockData.users.find(u => u.id === adminId)
+    if (!admin || admin.role !== 'admin') throw new Error('Admin not found')
+    
+    const collegeUsers = mockData.users.filter(user => user.collegeId === admin.collegeId)
+    const collegeCourses = mockData.courses.filter(course => course.collegeId === admin.collegeId)
+    const payments = mockData.testResults.map(result => ({
+      id: result.id,
+      userName: mockData.users.find(u => u.id === result.studentId)?.name,
+      courseTitle: mockData.courses.find(c => c.id === result.courseId)?.title,
+      amount: Math.floor(Math.random() * 200) + 50,
+      status: 'completed',
+      createdAt: result.submittedAt
+    }))
+    
+    return {
+      users: collegeUsers,
+      courses: collegeCourses,
+      payments,
+      stats: {
+        totalUsers: collegeUsers.length,
+        totalCourses: collegeCourses.length,
+        totalRevenue: payments.reduce((sum, p) => sum + p.amount, 0),
+        activeUsers: collegeUsers.filter(u => u.isActive).length
+      }
+    }
+  },
+
   createUser: async (userData) => {
     await mockAPI.delay(800)
     const newUser = {

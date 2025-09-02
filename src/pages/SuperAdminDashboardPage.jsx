@@ -523,6 +523,24 @@ const SuperAdminDashboardPage = () => {
                         </div>
                       </div>
                       
+                      {/* College Admin Assignment */}
+                      <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                        <h5 className="text-sm font-medium text-gray-700 mb-2">College Admin:</h5>
+                        {(() => {
+                          const collegeAdmin = admins.find(admin => admin.collegeId === college.id);
+                          return collegeAdmin ? (
+                            <div className="flex items-center space-x-2">
+                              <div className="w-6 h-6 rounded-full overflow-hidden bg-gray-200">
+                                <img src={collegeAdmin.avatar} alt={collegeAdmin.name} className="w-full h-full object-cover" />
+                              </div>
+                              <span className="text-sm text-gray-900">{collegeAdmin.name}</span>
+                            </div>
+                          ) : (
+                            <span className="text-sm text-gray-500">No admin assigned</span>
+                          );
+                        })()}
+                      </div>
+                      
                       <div className="flex items-center space-x-2 text-xs text-gray-500 mb-4">
                         <Calendar size={12} />
                         <span>Est. {college.establishedYear}</span>
@@ -646,6 +664,71 @@ const SuperAdminDashboardPage = () => {
                 </div>
               </Card.Header>
               <Card.Content>
+                {/* Admin-Course Assignments Overview */}
+                <div className="mb-8 p-4 bg-blue-50 rounded-lg">
+                  <h4 className="font-medium text-blue-900 mb-3">Admin-Course Assignments</h4>
+                  <div className="space-y-2">
+                    {admins.map(admin => {
+                      const adminCourses = courses.filter(course => course.createdBy === admin.id);
+                      const college = colleges.find(c => c.id === admin.collegeId);
+                      return (
+                        <div key={admin.id} className="flex items-center justify-between p-2 bg-white rounded">
+                          <div className="flex items-center space-x-2">
+                            <img src={admin.avatar} alt={admin.name} className="w-6 h-6 rounded-full" />
+                            <span className="text-sm font-medium">{admin.name}</span>
+                            <span className="text-xs text-gray-500">({college?.name})</span>
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            {adminCourses.length} courses managed
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Course-User Assignments Overview */}
+                <div className="mb-8 p-4 bg-green-50 rounded-lg">
+                  <h4 className="font-medium text-green-900 mb-3">Course Assignments</h4>
+                  <div className="space-y-3">
+                    {courses.map(course => {
+                      const assignedStudents = students.filter(student => 
+                        student.assignedCourses.includes(course.id)
+                      );
+                      const assignedInstructors = instructors.filter(instructor => 
+                        course.assignedInstructors.includes(instructor.id)
+                      );
+                      const college = colleges.find(c => c.id === course.collegeId);
+                      
+                      return (
+                        <div key={course.id} className="p-3 bg-white rounded-lg border">
+                          <div className="flex items-center justify-between mb-2">
+                            <div>
+                              <h5 className="font-medium text-gray-900">{course.title}</h5>
+                              <p className="text-xs text-gray-500">{college?.name}</p>
+                            </div>
+                            <Badge variant={course.status === 'published' ? 'success' : 'warning'} size="sm">
+                              {course.status}
+                            </Badge>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                              <span className="text-gray-600">Instructors: </span>
+                              <span className="font-medium">
+                                {assignedInstructors.map(i => i.name).join(', ') || 'None'}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-gray-600">Students: </span>
+                              <span className="font-medium">{assignedStudents.length}</span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
@@ -666,6 +749,7 @@ const SuperAdminDashboardPage = () => {
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">College</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assignments</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Login</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
@@ -674,6 +758,12 @@ const SuperAdminDashboardPage = () => {
                     <tbody className="bg-white divide-y divide-gray-200">
                       {getFilteredUsers().map(user => {
                         const college = colleges.find(c => c.id === user.collegeId)
+                        const userAssignments = user.role === 'instructor' 
+                          ? courses.filter(c => c.assignedInstructors.includes(user.id))
+                          : user.role === 'student' 
+                            ? courses.filter(c => user.assignedCourses?.includes(c.id))
+                            : courses.filter(c => c.createdBy === user.id);
+                        
                         return (
                           <tr key={user.id} className="hover:bg-gray-50">
                             <td className="px-6 py-4 whitespace-nowrap">
@@ -717,6 +807,17 @@ const SuperAdminDashboardPage = () => {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                               {college?.name || 'N/A'}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-900">
+                                {userAssignments.length} course{userAssignments.length !== 1 ? 's' : ''}
+                              </div>
+                              {userAssignments.length > 0 && (
+                                <div className="text-xs text-gray-500">
+                                  {userAssignments.slice(0, 2).map(c => c.title).join(', ')}
+                                  {userAssignments.length > 2 && ` +${userAssignments.length - 2} more`}
+                                </div>
+                              )}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="flex items-center space-x-2">
@@ -787,23 +888,38 @@ const SuperAdminDashboardPage = () => {
                   <div className="space-y-4">
                     {colleges.map(college => {
                       const breakdown = systemAnalytics?.collegeBreakdown[college.id]
+                      const collegeAdmin = admins.find(admin => admin.collegeId === college.id);
+                      const collegeInstructors = instructors.filter(instructor => instructor.collegeId === college.id);
+                      const collegeStudents = students.filter(student => student.collegeId === college.id);
+                      const collegeCourses = courses.filter(course => course.collegeId === college.id);
+                      
                       return (
                         <div key={college.id} className="p-4 border border-gray-200 rounded-lg">
                           <div className="flex items-center justify-between mb-3">
                             <h4 className="font-medium text-gray-900">{college.name}</h4>
+                              <Badge variant="info" size="sm">{college.code}</Badge>
+                              <img src={college.logo} alt={college.name} className="w-8 h-8 rounded object-cover" />
                             <Badge variant="info" size="sm">${breakdown?.revenue || 0}</Badge>
                           </div>
+                          
+                          <div className="mb-3 p-2 bg-gray-50 rounded">
+                            <div className="text-xs text-gray-600 mb-1">Admin: {collegeAdmin?.name || 'Unassigned'}</div>
+                            <div className="text-xs text-gray-500">
+                              Manages {collegeCourses.length} courses with {collegeInstructors.length} instructors
+                            </div>
+                          </div>
+                          
                           <div className="grid grid-cols-3 gap-4 text-sm">
                             <div className="text-center">
-                              <div className="font-medium text-gray-900">{breakdown?.students || 0}</div>
+                              <div className="font-medium text-gray-900">{collegeStudents.length}</div>
                               <div className="text-gray-500">Students</div>
                             </div>
                             <div className="text-center">
-                              <div className="font-medium text-gray-900">{breakdown?.instructors || 0}</div>
+                              <div className="font-medium text-gray-900">{collegeInstructors.length}</div>
                               <div className="text-gray-500">Instructors</div>
                             </div>
                             <div className="text-center">
-                              <div className="font-medium text-gray-900">{breakdown?.courses || 0}</div>
+                              <div className="font-medium text-gray-900">{collegeCourses.length}</div>
                               <div className="text-gray-500">Courses</div>
                             </div>
                           </div>
@@ -913,6 +1029,104 @@ const SuperAdminDashboardPage = () => {
   )
 }
 
+// User Details Component
+const UserDetailsView = ({ user, college, courses, onClose }) => {
+  const userCourses = user.role === 'instructor' 
+    ? courses.filter(c => c.assignedInstructors.includes(user.id))
+    : user.role === 'student' 
+      ? courses.filter(c => user.assignedCourses?.includes(c.id))
+      : courses.filter(c => c.createdBy === user.id);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center space-x-4">
+        <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-100">
+          <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900">{user.name}</h3>
+          <p className="text-gray-600">{user.email}</p>
+          <div className="flex items-center space-x-2 mt-2">
+            <Badge variant={
+              user.role === 'admin' ? 'danger' : 
+              user.role === 'instructor' ? 'warning' : 'info'
+            }>
+              {user.role}
+            </Badge>
+            <Badge variant={user.isActive ? 'success' : 'secondary'}>
+              {user.isActive ? 'Active' : 'Inactive'}
+            </Badge>
+            {user.isVerified && (
+              <Badge variant="success" size="sm">Verified</Badge>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="text-sm font-medium text-gray-600">College</label>
+          <p className="text-gray-900">{college?.name || 'N/A'}</p>
+        </div>
+        <div>
+          <label className="text-sm font-medium text-gray-600">Joined Date</label>
+          <p className="text-gray-900">{new Date(user.joinedDate).toLocaleDateString()}</p>
+        </div>
+        <div>
+          <label className="text-sm font-medium text-gray-600">Last Login</label>
+          <p className="text-gray-900">
+            {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'Never'}
+          </p>
+        </div>
+        <div>
+          <label className="text-sm font-medium text-gray-600">
+            {user.role === 'instructor' ? 'Teaching Courses' : 
+             user.role === 'student' ? 'Enrolled Courses' : 'Managed Courses'}
+          </label>
+          <p className="text-gray-900">{userCourses.length}</p>
+        </div>
+      </div>
+
+      {userCourses.length > 0 && (
+        <div>
+          <label className="text-sm font-medium text-gray-600 mb-2 block">Course Assignments</label>
+          <div className="space-y-2">
+            {userCourses.map(course => (
+              <div key={course.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                <span className="text-sm text-gray-900">{course.title}</span>
+                <Badge variant={course.status === 'published' ? 'success' : 'warning'} size="sm">
+                  {course.status}
+                </Badge>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {user.role === 'instructor' && user.permissions && (
+        <div>
+          <label className="text-sm font-medium text-gray-600 mb-2 block">Permissions</label>
+          <div className="grid grid-cols-2 gap-2">
+            {Object.entries(user.permissions).map(([key, value]) => (
+              <div key={key} className="flex items-center space-x-2">
+                <div className={`w-3 h-3 rounded-full ${value ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                <span className="text-sm text-gray-700">{key.replace(/([A-Z])/g, ' $1').toLowerCase()}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="flex justify-end space-x-3">
+        <Button variant="outline" onClick={onClose}>Close</Button>
+        <Button onClick={() => toast('User editing coming soon!')}>
+          <Edit size={16} className="mr-2" />
+          Edit User
+        </Button>
+      </div>
+    </div>
+  )
+}
 // College Form Component
 const CollegeForm = ({ college, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({

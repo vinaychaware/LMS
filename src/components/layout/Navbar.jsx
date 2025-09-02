@@ -73,7 +73,7 @@ const Navbar = () => {
                         : 'text-gray-700 hover:text-primary-600'
                     }`}
                   >
-                    Super Admin Dashboard
+                    Super Admin
                   </Link>
                 ) : userRole === 'admin' ? (
                   <Link
@@ -84,7 +84,7 @@ const Navbar = () => {
                         : 'text-gray-700 hover:text-primary-600'
                     }`}
                   >
-                    Admin Dashboard
+                    Admin Panel
                   </Link>
                 ) : userRole === 'instructor' ? (
                   <Link
@@ -95,7 +95,7 @@ const Navbar = () => {
                         : 'text-gray-700 hover:text-primary-600'
                     }`}
                   >
-                    Instructor Dashboard
+                    My Courses
                   </Link>
                 ) : (
                   <Link
@@ -106,7 +106,7 @@ const Navbar = () => {
                         : 'text-gray-700 hover:text-primary-600'
                       }`}
                   >
-                    Dashboard
+                    My Learning
                   </Link>
                 )}
                 <Link
@@ -117,20 +117,8 @@ const Navbar = () => {
                       : 'text-gray-700 hover:text-primary-600'
                   }`}
                 >
-                  Courses
+                  Browse Courses
                 </Link>
-                {(userRole === 'admin' || userRole === 'superadmin') && (
-                  <Link
-                    to={userRole === 'superadmin' ? '/superadmin' : '/admin'}
-                    className={`text-sm font-medium transition-colors ${
-                      isActive(userRole === 'superadmin' ? '/superadmin' : '/admin') 
-                        ? 'text-primary-600' 
-                        : 'text-gray-700 hover:text-primary-600'
-                    }`}
-                  >
-                    {userRole === 'superadmin' ? 'Super Admin' : 'Admin'} Panel
-                  </Link>
-                )}
               </>
             ) : (
               <>
@@ -214,7 +202,7 @@ const Navbar = () => {
                     }`}
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
-                    Super Admin Dashboard
+                    Super Admin
                   </Link>
                 ) : userRole === 'admin' ? (
                   <Link
@@ -226,7 +214,7 @@ const Navbar = () => {
                     }`}
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
-                    Admin Dashboard
+                    Admin Panel
                   </Link>
                 ) : userRole === 'instructor' ? (
                   <Link
@@ -238,7 +226,7 @@ const Navbar = () => {
                     }`}
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
-                    Instructor Dashboard
+                    My Courses
                   </Link>
                 ) : (
                   <Link
@@ -250,7 +238,7 @@ const Navbar = () => {
                     }`}
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
-                    Dashboard
+                    My Learning
                   </Link>
                 )}
                 <Link
@@ -262,21 +250,8 @@ const Navbar = () => {
                   }`}
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
-                  Courses
+                  Browse Courses
                 </Link>
-                {(userRole === 'admin' || userRole === 'superadmin') && (
-                  <Link
-                    to={userRole === 'superadmin' ? '/superadmin' : '/admin'}
-                    className={`block px-3 py-2 rounded-md text-base font-medium ${
-                      isActive(userRole === 'superadmin' ? '/superadmin' : '/admin')
-                        ? 'text-primary-600 bg-primary-50'
-                        : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
-                    }`}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    {userRole === 'superadmin' ? 'Super Admin' : 'Admin'} Panel
-                  </Link>
-                )}
                 <div className="border-t border-gray-200 pt-4 mt-4">
                   <div className="px-3 py-2 text-sm text-gray-600">
                     Signed in as {user?.name} ({getRoleLabel()})
