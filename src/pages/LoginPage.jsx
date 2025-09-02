@@ -27,6 +27,12 @@ const LoginPage = () => {
   // Mock user database
   const mockUsers = [
     {
+      email: 'superadmin@edusphere.com',
+      password: 'SuperAdmin123',
+      name: 'Super Administrator',
+      role: 'superadmin'
+    },
+    {
       email: 'student@demo.com',
       password: 'Student123',
       name: 'John Student',
@@ -212,6 +218,21 @@ const LoginPage = () => {
             </div>
 
             <div className="mt-6 grid grid-cols-3 gap-3">
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => {
+                  document.querySelector('input[name="email"]').value = 'superadmin@edusphere.com'
+                  document.querySelector('input[name="password"]').value = 'SuperAdmin123'
+                  toast.success('Super Admin credentials filled! Click Sign in.')
+                }}
+              >
+                <Shield size={16} className="mr-2" />
+                <span className="text-xs">Super Admin</span>
+              </Button>
+            </div>
+            
+            <div className="mt-3 grid grid-cols-3 gap-3">
               <Button
                 variant="outline"
                 className="w-full"

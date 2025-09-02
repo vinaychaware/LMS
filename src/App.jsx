@@ -8,7 +8,9 @@ import StudentDashboardPage from './pages/StudentDashboardPage'
 import InstructorDashboardPage from './pages/InstructorDashboardPage'
 import CreateCoursePage from './pages/CreateCoursePage'
 import AdminDashboardPage from './pages/AdminDashboardPage'
+import SuperAdminDashboardPage from './pages/SuperAdminDashboardPage'
 import CourseViewerPage from './pages/CourseViewerPage'
+import RegisterPage from './pages/RegisterPage'
 
 // ✅ Import Terms & Privacy pages
 import Terms from './pages/TermsPage'
@@ -34,7 +36,9 @@ const PublicRoute = ({ children }) => {
   const { isAuthenticated, userRole } = useAuthStore()
   
   if (isAuthenticated) {
-    if (userRole === 'admin') {
+    if (userRole === 'superadmin') {
+      return <Navigate to="/superadmin" replace />
+    } else if (userRole === 'admin') {
       return <Navigate to="/admin" replace />
     } else if (userRole === 'instructor') {
       return <Navigate to="/instructor" replace />
@@ -67,6 +71,15 @@ const App = () => {
           element={
             <PublicRoute>
               <LoginPage />
+            </PublicRoute>
+          } 
+        />
+        
+        <Route 
+          path="/register" 
+          element={
+            <PublicRoute>
+              <RegisterPage />
             </PublicRoute>
           } 
         />
@@ -110,6 +123,15 @@ const App = () => {
         />
         
         {/* Admin Routes */}
+        <Route 
+          path="/superadmin" 
+          element={
+            <ProtectedRoute allowedRoles={['superadmin']}>
+              <SuperAdminDashboardPage />
+            </ProtectedRoute>
+          } 
+        />
+        
         <Route 
           path="/admin" 
           element={

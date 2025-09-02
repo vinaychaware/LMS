@@ -1,23 +1,144 @@
-// Enhanced mock data service for LMS with Course → Module → Chapter hierarchy
+// Enhanced mock data service for LMS with proper hierarchy and Super Admin support
 export const mockData = {
-  // Users data with proper hierarchy
-  users: [
+  // Colleges/Organizations
+  colleges: [
     {
       id: '1',
-      name: 'System Admin',
-      email: 'admin@demo.com',
+      name: 'Tech University',
+      code: 'TECH001',
+      address: '123 Innovation Drive, Tech City, TC 12345',
+      phone: '+1-555-0123',
+      email: 'admin@techuniversity.edu',
+      website: 'https://techuniversity.edu',
+      establishedYear: 2010,
+      totalStudents: 1250,
+      totalInstructors: 45,
+      totalCourses: 120,
+      status: 'active',
+      logo: 'https://images.pexels.com/photos/267885/pexels-photo-267885.jpeg?auto=compress&cs=tinysrgb&w=150',
+      createdAt: '2024-01-01T00:00:00Z',
+      updatedAt: '2024-01-20T10:00:00Z'
+    },
+    {
+      id: '2',
+      name: 'Business Academy',
+      code: 'BIZ002',
+      address: '456 Commerce Street, Business City, BC 67890',
+      phone: '+1-555-0456',
+      email: 'contact@businessacademy.edu',
+      website: 'https://businessacademy.edu',
+      establishedYear: 2015,
+      totalStudents: 890,
+      totalInstructors: 32,
+      totalCourses: 85,
+      status: 'active',
+      logo: 'https://images.pexels.com/photos/159711/books-bookstore-book-reading-159711.jpeg?auto=compress&cs=tinysrgb&w=150',
+      createdAt: '2024-01-05T00:00:00Z',
+      updatedAt: '2024-01-18T15:30:00Z'
+    },
+    {
+      id: '3',
+      name: 'Creative Arts Institute',
+      code: 'ART003',
+      address: '789 Artist Lane, Creative City, CC 13579',
+      phone: '+1-555-0789',
+      email: 'info@creativearts.edu',
+      website: 'https://creativearts.edu',
+      establishedYear: 2018,
+      totalStudents: 650,
+      totalInstructors: 28,
+      totalCourses: 95,
+      status: 'active',
+      logo: 'https://images.pexels.com/photos/1181533/pexels-photo-1181533.jpeg?auto=compress&cs=tinysrgb&w=150',
+      createdAt: '2024-01-10T00:00:00Z',
+      updatedAt: '2024-01-19T09:45:00Z'
+    }
+  ],
+
+  // Users with proper hierarchy and college assignments
+  users: [
+    // Super Admin
+    {
+      id: '0',
+      name: 'Super Administrator',
+      email: 'superadmin@edusphere.com',
+      role: 'superadmin',
+      avatar: 'https://images.pexels.com/photos/2182970/pexels-photo-2182970.jpeg?auto=compress&cs=tinysrgb&w=150',
+      isActive: true,
+      isVerified: true,
+      joinedDate: '2024-01-01T00:00:00Z',
+      lastLogin: '2024-01-20T08:00:00Z',
+      collegeId: null, // Super admin oversees all colleges
+      permissions: {
+        canManageColleges: true,
+        canManageAllUsers: true,
+        canManageSystem: true,
+        canViewAllData: true,
+        canCreateAdmins: true
+      }
+    },
+    // College Admins
+    {
+      id: '1',
+      name: 'Dr. Sarah Johnson',
+      email: 'admin@techuniversity.edu',
       role: 'admin',
       avatar: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=150',
       isActive: true,
       isVerified: true,
-      joinedDate: '2024-01-01',
+      joinedDate: '2024-01-01T00:00:00Z',
       lastLogin: '2024-01-20T08:00:00Z',
+      collegeId: '1',
+      assignedBy: '0', // Super Admin
       permissions: {
         canCreateCourses: true,
         canManageUsers: true,
-        canManageSystem: true
+        canManageCollegeCourses: true,
+        canAssignInstructors: true,
+        canViewCollegeAnalytics: true
       }
     },
+    {
+      id: '11',
+      name: 'Prof. Michael Chen',
+      email: 'admin@businessacademy.edu',
+      role: 'admin',
+      avatar: 'https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg?auto=compress&cs=tinysrgb&w=150',
+      isActive: true,
+      isVerified: true,
+      joinedDate: '2024-01-05T00:00:00Z',
+      lastLogin: '2024-01-19T16:30:00Z',
+      collegeId: '2',
+      assignedBy: '0',
+      permissions: {
+        canCreateCourses: true,
+        canManageUsers: true,
+        canManageCollegeCourses: true,
+        canAssignInstructors: true,
+        canViewCollegeAnalytics: true
+      }
+    },
+    {
+      id: '21',
+      name: 'Dr. Emily Rodriguez',
+      email: 'admin@creativearts.edu',
+      role: 'admin',
+      avatar: 'https://images.pexels.com/photos/1181686/pexels-photo-1181686.jpeg?auto=compress&cs=tinysrgb&w=150',
+      isActive: true,
+      isVerified: true,
+      joinedDate: '2024-01-10T00:00:00Z',
+      lastLogin: '2024-01-20T11:15:00Z',
+      collegeId: '3',
+      assignedBy: '0',
+      permissions: {
+        canCreateCourses: true,
+        canManageUsers: true,
+        canManageCollegeCourses: true,
+        canAssignInstructors: true,
+        canViewCollegeAnalytics: true
+      }
+    },
+    // Instructors
     {
       id: '2',
       name: 'Sarah Instructor',
@@ -26,17 +147,62 @@ export const mockData = {
       avatar: 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=150',
       isActive: true,
       isVerified: true,
-      joinedDate: '2024-01-10',
+      joinedDate: '2024-01-10T00:00:00Z',
       lastLogin: '2024-01-20T09:15:00Z',
-      assignedBy: '1', // Admin ID
+      collegeId: '1',
+      assignedBy: '1', // College Admin
       permissions: {
-        canCreateCourses: true, // Admin-controlled
+        canCreateCourses: true,
         canManageStudents: true,
-        canViewAnalytics: true
+        canViewAnalytics: true,
+        canCreateTests: true
       },
-      assignedCourses: ['1', '2'], // Course IDs
-      students: ['3', '4', '5'] // Student IDs under this instructor
+      assignedCourses: ['1', '2'],
+      students: ['3', '4', '5']
     },
+    {
+      id: '12',
+      name: 'Prof. David Wilson',
+      email: 'dwilson@businessacademy.edu',
+      role: 'instructor',
+      avatar: 'https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=150',
+      isActive: true,
+      isVerified: true,
+      joinedDate: '2024-01-12T00:00:00Z',
+      lastLogin: '2024-01-19T14:20:00Z',
+      collegeId: '2',
+      assignedBy: '11',
+      permissions: {
+        canCreateCourses: false, // Disabled by admin
+        canManageStudents: true,
+        canViewAnalytics: true,
+        canCreateTests: false
+      },
+      assignedCourses: ['3'],
+      students: ['13', '14']
+    },
+    {
+      id: '22',
+      name: 'Ms. Lisa Thompson',
+      email: 'lthompson@creativearts.edu',
+      role: 'instructor',
+      avatar: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=150',
+      isActive: true,
+      isVerified: true,
+      joinedDate: '2024-01-15T00:00:00Z',
+      lastLogin: '2024-01-20T13:45:00Z',
+      collegeId: '3',
+      assignedBy: '21',
+      permissions: {
+        canCreateCourses: true,
+        canManageStudents: true,
+        canViewAnalytics: true,
+        canCreateTests: true
+      },
+      assignedCourses: ['4'],
+      students: ['23', '24']
+    },
+    // Students
     {
       id: '3',
       name: 'John Student',
@@ -45,76 +211,220 @@ export const mockData = {
       avatar: 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150',
       isActive: true,
       isVerified: true,
-      joinedDate: '2024-01-15',
+      joinedDate: '2024-01-15T00:00:00Z',
       lastLogin: '2024-01-20T10:30:00Z',
-      instructorId: '2', // Assigned under instructor
-      assignedCourses: ['1'], // Courses assigned by instructor
+      collegeId: '1',
+      instructorId: '2',
+      assignedBy: '2', // Instructor
+      assignedCourses: ['1'],
       progress: {
-        '1': { // Course ID
+        '1': {
           currentModule: '1',
-          currentChapter: '2',
-          completedChapters: ['1-1', '1-2'],
+          currentChapter: '1-1',
+          completedChapters: [],
           completedModules: [],
           moduleTestResults: {},
           courseTestResult: null,
           aiInterviewResult: null,
-          overallProgress: 25
+          overallProgress: 0,
+          timeSpent: 0,
+          lastAccessed: '2024-01-20T10:30:00Z'
         }
       }
     },
     {
       id: '4',
       name: 'Emily Johnson',
-      email: 'emily@example.com',
+      email: 'emily@techuniversity.edu',
       role: 'student',
       avatar: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=150',
       isActive: true,
       isVerified: true,
-      joinedDate: '2024-01-18',
+      joinedDate: '2024-01-18T00:00:00Z',
       lastLogin: '2024-01-19T16:45:00Z',
+      collegeId: '1',
       instructorId: '2',
+      assignedBy: '2',
       assignedCourses: ['1', '2'],
       progress: {
         '1': {
           currentModule: '2',
-          currentChapter: '1',
+          currentChapter: '2-1',
           completedChapters: ['1-1', '1-2', '1-3'],
           completedModules: ['1'],
-          moduleTestResults: { '1': { score: 85, passed: true, attemptedAt: '2024-01-19' } },
+          moduleTestResults: { 
+            '1': { score: 85, passed: true, attemptedAt: '2024-01-19T14:00:00Z', attempts: 1 }
+          },
           courseTestResult: null,
           aiInterviewResult: null,
-          overallProgress: 60
+          overallProgress: 35,
+          timeSpent: 180,
+          lastAccessed: '2024-01-19T16:45:00Z'
+        },
+        '2': {
+          currentModule: '4',
+          currentChapter: '4-1',
+          completedChapters: [],
+          completedModules: [],
+          moduleTestResults: {},
+          courseTestResult: null,
+          aiInterviewResult: null,
+          overallProgress: 5,
+          timeSpent: 30,
+          lastAccessed: '2024-01-19T15:20:00Z'
         }
       }
     },
     {
       id: '5',
       name: 'Michael Brown',
-      email: 'michael@example.com',
+      email: 'michael@techuniversity.edu',
       role: 'student',
       avatar: 'https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=150',
       isActive: true,
       isVerified: true,
-      joinedDate: '2024-01-16',
+      joinedDate: '2024-01-16T00:00:00Z',
       lastLogin: '2024-01-19T14:20:00Z',
+      collegeId: '1',
       instructorId: '2',
+      assignedBy: '2',
       assignedCourses: ['2'],
       progress: {
         '2': {
-          currentModule: '1',
-          currentChapter: '1',
+          currentModule: '4',
+          currentChapter: '4-1',
           completedChapters: [],
           completedModules: [],
           moduleTestResults: {},
           courseTestResult: null,
           aiInterviewResult: null,
-          overallProgress: 5
+          overallProgress: 5,
+          timeSpent: 45,
+          lastAccessed: '2024-01-19T14:20:00Z'
+        }
+      }
+    },
+    // Business Academy Students
+    {
+      id: '13',
+      name: 'Alex Martinez',
+      email: 'alex@businessacademy.edu',
+      role: 'student',
+      avatar: 'https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg?auto=compress&cs=tinysrgb&w=150',
+      isActive: true,
+      isVerified: true,
+      joinedDate: '2024-01-12T00:00:00Z',
+      lastLogin: '2024-01-20T09:30:00Z',
+      collegeId: '2',
+      instructorId: '12',
+      assignedBy: '12',
+      assignedCourses: ['3'],
+      progress: {
+        '3': {
+          currentModule: '6',
+          currentChapter: '6-1',
+          completedChapters: [],
+          completedModules: [],
+          moduleTestResults: {},
+          courseTestResult: null,
+          aiInterviewResult: null,
+          overallProgress: 10,
+          timeSpent: 60,
+          lastAccessed: '2024-01-20T09:30:00Z'
+        }
+      }
+    },
+    {
+      id: '14',
+      name: 'Jessica Lee',
+      email: 'jessica@businessacademy.edu',
+      role: 'student',
+      avatar: 'https://images.pexels.com/photos/1181686/pexels-photo-1181686.jpeg?auto=compress&cs=tinysrgb&w=150',
+      isActive: true,
+      isVerified: true,
+      joinedDate: '2024-01-14T00:00:00Z',
+      lastLogin: '2024-01-19T11:15:00Z',
+      collegeId: '2',
+      instructorId: '12',
+      assignedBy: '12',
+      assignedCourses: ['3'],
+      progress: {
+        '3': {
+          currentModule: '6',
+          currentChapter: '6-2',
+          completedChapters: ['6-1'],
+          completedModules: [],
+          moduleTestResults: {},
+          courseTestResult: null,
+          aiInterviewResult: null,
+          overallProgress: 15,
+          timeSpent: 90,
+          lastAccessed: '2024-01-19T11:15:00Z'
+        }
+      }
+    },
+    // Creative Arts Students
+    {
+      id: '23',
+      name: 'Ryan Cooper',
+      email: 'ryan@creativearts.edu',
+      role: 'student',
+      avatar: 'https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg?auto=compress&cs=tinysrgb&w=150',
+      isActive: true,
+      isVerified: true,
+      joinedDate: '2024-01-16T00:00:00Z',
+      lastLogin: '2024-01-20T14:00:00Z',
+      collegeId: '3',
+      instructorId: '22',
+      assignedBy: '22',
+      assignedCourses: ['4'],
+      progress: {
+        '4': {
+          currentModule: '7',
+          currentChapter: '7-1',
+          completedChapters: [],
+          completedModules: [],
+          moduleTestResults: {},
+          courseTestResult: null,
+          aiInterviewResult: null,
+          overallProgress: 8,
+          timeSpent: 40,
+          lastAccessed: '2024-01-20T14:00:00Z'
+        }
+      }
+    },
+    {
+      id: '24',
+      name: 'Sophia Davis',
+      email: 'sophia@creativearts.edu',
+      role: 'student',
+      avatar: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=150',
+      isActive: true,
+      isVerified: true,
+      joinedDate: '2024-01-17T00:00:00Z',
+      lastLogin: '2024-01-20T12:30:00Z',
+      collegeId: '3',
+      instructorId: '22',
+      assignedBy: '22',
+      assignedCourses: ['4'],
+      progress: {
+        '4': {
+          currentModule: '7',
+          currentChapter: '7-2',
+          completedChapters: ['7-1'],
+          completedModules: [],
+          moduleTestResults: {},
+          courseTestResult: null,
+          aiInterviewResult: null,
+          overallProgress: 12,
+          timeSpent: 75,
+          lastAccessed: '2024-01-20T12:30:00Z'
         }
       }
     }
   ],
 
-  // Courses with proper hierarchy
+  // Courses with proper college assignments
   courses: [
     {
       id: '1',
@@ -130,19 +440,23 @@ export const mockData = {
       level: 'beginner',
       status: 'published',
       isActive: true,
-      createdBy: '1', // Admin
+      collegeId: '1',
+      createdBy: '1',
       assignedInstructors: ['2'],
       enrolledStudents: ['3', '4'],
       totalModules: 3,
       totalChapters: 9,
       estimatedDuration: '40 hours',
-      createdAt: '2024-01-10',
-      updatedAt: '2024-01-19',
+      price: 299,
+      rating: 4.8,
+      reviewCount: 156,
+      createdAt: '2024-01-10T00:00:00Z',
+      updatedAt: '2024-01-19T00:00:00Z',
       courseTest: {
         id: 'ct-1',
         title: 'Web Development Final Assessment',
         questions: 50,
-        duration: 120, // minutes
+        duration: 120,
         passingScore: 70,
         maxAttempts: 2
       }
@@ -161,14 +475,18 @@ export const mockData = {
       level: 'advanced',
       status: 'published',
       isActive: true,
+      collegeId: '1',
       createdBy: '1',
       assignedInstructors: ['2'],
       enrolledStudents: ['4', '5'],
       totalModules: 2,
       totalChapters: 6,
       estimatedDuration: '25 hours',
-      createdAt: '2024-01-12',
-      updatedAt: '2024-01-18',
+      price: 199,
+      rating: 4.9,
+      reviewCount: 89,
+      createdAt: '2024-01-12T00:00:00Z',
+      updatedAt: '2024-01-18T00:00:00Z',
       courseTest: {
         id: 'ct-2',
         title: 'Advanced JavaScript Final Test',
@@ -177,12 +495,82 @@ export const mockData = {
         passingScore: 75,
         maxAttempts: 2
       }
+    },
+    {
+      id: '3',
+      title: 'Business Strategy Fundamentals',
+      description: 'Learn essential business strategy concepts and frameworks for modern organizations.',
+      instructor: {
+        id: '12',
+        name: 'Prof. David Wilson',
+        avatar: 'https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=150'
+      },
+      thumbnail: 'https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=400',
+      category: 'Business',
+      level: 'intermediate',
+      status: 'published',
+      isActive: true,
+      collegeId: '2',
+      createdBy: '11',
+      assignedInstructors: ['12'],
+      enrolledStudents: ['13', '14'],
+      totalModules: 2,
+      totalChapters: 8,
+      estimatedDuration: '30 hours',
+      price: 249,
+      rating: 4.7,
+      reviewCount: 67,
+      createdAt: '2024-01-13T00:00:00Z',
+      updatedAt: '2024-01-19T00:00:00Z',
+      courseTest: {
+        id: 'ct-3',
+        title: 'Business Strategy Assessment',
+        questions: 35,
+        duration: 75,
+        passingScore: 70,
+        maxAttempts: 3
+      }
+    },
+    {
+      id: '4',
+      title: 'Digital Art & Design Mastery',
+      description: 'Comprehensive course covering digital art techniques, design principles, and creative workflows.',
+      instructor: {
+        id: '22',
+        name: 'Ms. Lisa Thompson',
+        avatar: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=150'
+      },
+      thumbnail: 'https://images.pexels.com/photos/3184338/pexels-photo-3184338.jpeg?auto=compress&cs=tinysrgb&w=400',
+      category: 'Design',
+      level: 'beginner',
+      status: 'published',
+      isActive: true,
+      collegeId: '3',
+      createdBy: '21',
+      assignedInstructors: ['22'],
+      enrolledStudents: ['23', '24'],
+      totalModules: 3,
+      totalChapters: 12,
+      estimatedDuration: '35 hours',
+      price: 179,
+      rating: 4.6,
+      reviewCount: 43,
+      createdAt: '2024-01-16T00:00:00Z',
+      updatedAt: '2024-01-20T00:00:00Z',
+      courseTest: {
+        id: 'ct-4',
+        title: 'Digital Art Portfolio Assessment',
+        questions: 25,
+        duration: 60,
+        passingScore: 75,
+        maxAttempts: 2
+      }
     }
   ],
 
-  // Modules within courses
+  // Modules with proper course assignments
   modules: [
-    // Course 1 Modules
+    // Course 1 Modules (Web Development)
     {
       id: '1',
       courseId: '1',
@@ -192,6 +580,7 @@ export const mockData = {
       estimatedDuration: '15 hours',
       totalChapters: 3,
       isActive: true,
+      createdBy: '1',
       moduleTest: {
         id: 'mt-1',
         title: 'Frontend Fundamentals Test',
@@ -210,6 +599,7 @@ export const mockData = {
       estimatedDuration: '20 hours',
       totalChapters: 4,
       isActive: true,
+      createdBy: '1',
       moduleTest: {
         id: 'mt-2',
         title: 'Backend Development Test',
@@ -228,6 +618,7 @@ export const mockData = {
       estimatedDuration: '5 hours',
       totalChapters: 2,
       isActive: true,
+      createdBy: '1',
       moduleTest: {
         id: 'mt-3',
         title: 'Full Stack Integration Test',
@@ -237,7 +628,7 @@ export const mockData = {
         maxAttempts: 3
       }
     },
-    // Course 2 Modules
+    // Course 2 Modules (Advanced JavaScript)
     {
       id: '4',
       courseId: '2',
@@ -247,6 +638,7 @@ export const mockData = {
       estimatedDuration: '15 hours',
       totalChapters: 3,
       isActive: true,
+      createdBy: '1',
       moduleTest: {
         id: 'mt-4',
         title: 'Advanced JavaScript Features Test',
@@ -265,6 +657,7 @@ export const mockData = {
       estimatedDuration: '10 hours',
       totalChapters: 3,
       isActive: true,
+      createdBy: '1',
       moduleTest: {
         id: 'mt-5',
         title: 'Design Patterns Test',
@@ -273,10 +666,107 @@ export const mockData = {
         passingScore: 75,
         maxAttempts: 2
       }
+    },
+    // Course 3 Modules (Business Strategy)
+    {
+      id: '6',
+      courseId: '3',
+      title: 'Strategic Planning Fundamentals',
+      description: 'Core concepts of strategic planning and analysis',
+      order: 1,
+      estimatedDuration: '18 hours',
+      totalChapters: 4,
+      isActive: true,
+      createdBy: '11',
+      moduleTest: {
+        id: 'mt-6',
+        title: 'Strategic Planning Test',
+        questions: 20,
+        duration: 50,
+        passingScore: 70,
+        maxAttempts: 3
+      }
+    },
+    {
+      id: '8',
+      courseId: '3',
+      title: 'Market Analysis & Competitive Intelligence',
+      description: 'Understanding markets and competitive landscapes',
+      order: 2,
+      estimatedDuration: '12 hours',
+      totalChapters: 4,
+      isActive: true,
+      createdBy: '11',
+      moduleTest: {
+        id: 'mt-8',
+        title: 'Market Analysis Test',
+        questions: 18,
+        duration: 40,
+        passingScore: 70,
+        maxAttempts: 3
+      }
+    },
+    // Course 4 Modules (Digital Art)
+    {
+      id: '7',
+      courseId: '4',
+      title: 'Digital Art Basics',
+      description: 'Introduction to digital art tools and techniques',
+      order: 1,
+      estimatedDuration: '12 hours',
+      totalChapters: 4,
+      isActive: true,
+      createdBy: '21',
+      moduleTest: {
+        id: 'mt-7',
+        title: 'Digital Art Basics Test',
+        questions: 15,
+        duration: 35,
+        passingScore: 75,
+        maxAttempts: 3
+      }
+    },
+    {
+      id: '9',
+      courseId: '4',
+      title: 'Advanced Design Techniques',
+      description: 'Professional design workflows and advanced techniques',
+      order: 2,
+      estimatedDuration: '15 hours',
+      totalChapters: 4,
+      isActive: true,
+      createdBy: '21',
+      moduleTest: {
+        id: 'mt-9',
+        title: 'Advanced Design Test',
+        questions: 20,
+        duration: 45,
+        passingScore: 75,
+        maxAttempts: 2
+      }
+    },
+    {
+      id: '10',
+      courseId: '4',
+      title: 'Portfolio Development',
+      description: 'Building a professional design portfolio',
+      order: 3,
+      estimatedDuration: '8 hours',
+      totalChapters: 4,
+      isActive: true,
+      createdBy: '21',
+      moduleTest: {
+        id: 'mt-10',
+        title: 'Portfolio Assessment',
+        questions: 12,
+        duration: 30,
+        passingScore: 80,
+        maxAttempts: 2
+      }
     }
   ],
 
-  // Chapters within modules
+  // Chapters with proper module assignments
   chapters: [
     // Module 1 Chapters (Frontend Fundamentals)
     {
@@ -285,7 +775,7 @@ export const mockData = {
       courseId: '1',
       title: 'HTML Fundamentals',
       description: 'Learn HTML structure, semantic elements, and best practices',
-      content: 'HTML (HyperText Markup Language) is the standard markup language...',
+      content: 'HTML (HyperText Markup Language) is the standard markup language for creating web pages. In this chapter, you will learn about HTML structure, semantic elements, forms, and accessibility best practices.',
       order: 1,
       estimatedDuration: '5 hours',
       videoUrl: 'https://example.com/videos/html-fundamentals.mp4',
@@ -293,7 +783,8 @@ export const mockData = {
         { type: 'pdf', title: 'HTML Reference Guide', url: '/resources/html-guide.pdf' },
         { type: 'link', title: 'MDN HTML Documentation', url: 'https://developer.mozilla.org/en-US/docs/Web/HTML' }
       ],
-      isActive: true
+      isActive: true,
+      isLocked: false
     },
     {
       id: '1-2',
@@ -301,7 +792,7 @@ export const mockData = {
       courseId: '1',
       title: 'CSS Styling and Layout',
       description: 'Master CSS for styling and responsive layouts',
-      content: 'CSS (Cascading Style Sheets) is used for styling HTML elements...',
+      content: 'CSS (Cascading Style Sheets) is used for styling HTML elements. Learn about selectors, box model, flexbox, grid, and responsive design principles.',
       order: 2,
       estimatedDuration: '6 hours',
       videoUrl: 'https://example.com/videos/css-fundamentals.mp4',
@@ -309,7 +800,8 @@ export const mockData = {
         { type: 'pdf', title: 'CSS Flexbox Guide', url: '/resources/flexbox-guide.pdf' },
         { type: 'codepen', title: 'CSS Examples', url: 'https://codepen.io/examples' }
       ],
-      isActive: true
+      isActive: true,
+      isLocked: true
     },
     {
       id: '1-3',
@@ -317,14 +809,15 @@ export const mockData = {
       courseId: '1',
       title: 'JavaScript Basics',
       description: 'Introduction to JavaScript programming',
-      content: 'JavaScript is a high-level programming language...',
+      content: 'JavaScript is a high-level programming language that enables interactive web pages. Learn variables, functions, DOM manipulation, and event handling.',
       order: 3,
       estimatedDuration: '4 hours',
       videoUrl: 'https://example.com/videos/js-basics.mp4',
       resources: [
         { type: 'pdf', title: 'JavaScript Cheat Sheet', url: '/resources/js-cheatsheet.pdf' }
       ],
-      isActive: true
+      isActive: true,
+      isLocked: true
     },
     // Module 2 Chapters (Backend Development)
     {
@@ -333,12 +826,13 @@ export const mockData = {
       courseId: '1',
       title: 'Node.js Introduction',
       description: 'Server-side JavaScript with Node.js',
-      content: 'Node.js is a JavaScript runtime built on Chrome\'s V8 engine...',
+      content: 'Node.js is a JavaScript runtime built on Chrome\'s V8 engine. Learn about server-side JavaScript, npm, modules, and building your first server.',
       order: 1,
       estimatedDuration: '5 hours',
       videoUrl: 'https://example.com/videos/nodejs-intro.mp4',
       resources: [],
-      isActive: true
+      isActive: true,
+      isLocked: true
     },
     {
       id: '2-2',
@@ -346,12 +840,13 @@ export const mockData = {
       courseId: '1',
       title: 'Express.js Framework',
       description: 'Building web applications with Express.js',
-      content: 'Express.js is a minimal and flexible Node.js web application framework...',
+      content: 'Express.js is a minimal and flexible Node.js web application framework. Learn routing, middleware, templating, and building RESTful APIs.',
       order: 2,
       estimatedDuration: '6 hours',
       videoUrl: 'https://example.com/videos/express-intro.mp4',
       resources: [],
-      isActive: true
+      isActive: true,
+      isLocked: true
     },
     {
       id: '2-3',
@@ -359,12 +854,13 @@ export const mockData = {
       courseId: '1',
       title: 'Database Integration',
       description: 'Working with databases in Node.js applications',
-      content: 'Learn how to integrate databases with your Node.js applications...',
+      content: 'Learn how to integrate databases with your Node.js applications using MongoDB and Mongoose ODM.',
       order: 3,
       estimatedDuration: '6 hours',
       videoUrl: 'https://example.com/videos/database-integration.mp4',
       resources: [],
-      isActive: true
+      isActive: true,
+      isLocked: true
     },
     {
       id: '2-4',
@@ -372,192 +868,115 @@ export const mockData = {
       courseId: '1',
       title: 'API Development',
       description: 'Creating RESTful APIs with Express.js',
-      content: 'REST APIs are the backbone of modern web applications...',
+      content: 'REST APIs are the backbone of modern web applications. Learn to design, build, and test RESTful APIs.',
       order: 4,
       estimatedDuration: '3 hours',
       videoUrl: 'https://example.com/videos/api-development.mp4',
       resources: [],
-      isActive: true
-    }
-  ],
-
-  // Module Tests
-  moduleTests: [
-    {
-      id: 'mt-1',
-      moduleId: '1',
-      courseId: '1',
-      title: 'Frontend Fundamentals Test',
-      description: 'Test your knowledge of HTML, CSS, and basic JavaScript',
-      questions: 20,
-      duration: 45, // minutes
-      passingScore: 70,
-      maxAttempts: 3,
       isActive: true,
-      questions: [
-        {
-          id: 'q1',
-          type: 'multiple-choice',
-          question: 'What does HTML stand for?',
-          options: [
-            'HyperText Markup Language',
-            'High Tech Modern Language',
-            'Home Tool Markup Language',
-            'Hyperlink and Text Markup Language'
-          ],
-          correctAnswer: 0,
-          points: 5
-        },
-        {
-          id: 'q2',
-          type: 'multiple-choice',
-          question: 'Which CSS property is used for changing text color?',
-          options: ['color', 'text-color', 'font-color', 'text-style'],
-          correctAnswer: 0,
-          points: 5
-        }
-        // More questions would be added here
-      ]
+      isLocked: true
     },
+    // Additional chapters for other courses...
     {
-      id: 'mt-2',
-      moduleId: '2',
-      courseId: '1',
-      title: 'Backend Development Test',
-      description: 'Assess your backend development skills',
-      questions: 25,
-      duration: 60,
-      passingScore: 70,
-      maxAttempts: 3,
-      isActive: true
-    }
-  ],
-
-  // Course Tests
-  courseTests: [
-    {
-      id: 'ct-1',
-      courseId: '1',
-      title: 'Web Development Final Assessment',
-      description: 'Comprehensive test covering all course modules',
-      questions: 50,
-      duration: 120,
-      passingScore: 70,
-      maxAttempts: 2,
+      id: '4-1',
+      moduleId: '4',
+      courseId: '2',
+      title: 'ES6+ Features',
+      description: 'Modern JavaScript syntax and features',
+      content: 'Explore ES6+ features including arrow functions, destructuring, modules, promises, and async/await.',
+      order: 1,
+      estimatedDuration: '5 hours',
+      videoUrl: 'https://example.com/videos/es6-features.mp4',
+      resources: [],
       isActive: true,
-      prerequisite: 'all-modules-completed'
-    }
-  ],
-
-  // Test Results
-  testResults: [
+      isLocked: false
+    },
     {
-      id: 'tr-1',
-      studentId: '4',
-      testId: 'mt-1',
-      testType: 'module',
-      moduleId: '1',
-      courseId: '1',
-      score: 85,
-      totalQuestions: 20,
-      correctAnswers: 17,
-      passed: true,
-      attemptNumber: 1,
-      timeSpent: 35, // minutes
-      submittedAt: '2024-01-19T14:30:00Z',
-      answers: [
-        { questionId: 'q1', selectedAnswer: 0, isCorrect: true },
-        { questionId: 'q2', selectedAnswer: 0, isCorrect: true }
-      ]
-    }
-  ],
-
-  // AI Interview Results
-  aiInterviewResults: [
+      id: '6-1',
+      moduleId: '6',
+      courseId: '3',
+      title: 'Strategic Analysis Framework',
+      description: 'Understanding strategic analysis tools',
+      content: 'Learn SWOT analysis, Porter\'s Five Forces, and other strategic analysis frameworks.',
+      order: 1,
+      estimatedDuration: '4 hours',
+      videoUrl: 'https://example.com/videos/strategic-analysis.mp4',
+      resources: [],
+      isActive: true,
+      isLocked: false
+    },
     {
-      id: 'ai-1',
-      studentId: '4',
-      courseId: '1',
-      overallScore: 88,
-      technicalScore: 85,
-      communicationScore: 90,
-      problemSolvingScore: 87,
-      feedback: 'Excellent understanding of web development concepts. Strong communication skills.',
-      interviewDuration: 45, // minutes
-      completedAt: '2024-01-20T10:00:00Z',
-      questions: [
-        {
-          question: 'Explain the difference between let, const, and var in JavaScript',
-          answer: 'Student provided comprehensive answer...',
-          score: 9
-        }
-      ],
-      recommendation: 'Ready for junior developer positions'
+      id: '6-2',
+      moduleId: '6',
+      courseId: '3',
+      title: 'Competitive Positioning',
+      description: 'Developing competitive strategies',
+      content: 'Learn how to position your organization competitively in the market.',
+      order: 2,
+      estimatedDuration: '5 hours',
+      videoUrl: 'https://example.com/videos/competitive-positioning.mp4',
+      resources: [],
+      isActive: true,
+      isLocked: true
+    },
+    {
+      id: '7-1',
+      moduleId: '7',
+      courseId: '4',
+      title: 'Digital Drawing Fundamentals',
+      description: 'Basic digital drawing techniques',
+      content: 'Learn the fundamentals of digital drawing using professional software tools.',
+      order: 1,
+      estimatedDuration: '3 hours',
+      videoUrl: 'https://example.com/videos/digital-drawing.mp4',
+      resources: [],
+      isActive: true,
+      isLocked: false
+    },
+    {
+      id: '7-2',
+      moduleId: '7',
+      courseId: '4',
+      title: 'Color Theory & Composition',
+      description: 'Understanding color and composition in digital art',
+      content: 'Master color theory, composition rules, and visual hierarchy in digital art.',
+      order: 2,
+      estimatedDuration: '4 hours',
+      videoUrl: 'https://example.com/videos/color-theory.mp4',
+      resources: [],
+      isActive: true,
+      isLocked: true
     }
   ],
 
-  // System settings and permissions
-  systemSettings: {
-    instructorPermissions: {
-      '2': {
-        canCreateCourses: true,
-        canEditCourses: true,
-        canDeleteCourses: false,
-        canManageTests: true,
-        canViewAllStudents: false,
-        assignedCourses: ['1', '2']
-      }
+  // System analytics and metrics
+  systemAnalytics: {
+    overview: {
+      totalColleges: 3,
+      totalAdmins: 3,
+      totalInstructors: 3,
+      totalStudents: 6,
+      totalCourses: 4,
+      totalModules: 7,
+      totalChapters: 10,
+      activeUsers: 12,
+      systemUptime: '99.9%',
+      avgCourseCompletion: 23,
+      totalRevenue: 2847,
+      monthlyActiveUsers: 11
     },
-    courseVisibility: {
-      '1': { instructors: ['2'], students: ['3', '4'] },
-      '2': { instructors: ['2'], students: ['4', '5'] }
+    collegeBreakdown: {
+      '1': { students: 3, instructors: 1, courses: 2, revenue: 1494 },
+      '2': { students: 2, instructors: 1, courses: 1, revenue: 498 },
+      '3': { students: 2, instructors: 1, courses: 1, revenue: 358 }
     },
-    aiInterviewSettings: {
-      enabled: true,
-      apiEndpoint: 'https://api.ai-interview.com/v1',
-      defaultDuration: 45,
-      questionTypes: ['technical', 'behavioral', 'problem-solving']
-    }
-  },
-
-  // Analytics data
-  analytics: {
-    systemOverview: {
-      totalUsers: 5,
-      totalCourses: 2,
-      totalModules: 5,
-      totalChapters: 7,
-      activeStudents: 3,
-      activeInstructors: 1,
-      completionRate: 65,
-      averageTestScore: 82
-    },
-    instructorAnalytics: {
-      '2': {
-        totalStudents: 3,
-        activeCourses: 2,
-        averageStudentProgress: 43,
-        totalTestsGraded: 5,
-        studentSatisfaction: 4.8
-      }
-    },
-    studentAnalytics: {
-      '3': {
-        coursesEnrolled: 1,
-        chaptersCompleted: 2,
-        modulesCompleted: 0,
-        averageTestScore: 0,
-        timeSpent: 120, // minutes
-        lastActivity: '2024-01-20T10:30:00Z'
-      },
-      '4': {
-        coursesEnrolled: 2,
-        chaptersCompleted: 3,
-        modulesCompleted: 1,
-        averageTestScore: 85,
-        timeSpent: 300,
-        lastActivity: '2024-01-19T16:45:00Z'
-      }
+    performanceMetrics: {
+      cpuUsage: 45,
+      memoryUsage: 62,
+      diskUsage: 38,
+      networkLatency: 12,
+      errorRate: 0.02,
+      responseTime: 145
     }
   }
 }
@@ -565,6 +984,131 @@ export const mockData = {
 // Enhanced API simulation functions
 export const mockAPI = {
   delay: (ms = 1000) => new Promise(resolve => setTimeout(resolve, ms)),
+
+  // Super Admin APIs
+  getAllColleges: async () => {
+    await mockAPI.delay(800)
+    return mockData.colleges
+  },
+
+  getAllAdmins: async () => {
+    await mockAPI.delay(600)
+    return mockData.users.filter(user => user.role === 'admin')
+  },
+
+  getAllInstructors: async () => {
+    await mockAPI.delay(700)
+    return mockData.users.filter(user => user.role === 'instructor')
+  },
+
+  getAllStudents: async () => {
+    await mockAPI.delay(900)
+    return mockData.users.filter(user => user.role === 'student')
+  },
+
+  getSystemAnalytics: async () => {
+    await mockAPI.delay(1200)
+    return mockData.systemAnalytics
+  },
+
+  createCollege: async (collegeData) => {
+    await mockAPI.delay(1000)
+    const newCollege = {
+      id: String(mockData.colleges.length + 1),
+      ...collegeData,
+      totalStudents: 0,
+      totalInstructors: 0,
+      totalCourses: 0,
+      status: 'active',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }
+    mockData.colleges.push(newCollege)
+    return newCollege
+  },
+
+  updateCollege: async (collegeId, updates) => {
+    await mockAPI.delay(800)
+    const college = mockData.colleges.find(c => c.id === collegeId)
+    if (college) {
+      Object.assign(college, updates, { updatedAt: new Date().toISOString() })
+      return college
+    }
+    throw new Error('College not found')
+  },
+
+  deleteCollege: async (collegeId) => {
+    await mockAPI.delay(600)
+    const index = mockData.colleges.findIndex(c => c.id === collegeId)
+    if (index !== -1) {
+      mockData.colleges.splice(index, 1)
+      return true
+    }
+    throw new Error('College not found')
+  },
+
+  // Admin APIs
+  getCollegeUsers: async (collegeId) => {
+    await mockAPI.delay(600)
+    return mockData.users.filter(user => user.collegeId === collegeId)
+  },
+
+  getCollegeCourses: async (collegeId) => {
+    await mockAPI.delay(700)
+    return mockData.courses.filter(course => course.collegeId === collegeId)
+  },
+
+  createUser: async (userData) => {
+    await mockAPI.delay(800)
+    const newUser = {
+      id: String(Date.now()),
+      ...userData,
+      isActive: true,
+      isVerified: false,
+      joinedDate: new Date().toISOString(),
+      lastLogin: null,
+      progress: {},
+      assignedCourses: [],
+      students: userData.role === 'instructor' ? [] : undefined
+    }
+    mockData.users.push(newUser)
+    
+    // Update college stats
+    const college = mockData.colleges.find(c => c.id === userData.collegeId)
+    if (college) {
+      if (userData.role === 'student') college.totalStudents++
+      if (userData.role === 'instructor') college.totalInstructors++
+    }
+    
+    return newUser
+  },
+
+  updateUserPermissions: async (userId, permissions) => {
+    await mockAPI.delay(500)
+    const user = mockData.users.find(u => u.id === userId)
+    if (user) {
+      user.permissions = { ...user.permissions, ...permissions }
+      user.updatedAt = new Date().toISOString()
+      return user
+    }
+    throw new Error('User not found')
+  },
+
+  assignStudentToInstructor: async (studentId, instructorId) => {
+    await mockAPI.delay(500)
+    const student = mockData.users.find(u => u.id === studentId)
+    const instructor = mockData.users.find(u => u.id === instructorId)
+    
+    if (student && instructor) {
+      student.instructorId = instructorId
+      student.assignedBy = instructorId
+      if (!instructor.students.includes(studentId)) {
+        instructor.students.push(studentId)
+      }
+      return { student, instructor }
+    }
+    throw new Error('User not found')
+  },
 
   // Course Management
   getCoursesByInstructor: async (instructorId) => {
@@ -610,27 +1154,39 @@ export const mockAPI = {
         moduleTestResults: {},
         courseTestResult: null,
         aiInterviewResult: null,
-        overallProgress: 0
+        overallProgress: 0,
+        timeSpent: 0,
+        lastAccessed: new Date().toISOString()
       }
     }
     
     const progress = student.progress[courseId]
     if (!progress.completedChapters.includes(chapterId)) {
       progress.completedChapters.push(chapterId)
+      progress.timeSpent += Math.floor(Math.random() * 60) + 30 // Add random time
     }
     
+    // Update current position
+    progress.currentChapter = chapterId
+    progress.lastAccessed = new Date().toISOString()
+    
     // Check if module is completed
-    const module = mockData.modules.find(m => m.id === moduleId)
     const moduleChapters = mockData.chapters.filter(c => c.moduleId === moduleId)
     const completedModuleChapters = progress.completedChapters.filter(chId => 
       moduleChapters.some(ch => ch.id === chId)
     )
     
-    if (completedModuleChapters.length === moduleChapters.length && 
-        !progress.completedModules.includes(moduleId)) {
+    if (completedModuleChapters.length === moduleChapters.length) {
       // Module completed, unlock test
       progress.moduleTestUnlocked = moduleId
     }
+    
+    // Calculate overall progress
+    const course = mockData.courses.find(c => c.id === courseId)
+    const totalSteps = course.totalChapters + course.totalModules + 2 // +2 for course test and AI interview
+    const completedSteps = progress.completedChapters.length + progress.completedModules.length + 
+                          (progress.courseTestResult?.passed ? 1 : 0) + (progress.aiInterviewResult ? 1 : 0)
+    progress.overallProgress = Math.round((completedSteps / totalSteps) * 100)
     
     return progress
   },
@@ -638,35 +1194,24 @@ export const mockAPI = {
   // Test Management
   getModuleTest: async (moduleId) => {
     await mockAPI.delay(500)
-    return mockData.moduleTests.find(test => test.moduleId === moduleId)
+    const module = mockData.modules.find(m => m.id === moduleId)
+    return module?.moduleTest || null
   },
 
   getCourseTest: async (courseId) => {
     await mockAPI.delay(500)
-    return mockData.courseTests.find(test => test.courseId === courseId)
+    const course = mockData.courses.find(c => c.id === courseId)
+    return course?.courseTest || null
   },
 
   submitModuleTest: async (studentId, testId, answers) => {
     await mockAPI.delay(1000)
-    const test = mockData.moduleTests.find(t => t.id === testId)
-    if (!test) throw new Error('Test not found')
+    const module = mockData.modules.find(m => m.moduleTest?.id === testId)
+    if (!module) throw new Error('Test not found')
     
-    // Calculate score
-    let correctAnswers = 0
-    const totalQuestions = test.questions.length || test.questions
-    
-    if (Array.isArray(test.questions)) {
-      answers.forEach(answer => {
-        const question = test.questions.find(q => q.id === answer.questionId)
-        if (question && question.correctAnswer === answer.selectedAnswer) {
-          correctAnswers++
-        }
-      })
-    } else {
-      // Mock scoring for simplified tests
-      correctAnswers = Math.floor(Math.random() * totalQuestions * 0.3) + Math.floor(totalQuestions * 0.7)
-    }
-    
+    const test = module.moduleTest
+    const totalQuestions = test.questions
+    const correctAnswers = Math.floor(Math.random() * totalQuestions * 0.3) + Math.floor(totalQuestions * 0.7)
     const score = Math.round((correctAnswers / totalQuestions) * 100)
     const passed = score >= test.passingScore
     
@@ -675,8 +1220,8 @@ export const mockAPI = {
       studentId,
       testId,
       testType: 'module',
-      moduleId: test.moduleId,
-      courseId: test.courseId,
+      moduleId: module.id,
+      courseId: module.courseId,
       score,
       totalQuestions,
       correctAnswers,
@@ -687,19 +1232,25 @@ export const mockAPI = {
       answers
     }
     
-    mockData.testResults.push(result)
-    
     // Update student progress
     const student = mockData.users.find(user => user.id === studentId)
-    if (student.progress[test.courseId]) {
-      student.progress[test.courseId].moduleTestResults[test.moduleId] = {
+    if (student.progress[module.courseId]) {
+      student.progress[module.courseId].moduleTestResults[module.id] = {
         score,
         passed,
-        attemptedAt: new Date().toISOString()
+        attemptedAt: new Date().toISOString(),
+        attempts: 1
       }
       
-      if (passed && !student.progress[test.courseId].completedModules.includes(test.moduleId)) {
-        student.progress[test.courseId].completedModules.push(test.moduleId)
+      if (passed && !student.progress[module.courseId].completedModules.includes(module.id)) {
+        student.progress[module.courseId].completedModules.push(module.id)
+        
+        // Check if all modules are completed to unlock course test
+        const courseModules = mockData.modules.filter(m => m.courseId === module.courseId)
+        const completedModules = student.progress[module.courseId].completedModules
+        if (completedModules.length === courseModules.length) {
+          student.progress[module.courseId].courseTestUnlocked = true
+        }
       }
     }
     
@@ -708,9 +1259,10 @@ export const mockAPI = {
 
   submitCourseTest: async (studentId, testId, answers) => {
     await mockAPI.delay(1500)
-    const test = mockData.courseTests.find(t => t.id === testId)
-    if (!test) throw new Error('Test not found')
+    const course = mockData.courses.find(c => c.courseTest?.id === testId)
+    if (!course) throw new Error('Test not found')
     
+    const test = course.courseTest
     const totalQuestions = test.questions
     const correctAnswers = Math.floor(Math.random() * totalQuestions * 0.3) + Math.floor(totalQuestions * 0.7)
     const score = Math.round((correctAnswers / totalQuestions) * 100)
@@ -721,7 +1273,7 @@ export const mockAPI = {
       studentId,
       testId,
       testType: 'course',
-      courseId: test.courseId,
+      courseId: course.id,
       score,
       totalQuestions,
       correctAnswers,
@@ -732,20 +1284,19 @@ export const mockAPI = {
       answers
     }
     
-    mockData.testResults.push(result)
-    
     // Update student progress
     const student = mockData.users.find(user => user.id === studentId)
-    if (student.progress[test.courseId]) {
-      student.progress[test.courseId].courseTestResult = {
+    if (student.progress[course.id]) {
+      student.progress[course.id].courseTestResult = {
         score,
         passed,
-        attemptedAt: new Date().toISOString()
+        attemptedAt: new Date().toISOString(),
+        attempts: 1
       }
       
       if (passed) {
-        student.progress[test.courseId].overallProgress = 100
-        student.progress[test.courseId].aiInterviewUnlocked = true
+        student.progress[course.id].overallProgress = 90 // 90% after course test, 100% after AI interview
+        student.progress[course.id].aiInterviewUnlocked = true
       }
     }
     
@@ -755,7 +1306,6 @@ export const mockAPI = {
   // AI Interview Integration
   startAIInterview: async (studentId, courseId) => {
     await mockAPI.delay(2000)
-    // Simulate AI interview session start
     return {
       sessionId: `ai-session-${Date.now()}`,
       studentId,
@@ -768,7 +1318,6 @@ export const mockAPI = {
 
   completeAIInterview: async (sessionId, responses) => {
     await mockAPI.delay(3000)
-    // Simulate AI interview completion and scoring
     const overallScore = Math.floor(Math.random() * 20) + 80 // 80-100
     const technicalScore = Math.floor(Math.random() * 25) + 75
     const communicationScore = Math.floor(Math.random() * 30) + 70
@@ -788,122 +1337,7 @@ export const mockAPI = {
       certificateEligible: overallScore >= 70
     }
     
-    mockData.aiInterviewResults.push(result)
     return result
-  },
-
-  // Admin Functions
-  createUser: async (userData) => {
-    await mockAPI.delay(800)
-    const newUser = {
-      id: String(mockData.users.length + 1),
-      ...userData,
-      isActive: true,
-      isVerified: false,
-      joinedDate: new Date().toISOString(),
-      lastLogin: null,
-      progress: {}
-    }
-    mockData.users.push(newUser)
-    return newUser
-  },
-
-  updateUserPermissions: async (userId, permissions) => {
-    await mockAPI.delay(500)
-    const user = mockData.users.find(u => u.id === userId)
-    if (user) {
-      user.permissions = { ...user.permissions, ...permissions }
-      return user
-    }
-    throw new Error('User not found')
-  },
-
-  assignStudentToInstructor: async (studentId, instructorId) => {
-    await mockAPI.delay(500)
-    const student = mockData.users.find(u => u.id === studentId)
-    const instructor = mockData.users.find(u => u.id === instructorId)
-    
-    if (student && instructor) {
-      student.instructorId = instructorId
-      if (!instructor.students.includes(studentId)) {
-        instructor.students.push(studentId)
-      }
-      return { student, instructor }
-    }
-    throw new Error('User not found')
-  },
-
-  assignCourseToStudent: async (studentId, courseId) => {
-    await mockAPI.delay(500)
-    const student = mockData.users.find(u => u.id === studentId)
-    if (student) {
-      if (!student.assignedCourses.includes(courseId)) {
-        student.assignedCourses.push(courseId)
-      }
-      return student
-    }
-    throw new Error('Student not found')
-  },
-
-  // Course Management
-  createCourse: async (courseData) => {
-    await mockAPI.delay(1200)
-    const newCourse = {
-      id: String(mockData.courses.length + 1),
-      ...courseData,
-      totalModules: 0,
-      totalChapters: 0,
-      enrolledStudents: [],
-      status: 'draft',
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    }
-    mockData.courses.push(newCourse)
-    return newCourse
-  },
-
-  createModule: async (moduleData) => {
-    await mockAPI.delay(800)
-    const newModule = {
-      id: String(mockData.modules.length + 1),
-      ...moduleData,
-      totalChapters: 0,
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    }
-    mockData.modules.push(newModule)
-    return newModule
-  },
-
-  createChapter: async (chapterData) => {
-    await mockAPI.delay(600)
-    const newChapter = {
-      id: `${chapterData.moduleId}-${mockData.chapters.filter(c => c.moduleId === chapterData.moduleId).length + 1}`,
-      ...chapterData,
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    }
-    mockData.chapters.push(newChapter)
-    return newChapter
-  },
-
-  // Analytics
-  getSystemAnalytics: async () => {
-    await mockAPI.delay(1000)
-    return mockData.analytics.systemOverview
-  },
-
-  getInstructorAnalytics: async (instructorId) => {
-    await mockAPI.delay(800)
-    return mockData.analytics.instructorAnalytics[instructorId] || {}
-  },
-
-  getStudentAnalytics: async (studentId) => {
-    await mockAPI.delay(600)
-    return mockData.analytics.studentAnalytics[studentId] || {}
   },
 
   // Utility functions
@@ -951,5 +1385,38 @@ export const mockAPI = {
     if (!studentProgress) return false
     
     return studentProgress.courseTestResult?.passed === true
+  },
+
+  // Bulk operations for admin
+  bulkUpdateUsers: async (userIds, updates) => {
+    await mockAPI.delay(1200)
+    const updatedUsers = []
+    userIds.forEach(userId => {
+      const user = mockData.users.find(u => u.id === userId)
+      if (user) {
+        Object.assign(user, updates, { updatedAt: new Date().toISOString() })
+        updatedUsers.push(user)
+      }
+    })
+    return updatedUsers
+  },
+
+  deleteUser: async (userId) => {
+    await mockAPI.delay(600)
+    const userIndex = mockData.users.findIndex(u => u.id === userId)
+    if (userIndex !== -1) {
+      const user = mockData.users[userIndex]
+      
+      // Update college stats
+      const college = mockData.colleges.find(c => c.id === user.collegeId)
+      if (college) {
+        if (user.role === 'student') college.totalStudents--
+        if (user.role === 'instructor') college.totalInstructors--
+      }
+      
+      mockData.users.splice(userIndex, 1)
+      return true
+    }
+    throw new Error('User not found')
   }
 }
