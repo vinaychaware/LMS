@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { Menu, X, User, BookOpen, GraduationCap, Settings, LogOut } from 'lucide-react'
+import { Menu, X, User, BookOpen, GraduationCap, Settings, LogOut, Shield } from 'lucide-react'
 import useAuthStore from '../../store/useAuthStore'
 import Button from '../ui/Button'
 
@@ -18,6 +18,8 @@ const Navbar = () => {
 
   const getRoleIcon = () => {
     switch (userRole) {
+      case 'superadmin':
+        return <Shield size={20} />
       case 'student':
         return <GraduationCap size={20} />
       case 'instructor':
@@ -31,6 +33,8 @@ const Navbar = () => {
 
   const getRoleLabel = () => {
     switch (userRole) {
+      case 'superadmin':
+        return 'Super Admin'
       case 'student':
         return 'Student'
       case 'instructor':
@@ -60,7 +64,29 @@ const Navbar = () => {
           <div className="hidden md:flex items-center space-x-8">
             {isAuthenticated ? (
               <>
-                {userRole === 'instructor' ? (
+                {userRole === 'superadmin' ? (
+                  <Link
+                    to="/superadmin"
+                    className={`text-sm font-medium transition-colors ${
+                      isActive('/superadmin') 
+                        ? 'text-primary-600' 
+                        : 'text-gray-700 hover:text-primary-600'
+                    }`}
+                  >
+                    Super Admin Dashboard
+                  </Link>
+                ) : userRole === 'admin' ? (
+                  <Link
+                    to="/admin"
+                    className={`text-sm font-medium transition-colors ${
+                      isActive('/admin') 
+                        ? 'text-primary-600' 
+                        : 'text-gray-700 hover:text-primary-600'
+                    }`}
+                  >
+                    Admin Dashboard
+                  </Link>
+                ) : userRole === 'instructor' ? (
                   <Link
                     to="/instructor"
                     className={`text-sm font-medium transition-colors ${
@@ -93,16 +119,16 @@ const Navbar = () => {
                 >
                   Courses
                 </Link>
-                {userRole === 'admin' && (
+                {(userRole === 'admin' || userRole === 'superadmin') && (
                   <Link
-                    to="/admin"
+                    to={userRole === 'superadmin' ? '/superadmin' : '/admin'}
                     className={`text-sm font-medium transition-colors ${
-                      isActive('/admin') 
+                      isActive(userRole === 'superadmin' ? '/superadmin' : '/admin') 
                         ? 'text-primary-600' 
                         : 'text-gray-700 hover:text-primary-600'
                     }`}
                   >
-                    Admin Panel
+                    {userRole === 'superadmin' ? 'Super Admin' : 'Admin'} Panel
                   </Link>
                 )}
               </>
@@ -178,7 +204,31 @@ const Navbar = () => {
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t border-gray-200">
             {isAuthenticated ? (
               <>
-                {userRole === 'instructor' ? (
+                {userRole === 'superadmin' ? (
+                  <Link
+                    to="/superadmin"
+                    className={`block px-3 py-2 rounded-md text-base font-medium ${
+                      isActive('/superadmin')
+                        ? 'text-primary-600 bg-primary-50'
+                        : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
+                    }`}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Super Admin Dashboard
+                  </Link>
+                ) : userRole === 'admin' ? (
+                  <Link
+                    to="/admin"
+                    className={`block px-3 py-2 rounded-md text-base font-medium ${
+                      isActive('/admin')
+                        ? 'text-primary-600 bg-primary-50'
+                        : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
+                    }`}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Admin Dashboard
+                  </Link>
+                ) : userRole === 'instructor' ? (
                   <Link
                     to="/instructor"
                     className={`block px-3 py-2 rounded-md text-base font-medium ${
@@ -214,17 +264,17 @@ const Navbar = () => {
                 >
                   Courses
                 </Link>
-                {userRole === 'admin' && (
+                {(userRole === 'admin' || userRole === 'superadmin') && (
                   <Link
-                    to="/admin"
+                    to={userRole === 'superadmin' ? '/superadmin' : '/admin'}
                     className={`block px-3 py-2 rounded-md text-base font-medium ${
-                      isActive('/admin')
+                      isActive(userRole === 'superadmin' ? '/superadmin' : '/admin')
                         ? 'text-primary-600 bg-primary-50'
                         : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
                     }`}
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
-                    Admin Panel
+                    {userRole === 'superadmin' ? 'Super Admin' : 'Admin'} Panel
                   </Link>
                 )}
                 <div className="border-t border-gray-200 pt-4 mt-4">
