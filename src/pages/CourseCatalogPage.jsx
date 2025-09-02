@@ -1,23 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { 
-  Search, 
-  Filter, 
-  Star, 
-  Clock, 
-  Users, 
-  BookOpen, 
-  Play,
-  Award,
-  TrendingUp,
-  Heart,
-  Share2,
-  ChevronRight,
-  Grid3X3,
-  List,
-  SlidersHorizontal,
-  X
-} from 'lucide-react'
+import { Search, Filter, Star, Clock, Users, BookOpen, Play, Award, TrendingUp, Heart, Share2, ChevronRight, Grid as Grid3X3, List, SlidersHorizontal, X } from 'lucide-react'
 import { courseAPI } from '../services/api'
 import { mockData } from '../services/mockData'
 import useAuthStore from '../store/useAuthStore'
