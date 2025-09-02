@@ -897,8 +897,10 @@ const SuperAdminDashboardPage = () => {
                         <div key={college.id} className="p-4 border border-gray-200 rounded-lg">
                           <div className="flex items-center justify-between mb-3">
                             <h4 className="font-medium text-gray-900">{college.name}</h4>
+                            <div className="flex items-center space-x-2">
                               <Badge variant="info" size="sm">{college.code}</Badge>
                               <img src={college.logo} alt={college.name} className="w-8 h-8 rounded object-cover" />
+                            </div>
                             <Badge variant="info" size="sm">${breakdown?.revenue || 0}</Badge>
                           </div>
                           
@@ -1211,80 +1213,6 @@ const CollegeForm = ({ college, onSubmit, onCancel }) => {
   )
 }
 
-// User Details Component
-const UserDetailsView = ({ user, college, onClose }) => {
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center space-x-4">
-        <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-100">
-          <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
-        </div>
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900">{user.name}</h3>
-          <p className="text-gray-600">{user.email}</p>
-          <div className="flex items-center space-x-2 mt-2">
-            <Badge variant={
-              user.role === 'admin' ? 'danger' : 
-              user.role === 'instructor' ? 'warning' : 'info'
-            }>
-              {user.role}
-            </Badge>
-            <Badge variant={user.isActive ? 'success' : 'secondary'}>
-              {user.isActive ? 'Active' : 'Inactive'}
-            </Badge>
-            {user.isVerified && (
-              <Badge variant="success" size="sm">Verified</Badge>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="text-sm font-medium text-gray-600">College</label>
-          <p className="text-gray-900">{college?.name || 'N/A'}</p>
-        </div>
-        <div>
-          <label className="text-sm font-medium text-gray-600">Joined Date</label>
-          <p className="text-gray-900">{new Date(user.joinedDate).toLocaleDateString()}</p>
-        </div>
-        <div>
-          <label className="text-sm font-medium text-gray-600">Last Login</label>
-          <p className="text-gray-900">
-            {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'Never'}
-          </p>
-        </div>
-        <div>
-          <label className="text-sm font-medium text-gray-600">Assigned Courses</label>
-          <p className="text-gray-900">{user.assignedCourses?.length || 0}</p>
-        </div>
-      </div>
-
-      {user.role === 'instructor' && (
-        <div>
-          <label className="text-sm font-medium text-gray-600 mb-2 block">Permissions</label>
-          <div className="grid grid-cols-2 gap-2">
-            {Object.entries(user.permissions || {}).map(([key, value]) => (
-              <div key={key} className="flex items-center space-x-2">
-                <CheckCircle size={14} className={value ? 'text-green-500' : 'text-gray-300'} />
-                <span className="text-sm text-gray-700">{key.replace(/([A-Z])/g, ' $1').toLowerCase()}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div className="flex justify-end space-x-3">
-        <Button variant="outline" onClick={onClose}>Close</Button>
-        <Button onClick={() => toast('User editing coming soon!')}>
-          <Edit size={16} className="mr-2" />
-          Edit User
-        </Button>
-      </div>
-    </div>
-  )
-}
-
 // System Health Component
 const SystemHealthView = ({ analytics, onRefresh }) => {
   const [refreshing, setRefreshing] = useState(false)
@@ -1321,5 +1249,16 @@ const SystemHealthView = ({ analytics, onRefresh }) => {
           <Activity size={32} className="mx-auto text-blue-600 mb-2" />
           <div className="text-lg font-bold text-blue-600">{analytics?.overview.systemUptime}</div>
           <div className="text-sm text-blue-800">Uptime</div>
+        </div>
+        
+        <div className="text-center p-4 bg-purple-50 rounded-lg">
+          <Server size={32} className="mx-auto text-purple-600 mb-2" />
+          <div className="text-lg font-bold text-purple-600">Healthy</div>
+          <div className="text-sm text-purple-800">Server Status</div>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default SuperAdminDashboardPage
