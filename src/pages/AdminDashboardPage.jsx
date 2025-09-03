@@ -37,7 +37,7 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState(null);
   const [showUserModal, setShowUserModal] = useState(false);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('overview'); // This state will now control the Tabs
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState('all');
 
@@ -133,7 +133,7 @@ export default function AdminDashboardPage() {
     totalStudents: students.length,
     activeUsers: users.filter(user => user.isActive).length,
     publishedCourses: courses.filter(course => course.status === 'published').length,
-    totalRevenue: courses.reduce((sum, course) => sum + (course.price * course.enrolledStudents.length), 0)
+    // totalRevenue: courses.reduce((sum, course) => sum + (course.price * course.enrolledStudents.length), 0)
   };
 
   return (
@@ -153,9 +153,12 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* Stats Overview */}
+        {/* Stats Overview - ADDED onClick handlers and styling */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="p-6">
+          <Card 
+            className="p-6 cursor-pointer hover:shadow-lg hover:border-blue-500 border border-transparent transition-all"
+            onClick={() => setActiveTab('students')}
+          >
             <div className="flex items-center">
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                 <Users size={24} className="text-blue-600" />
@@ -168,7 +171,10 @@ export default function AdminDashboardPage() {
             </div>
           </Card>
 
-          <Card className="p-6">
+          <Card 
+            className="p-6 cursor-pointer hover:shadow-lg hover:border-green-500 border border-transparent transition-all"
+            onClick={() => setActiveTab('courses')}
+          >
             <div className="flex items-center">
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
                 <BookOpen size={24} className="text-green-600" />
@@ -181,7 +187,10 @@ export default function AdminDashboardPage() {
             </div>
           </Card>
 
-          <Card className="p-6">
+          <Card 
+            className="p-6 cursor-pointer hover:shadow-lg hover:border-purple-500 border border-transparent transition-all"
+            onClick={() => setActiveTab('instructors')}
+          >
             <div className="flex items-center">
               <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
                 <Award size={24} className="text-purple-600" />
@@ -194,7 +203,10 @@ export default function AdminDashboardPage() {
             </div>
           </Card>
 
-          <Card className="p-6">
+          {/* <Card 
+            className="p-6 cursor-pointer hover:shadow-lg hover:border-yellow-500 border border-transparent transition-all"
+            onClick={() => setActiveTab('overview')}
+          >
             <div className="flex items-center">
               <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
                 <DollarSign size={24} className="text-yellow-600" />
@@ -205,11 +217,11 @@ export default function AdminDashboardPage() {
                 <p className="text-xs text-gray-500">Total earnings</p>
               </div>
             </div>
-          </Card>
+          </Card> */}
         </div>
 
-        {/* Tabs */}
-        <Tabs defaultValue="overview">
+        {/* Tabs - ADDED value and onValueChange to make component controlled */}
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
           <Tabs.List className="mb-6">
             <Tabs.Trigger value="overview">Overview</Tabs.Trigger>
             <Tabs.Trigger value="instructors">Instructors</Tabs.Trigger>
