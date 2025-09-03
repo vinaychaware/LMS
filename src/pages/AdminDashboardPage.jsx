@@ -205,7 +205,7 @@ export default function AdminDashboardPage() {
                 <p className="text-xs text-gray-500">Total earnings</p>
               </div>
             </div>
-          </Card> */}
+          </Card> */
         </div>
 
         {/* Tabs */}
