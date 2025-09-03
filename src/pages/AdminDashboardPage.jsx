@@ -155,10 +155,7 @@ export default function AdminDashboardPage() {
 
         {/* Stats Overview - ADDED onClick handlers and styling */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card 
-            className="p-6 cursor-pointer hover:shadow-lg hover:border-blue-500 border border-transparent transition-all"
-            onClick={() => setActiveTab('students')}
-          >
+          <Card className="p-6">
             <div className="flex items-center">
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                 <Users size={24} className="text-blue-600" />
@@ -171,10 +168,7 @@ export default function AdminDashboardPage() {
             </div>
           </Card>
 
-          <Card 
-            className="p-6 cursor-pointer hover:shadow-lg hover:border-green-500 border border-transparent transition-all"
-            onClick={() => setActiveTab('courses')}
-          >
+          <Card className="p-6">
             <div className="flex items-center">
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
                 <BookOpen size={24} className="text-green-600" />
@@ -187,10 +181,7 @@ export default function AdminDashboardPage() {
             </div>
           </Card>
 
-          <Card 
-            className="p-6 cursor-pointer hover:shadow-lg hover:border-purple-500 border border-transparent transition-all"
-            onClick={() => setActiveTab('instructors')}
-          >
+          <Card className="p-6">
             <div className="flex items-center">
               <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
                 <Award size={24} className="text-purple-600" />
@@ -203,10 +194,7 @@ export default function AdminDashboardPage() {
             </div>
           </Card>
 
-          {/* <Card 
-            className="p-6 cursor-pointer hover:shadow-lg hover:border-yellow-500 border border-transparent transition-all"
-            onClick={() => setActiveTab('overview')}
-          >
+          <Card className="p-6">
             <div className="flex items-center">
               <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
                 <DollarSign size={24} className="text-yellow-600" />
@@ -220,8 +208,8 @@ export default function AdminDashboardPage() {
           </Card> */}
         </div>
 
-        {/* Tabs - ADDED value and onValueChange to make component controlled */}
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        {/* Tabs */}
+        <Tabs defaultValue="overview">
           <Tabs.List className="mb-6">
             <Tabs.Trigger value="overview">Overview</Tabs.Trigger>
             <Tabs.Trigger value="instructors">Instructors</Tabs.Trigger>

@@ -1,8 +1,11 @@
 import React, { useState } from 'react'
 import { cn } from '../../utils/cn'
 
-const Tabs = ({ children, defaultValue, className = '' }) => {
-  const [activeTab, setActiveTab] = useState(defaultValue)
+const Tabs = ({ children, defaultValue, value, onValueChange, className = '' }) => {
+  const [internalActiveTab, setInternalActiveTab] = useState(defaultValue)
+  
+  const activeTab = value !== undefined ? value : internalActiveTab
+  const setActiveTab = onValueChange || setInternalActiveTab
 
   return (
     <div className={cn('w-full', className)}>
