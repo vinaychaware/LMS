@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react'
-import { 
-  Building2, 
-  Users, 
-  Shield, 
+import {
+  Building2,
+  Users,
+  Shield,
   GraduationCap,
   TrendingUp,
   Activity,
@@ -49,6 +49,7 @@ const SuperAdminDashboardPage = () => {
   const [admins, setAdmins] = useState([])
   const [instructors, setInstructors] = useState([])
   const [students, setStudents] = useState([])
+  const [courses, setCourses] = useState([]) // FIX 1: Added courses state
   const [systemAnalytics, setSystemAnalytics] = useState(null)
   const [loading, setLoading] = useState(true)
   const [selectedCollege, setSelectedCollege] = useState(null)
@@ -69,18 +70,21 @@ const SuperAdminDashboardPage = () => {
   const fetchSuperAdminData = async () => {
     try {
       setLoading(true)
-      const [collegesData, adminsData, instructorsData, studentsData, analyticsData] = await Promise.all([
+      // FIX 1: Added mockAPI.getAllCourses() to the data fetching
+      const [collegesData, adminsData, instructorsData, studentsData, coursesData, analyticsData] = await Promise.all([
         mockAPI.getAllColleges(),
         mockAPI.getAllAdmins(),
         mockAPI.getAllInstructors(),
         mockAPI.getAllStudents(),
+        mockAPI.getAllCourses(),
         mockAPI.getSystemAnalytics()
       ])
-      
+
       setColleges(collegesData)
       setAdmins(adminsData)
       setInstructors(instructorsData)
       setStudents(studentsData)
+      setCourses(coursesData) // FIX 1: Set the courses state
       setSystemAnalytics(analyticsData)
     } catch (error) {
       console.error('Error fetching super admin data:', error)
@@ -89,6 +93,8 @@ const SuperAdminDashboardPage = () => {
       setLoading(false)
     }
   }
+
+  // ... (handleCollegeAction, handleUserAction, handleBulkAction, createCollege, updateCollege functions remain the same) ...
 
   const handleCollegeAction = async (collegeId, action) => {
     try {
@@ -224,28 +230,23 @@ const SuperAdminDashboardPage = () => {
 
   const getFilteredUsers = () => {
     let users = getAllUsers()
-    
+
     if (searchTerm) {
-      users = users.filter(user => 
+      users = users.filter(user =>
         user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.email.toLowerCase().includes(searchTerm.toLowerCase())
       )
     }
-    
+
     if (filterRole !== 'all') {
       users = users.filter(user => user.role === filterRole)
     }
-    
+
     if (filterCollege !== 'all') {
       users = users.filter(user => user.collegeId === filterCollege)
     }
-    
-    return users
-  }
 
-  const formatUptime = (percentage) => {
-    const days = Math.floor(percentage * 365 / 100)
-    return `${days} days (${percentage}%)`
+    return users
   }
 
   if (loading) {
@@ -275,14 +276,14 @@ const SuperAdminDashboardPage = () => {
               </div>
             </div>
             <div className="flex space-x-2">
-              <Button 
+              <Button
                 variant="outline"
                 onClick={() => setShowSystemModal(true)}
               >
                 <Server size={16} className="mr-2" />
                 System Health
               </Button>
-              <Button 
+              <Button
                 onClick={() => {
                   setSelectedCollege(null)
                   setShowCollegeModal(true)
@@ -304,7 +305,8 @@ const SuperAdminDashboardPage = () => {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Colleges</p>
-                <p className="text-2xl font-bold text-gray-900">{systemAnalytics?.overview.totalColleges}</p>
+                {/* FIX 2: Added full optional chaining and fallback values */}
+                <p className="text-2xl font-bold text-gray-900">{systemAnalytics?.overview?.totalColleges || 0}</p>
                 <p className="text-xs text-gray-500">Active institutions</p>
               </div>
             </div>
@@ -318,11 +320,12 @@ const SuperAdminDashboardPage = () => {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Users</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {(systemAnalytics?.overview.totalAdmins || 0) + 
-                   (systemAnalytics?.overview.totalInstructors || 0) + 
-                   (systemAnalytics?.overview.totalStudents || 0)}
+                  {/* FIX 2: Added full optional chaining and fallback values */}
+                  {(systemAnalytics?.overview?.totalAdmins || 0) +
+                   (systemAnalytics?.overview?.totalInstructors || 0) +
+                   (systemAnalytics?.overview?.totalStudents || 0)}
                 </p>
-                <p className="text-xs text-gray-500">{systemAnalytics?.overview.activeUsers} active</p>
+                <p className="text-xs text-gray-500">{systemAnalytics?.overview?.activeUsers || 0} active</p>
               </div>
             </div>
           </Card>
@@ -334,8 +337,9 @@ const SuperAdminDashboardPage = () => {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Courses</p>
-                <p className="text-2xl font-bold text-gray-900">{systemAnalytics?.overview.totalCourses}</p>
-                <p className="text-xs text-gray-500">{systemAnalytics?.overview.totalModules} modules</p>
+                {/* FIX 2: Added full optional chaining and fallback values */}
+                <p className="text-2xl font-bold text-gray-900">{systemAnalytics?.overview?.totalCourses || 0}</p>
+                <p className="text-xs text-gray-500">{systemAnalytics?.overview?.totalModules || 0} modules</p>
               </div>
             </div>
           </Card>
@@ -347,7 +351,8 @@ const SuperAdminDashboardPage = () => {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">System Health</p>
-                <p className="text-2xl font-bold text-gray-900">{systemAnalytics?.overview.systemUptime}</p>
+                {/* FIX 2: Added full optional chaining and fallback values */}
+                <p className="text-2xl font-bold text-gray-900">{systemAnalytics?.overview?.systemUptime || 'N/A'}</p>
                 <p className="text-xs text-gray-500">Uptime</p>
               </div>
             </div>
@@ -424,41 +429,46 @@ const SuperAdminDashboardPage = () => {
                           <Cpu size={16} className="text-blue-500" />
                           <span className="text-sm font-medium text-gray-700">CPU Usage</span>
                         </div>
-                        <span className="text-sm text-gray-900">{systemAnalytics?.performanceMetrics.cpuUsage}%</span>
+                        {/* FIX 2: Added full optional chaining and fallback values */}
+                        <span className="text-sm text-gray-900">{systemAnalytics?.performanceMetrics?.cpuUsage || 0}%</span>
                       </div>
-                      <Progress value={systemAnalytics?.performanceMetrics.cpuUsage} size="sm" />
+                      <Progress value={systemAnalytics?.performanceMetrics?.cpuUsage || 0} size="sm" />
                     </div>
-                    
+
                     <div>
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center space-x-2">
                           <Database size={16} className="text-green-500" />
                           <span className="text-sm font-medium text-gray-700">Memory Usage</span>
                         </div>
-                        <span className="text-sm text-gray-900">{systemAnalytics?.performanceMetrics.memoryUsage}%</span>
+                        {/* FIX 2: Added full optional chaining and fallback values */}
+                        <span className="text-sm text-gray-900">{systemAnalytics?.performanceMetrics?.memoryUsage || 0}%</span>
                       </div>
-                      <Progress value={systemAnalytics?.performanceMetrics.memoryUsage} size="sm" variant="accent" />
+                      <Progress value={systemAnalytics?.performanceMetrics?.memoryUsage || 0} size="sm" variant="accent" />
                     </div>
-                    
+
                     <div>
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center space-x-2">
                           <HardDrive size={16} className="text-purple-500" />
                           <span className="text-sm font-medium text-gray-700">Disk Usage</span>
                         </div>
-                        <span className="text-sm text-gray-900">{systemAnalytics?.performanceMetrics.diskUsage}%</span>
+                        {/* FIX 2: Added full optional chaining and fallback values */}
+                        <span className="text-sm text-gray-900">{systemAnalytics?.performanceMetrics?.diskUsage || 0}%</span>
                       </div>
-                      <Progress value={systemAnalytics?.performanceMetrics.diskUsage} size="sm" variant="secondary" />
+                      <Progress value={systemAnalytics?.performanceMetrics?.diskUsage || 0} size="sm" variant="secondary" />
                     </div>
-                    
+
                     <div className="pt-2 border-t border-gray-200">
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div className="text-center">
-                          <div className="font-medium text-gray-900">{systemAnalytics?.performanceMetrics.responseTime}ms</div>
+                          {/* FIX 2: Added full optional chaining and fallback values */}
+                          <div className="font-medium text-gray-900">{systemAnalytics?.performanceMetrics?.responseTime || 0}ms</div>
                           <div className="text-gray-500">Avg Response</div>
                         </div>
                         <div className="text-center">
-                          <div className="font-medium text-gray-900">{systemAnalytics?.performanceMetrics.errorRate}%</div>
+                          {/* FIX 2: Added full optional chaining and fallback values */}
+                          <div className="font-medium text-gray-900">{systemAnalytics?.performanceMetrics?.errorRate || 0}%</div>
                           <div className="text-gray-500">Error Rate</div>
                         </div>
                       </div>
@@ -469,7 +479,7 @@ const SuperAdminDashboardPage = () => {
             </div>
           </Tabs.Content>
 
-          {/* Colleges Tab */}
+          {/* ... (Colleges Tab remains the same) ... */}
           <Tabs.Content value="colleges">
             <Card>
               <Card.Header className="flex items-center justify-between">
@@ -586,7 +596,8 @@ const SuperAdminDashboardPage = () => {
               </Card.Content>
             </Card>
           </Tabs.Content>
-
+          
+          {/* ... (Users Tab and Analytics tab now work because `courses` is defined) ... */}
           {/* Users Tab */}
           <Tabs.Content value="users">
             <Card>
@@ -940,7 +951,8 @@ const SuperAdminDashboardPage = () => {
                   <div className="space-y-4">
                     <div className="text-center p-6 bg-green-50 rounded-lg">
                       <div className="text-3xl font-bold text-green-600 mb-2">
-                        ${systemAnalytics?.overview.totalRevenue?.toLocaleString()}
+                        {/* FIX 2: Added full optional chaining and fallback values */}
+                        ${(systemAnalytics?.overview?.totalRevenue || 0).toLocaleString()}
                       </div>
                       <div className="text-sm text-green-800">Total Revenue</div>
                     </div>
@@ -948,7 +960,7 @@ const SuperAdminDashboardPage = () => {
                     <div className="space-y-3">
                       {colleges.map(college => {
                         const breakdown = systemAnalytics?.collegeBreakdown[college.id]
-                        const percentage = breakdown?.revenue ? 
+                        const percentage = breakdown?.revenue && systemAnalytics?.overview?.totalRevenue ? 
                           (breakdown.revenue / systemAnalytics.overview.totalRevenue) * 100 : 0
                         
                         return (
@@ -980,10 +992,10 @@ const SuperAdminDashboardPage = () => {
         title={selectedCollege ? 'Edit College' : 'Add New College'}
         size="lg"
       >
-        <CollegeForm 
+        <CollegeForm
           college={selectedCollege}
-          onSubmit={selectedCollege ? 
-            (data) => updateCollege(selectedCollege.id, data) : 
+          onSubmit={selectedCollege ?
+            (data) => updateCollege(selectedCollege.id, data) :
             createCollege
           }
           onCancel={() => {
@@ -1004,9 +1016,10 @@ const SuperAdminDashboardPage = () => {
         size="lg"
       >
         {selectedUser && (
-          <UserDetailsView 
+          <UserDetailsView
             user={selectedUser}
             college={colleges.find(c => c.id === selectedUser.collegeId)}
+            courses={courses} // FIX 3: Passed the courses prop
             onClose={() => {
               setShowUserModal(false)
               setSelectedUser(null)
@@ -1022,7 +1035,7 @@ const SuperAdminDashboardPage = () => {
         title="System Health & Performance"
         size="xl"
       >
-        <SystemHealthView 
+        <SystemHealthView
           analytics={systemAnalytics}
           onRefresh={fetchSuperAdminData}
         />
@@ -1031,8 +1044,11 @@ const SuperAdminDashboardPage = () => {
   )
 }
 
+// ... (The sub-components UserDetailsView, CollegeForm, and SystemHealthView remain the same as they were correct) ...
+
 // User Details Component
 const UserDetailsView = ({ user, college, courses, onClose }) => {
+  // Now receives 'courses' correctly
   const userCourses = user.role === 'instructor' 
     ? courses.filter(c => c.assignedInstructors.includes(user.id))
     : user.role === 'student' 
@@ -1247,7 +1263,7 @@ const SystemHealthView = ({ analytics, onRefresh }) => {
         
         <div className="text-center p-4 bg-blue-50 rounded-lg">
           <Activity size={32} className="mx-auto text-blue-600 mb-2" />
-          <div className="text-lg font-bold text-blue-600">{analytics?.overview.systemUptime}</div>
+          <div className="text-lg font-bold text-blue-600">{analytics?.overview?.systemUptime || 'N/A'}</div>
           <div className="text-sm text-blue-800">Uptime</div>
         </div>
         
@@ -1260,5 +1276,6 @@ const SystemHealthView = ({ analytics, onRefresh }) => {
     </div>
   )
 }
+
 
 export default SuperAdminDashboardPage

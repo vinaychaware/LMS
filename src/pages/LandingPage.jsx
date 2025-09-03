@@ -8,24 +8,24 @@ const LandingPage = () => {
     {
       icon: <BookOpen size={24} />,
       title: 'Comprehensive Learning',
-      description: 'Access a wide range of courses designed by expert instructors'
+      description: ' Acquire industry-aligned skills through our expertly curated courses and earn certifications that showcase your professional readiness.'
     },
     {
       icon: <Users size={24} />,
-      title: 'Interactive Community',
-      description: 'Connect with fellow learners and instructors in a collaborative environment'
+      title: 'Take the Assessment',
+      description: ' Demonstrate your mastery with a placement-style final test, designed to evaluate your competencies and ensure you’re career-ready.'
     },
     {
       icon: <Award size={24} />,
-      title: 'Certified Progress',
-      description: 'Track your learning journey with certificates and achievements'
+      title: 'Take the Assessment',
+      description: 'Excel in AI-driven mock interviews with three attempts per course, receive personalized feedback, and confidently prepare for real-world opportunities.'
     }
   ]
 
   const stats = [
-    { number: '10,000+', label: 'Active Students' },
-    { number: '500+', label: 'Expert Instructors' },
-    { number: '1,000+', label: 'Quality Courses' },
+    { number: '100+', label: 'Industry-Relevant Courses' },
+    { number: '50+', label: 'Global Industry Partners' },
+    { number: '70+', label: 'Partner Colleges Across India' },
     { number: '95%', label: 'Satisfaction Rate' }
   ]
 
@@ -36,13 +36,12 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16">
           <div className="text-center">
             <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
-              Transform Your Learning
-              <span className="text-primary-600 block">With EduSphere</span>
+              Learn Achieve Shine.
+
+              <span className="text-primary-600 block">With Pugarch</span>
             </h1>
             <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-              Experience the future of education with our comprehensive Learning Management System. 
-              Whether you're a student, instructor, or administrator, EduSphere provides the tools 
-              you need to succeed.
+              “One platform to simplify teaching and supercharge learning with PugArch.”
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/courses">
@@ -71,11 +70,12 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Why Choose EduSphere?
+              Build Career-Ready Skills with Industry-Aligned Courses & AI Interview Prep
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Our platform combines cutting-edge technology with proven educational methodologies 
-              to deliver an exceptional learning experience.
+Our platform equips students with the skills they need to succeed. Through industry-ready courses and certifications, learners gain practical expertise that employers value. AI-driven interview practice builds confidence and prepares students for real-world opportunities. With anytime, anywhere access, students can learn and grow at their own pace, while colleges empower their campus to deliver career-ready graduates.
+
+
             </p>
           </div>
           
@@ -122,7 +122,7 @@ const LandingPage = () => {
             Ready to Start Learning?
           </h2>
           <p className="text-xl text-gray-600 mb-8">
-            Join thousands of learners who have already transformed their skills with EduSphere.
+            Join thousands of learners who have already transformed their skills with Pugarch.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/register">
@@ -184,7 +184,7 @@ const LandingPage = () => {
           </div>
           
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 EduSphere. All rights reserved.</p>
+            <p>&copy; 2025 PugArch. All rights reserved.</p>
           </div>
         </div>
       </footer>
