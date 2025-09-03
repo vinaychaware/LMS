@@ -1,11 +1,24 @@
 import React, { useState, useEffect } from 'react'
-import {
-  Building2,
-  Users,
-  Shield,
-  GraduationCap,
-  TrendingUp,
+import { Link } from 'react-router-dom'
+import { 
+  Shield, 
+  Users, 
+  Building2, 
+  BookOpen, 
+  TrendingUp, 
   Activity,
+  Plus,
+  Edit,
+  Eye,
+  Trash2,
+  Settings,
+  UserCheck,
+  UserX,
+  Search,
+  Filter,
+  Download,
+  BarChart3,
+  Globe,
   Server,
   Database,
   Cpu,
@@ -13,24 +26,17 @@ import {
   Wifi,
   AlertTriangle,
   CheckCircle,
-  Plus,
-  Edit,
-  Trash2,
-  Eye,
-  Search,
-  Filter,
-  Download,
-  Settings,
-  BarChart3,
-  Globe,
-  Mail,
-  Phone,
-  Calendar,
+  Clock,
   DollarSign,
-  BookOpen,
-  UserCheck,
-  UserX,
-  RefreshCw
+  Award,
+  Target,
+  Bell,
+  Calendar,
+  FileText,
+  ToggleLeft,
+  ToggleRight,
+  Lock,
+  Unlock
 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import { mockAPI, mockData } from '../services/mockData'
@@ -46,22 +52,27 @@ import Progress from '../components/ui/Progress'
 const SuperAdminDashboardPage = () => {
   const { user } = useAuthStore()
   const [colleges, setColleges] = useState([])
-  const [admins, setAdmins] = useState([])
-  const [instructors, setInstructors] = useState([])
-  const [students, setStudents] = useState([])
-  const [courses, setCourses] = useState([]) // FIX 1: Added courses state
+  const [allUsers, setAllUsers] = useState([])
+  const [allCourses, setAllCourses] = useState([])
   const [systemAnalytics, setSystemAnalytics] = useState(null)
   const [loading, setLoading] = useState(true)
   const [selectedCollege, setSelectedCollege] = useState(null)
   const [selectedUser, setSelectedUser] = useState(null)
   const [showCollegeModal, setShowCollegeModal] = useState(false)
   const [showUserModal, setShowUserModal] = useState(false)
+  const [showCreateCollegeModal, setShowCreateCollegeModal] = useState(false)
+  const [showPermissionModal, setShowPermissionModal] = useState(false)
   const [showSystemModal, setShowSystemModal] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [filterRole, setFilterRole] = useState('all')
   const [filterCollege, setFilterCollege] = useState('all')
-  const [selectedUsers, setSelectedUsers] = useState([])
   const [activeTab, setActiveTab] = useState('overview')
+  const [globalPermissions, setGlobalPermissions] = useState({
+    adminsCanCreateCourses: true,
+    adminsCanCreateTests: true,
+    instructorsCanCreateCourses: true,
+    instructorsCanCreateTests: true
+  })
 
   useEffect(() => {
     fetchSuperAdminData()
@@ -70,22 +81,21 @@ const SuperAdminDashboardPage = () => {
   const fetchSuperAdminData = async () => {
     try {
       setLoading(true)
-      // FIX 1: Added mockAPI.getAllCourses() to the data fetching
-      const [collegesData, adminsData, instructorsData, studentsData, coursesData, analyticsData] = await Promise.all([
+      
+      const [collegesData, usersData, analyticsData] = await Promise.all([
         mockAPI.getAllColleges(),
-        mockAPI.getAllAdmins(),
-        mockAPI.getAllInstructors(),
-        mockAPI.getAllStudents(),
-        mockAPI.getAllCourses(),
+        mockAPI.getAllStudents().then(students => [
+          ...students,
+          ...mockData.users.filter(u => ['admin', 'instructor', 'superadmin'].includes(u.role))
+        ]),
         mockAPI.getSystemAnalytics()
       ])
-
+      
       setColleges(collegesData)
-      setAdmins(adminsData)
-      setInstructors(instructorsData)
-      setStudents(studentsData)
-      setCourses(coursesData) // FIX 1: Set the courses state
+      setAllUsers(usersData)
+      setAllCourses(mockData.courses)
       setSystemAnalytics(analyticsData)
+      
     } catch (error) {
       console.error('Error fetching super admin data:', error)
       toast.error('Failed to load dashboard data')
@@ -94,111 +104,33 @@ const SuperAdminDashboardPage = () => {
     }
   }
 
-  // ... (handleCollegeAction, handleUserAction, handleBulkAction, createCollege, updateCollege functions remain the same) ...
-
-  const handleCollegeAction = async (collegeId, action) => {
+  const handlePermissionToggle = async (permission) => {
     try {
-      switch (action) {
-        case 'view':
-          const college = colleges.find(c => c.id === collegeId)
-          setSelectedCollege(college)
-          setShowCollegeModal(true)
-          break
-        case 'edit':
-          const editCollege = colleges.find(c => c.id === collegeId)
-          setSelectedCollege(editCollege)
-          setShowCollegeModal(true)
-          break
-        case 'delete':
-          if (window.confirm('Are you sure you want to delete this college? This action cannot be undone.')) {
-            await mockAPI.deleteCollege(collegeId)
-            toast.success('College deleted successfully')
-            await fetchSuperAdminData()
-          }
-          break
-        case 'deactivate':
-          await mockAPI.updateCollege(collegeId, { status: 'inactive' })
-          toast.success('College deactivated')
-          await fetchSuperAdminData()
-          break
-        case 'activate':
-          await mockAPI.updateCollege(collegeId, { status: 'active' })
-          toast.success('College activated')
-          await fetchSuperAdminData()
-          break
-        default:
-          break
+      const newPermissions = {
+        ...globalPermissions,
+        [permission]: !globalPermissions[permission]
       }
-    } catch (error) {
-      toast.error('Action failed. Please try again.')
-    }
-  }
-
-  const handleUserAction = async (userId, action) => {
-    try {
-      switch (action) {
-        case 'view':
-          const user = [...admins, ...instructors, ...students].find(u => u.id === userId)
-          setSelectedUser(user)
-          setShowUserModal(true)
-          break
-        case 'activate':
-          await mockAPI.bulkUpdateUsers([userId], { isActive: true })
-          toast.success('User activated')
-          await fetchSuperAdminData()
-          break
-        case 'deactivate':
-          await mockAPI.bulkUpdateUsers([userId], { isActive: false })
-          toast.success('User deactivated')
-          await fetchSuperAdminData()
-          break
-        case 'verify':
-          await mockAPI.bulkUpdateUsers([userId], { isVerified: true })
-          toast.success('User verified')
-          await fetchSuperAdminData()
-          break
-        case 'delete':
-          if (window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
-            await mockAPI.deleteUser(userId)
-            toast.success('User deleted successfully')
-            await fetchSuperAdminData()
-          }
-          break
-        default:
-          break
+      setGlobalPermissions(newPermissions)
+      
+      // Update all affected users
+      const affectedUsers = allUsers.filter(user => {
+        if (permission.startsWith('admins') && user.role === 'admin') return true
+        if (permission.startsWith('instructors') && user.role === 'instructor') return true
+        return false
+      })
+      
+      const permissionKey = permission.includes('Courses') ? 'canCreateCourses' : 'canCreateTests'
+      
+      for (const affectedUser of affectedUsers) {
+        await mockAPI.updateUserPermissions(affectedUser.id, {
+          [permissionKey]: newPermissions[permission]
+        })
       }
-    } catch (error) {
-      toast.error('Action failed. Please try again.')
-    }
-  }
-
-  const handleBulkAction = async (action) => {
-    if (selectedUsers.length === 0) {
-      toast.error('Please select users first')
-      return
-    }
-
-    try {
-      switch (action) {
-        case 'activate':
-          await mockAPI.bulkUpdateUsers(selectedUsers, { isActive: true })
-          toast.success(`${selectedUsers.length} users activated`)
-          break
-        case 'deactivate':
-          await mockAPI.bulkUpdateUsers(selectedUsers, { isActive: false })
-          toast.success(`${selectedUsers.length} users deactivated`)
-          break
-        case 'verify':
-          await mockAPI.bulkUpdateUsers(selectedUsers, { isVerified: true })
-          toast.success(`${selectedUsers.length} users verified`)
-          break
-        default:
-          break
-      }
-      setSelectedUsers([])
+      
+      toast.success(`Permission ${newPermissions[permission] ? 'granted' : 'revoked'} successfully`)
       await fetchSuperAdminData()
     } catch (error) {
-      toast.error('Bulk action failed')
+      toast.error('Failed to update permissions')
     }
   }
 
@@ -206,8 +138,7 @@ const SuperAdminDashboardPage = () => {
     try {
       await mockAPI.createCollege(collegeData)
       toast.success('College created successfully')
-      setShowCollegeModal(false)
-      setSelectedCollege(null)
+      setShowCreateCollegeModal(false)
       await fetchSuperAdminData()
     } catch (error) {
       toast.error('Failed to create college')
@@ -218,42 +149,96 @@ const SuperAdminDashboardPage = () => {
     try {
       await mockAPI.updateCollege(collegeId, updates)
       toast.success('College updated successfully')
-      setShowCollegeModal(false)
-      setSelectedCollege(null)
       await fetchSuperAdminData()
     } catch (error) {
       toast.error('Failed to update college')
     }
   }
 
-  const getAllUsers = () => [...admins, ...instructors, ...students]
+  const deleteCollege = async (collegeId) => {
+    if (window.confirm('Are you sure you want to delete this college? This action cannot be undone.')) {
+      try {
+        await mockAPI.deleteCollege(collegeId)
+        toast.success('College deleted successfully')
+        await fetchSuperAdminData()
+      } catch (error) {
+        toast.error('Failed to delete college')
+      }
+    }
+  }
+
+  const createUser = async (userData) => {
+    try {
+      await mockAPI.createUser(userData)
+      toast.success('User created successfully')
+      await fetchSuperAdminData()
+    } catch (error) {
+      toast.error('Failed to create user')
+    }
+  }
+
+  const updateUserStatus = async (userId, isActive) => {
+    try {
+      await mockAPI.bulkUpdateUsers([userId], { isActive })
+      toast.success(`User ${isActive ? 'activated' : 'deactivated'} successfully`)
+      await fetchSuperAdminData()
+    } catch (error) {
+      toast.error('Failed to update user status')
+    }
+  }
+
+  const deleteUser = async (userId) => {
+    if (window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+      try {
+        await mockAPI.deleteUser(userId)
+        toast.success('User deleted successfully')
+        await fetchSuperAdminData()
+      } catch (error) {
+        toast.error('Failed to delete user')
+      }
+    }
+  }
 
   const getFilteredUsers = () => {
-    let users = getAllUsers()
-
+    let filtered = allUsers.filter(u => u.role !== 'superadmin') // Don't show other super admins
+    
     if (searchTerm) {
-      users = users.filter(user =>
+      filtered = filtered.filter(user => 
         user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.email.toLowerCase().includes(searchTerm.toLowerCase())
       )
     }
-
+    
     if (filterRole !== 'all') {
-      users = users.filter(user => user.role === filterRole)
+      filtered = filtered.filter(user => user.role === filterRole)
     }
-
+    
     if (filterCollege !== 'all') {
-      users = users.filter(user => user.collegeId === filterCollege)
+      filtered = filtered.filter(user => user.collegeId === filterCollege)
     }
+    
+    return filtered
+  }
 
-    return users
+  const getCollegeStats = (collegeId) => {
+    const collegeUsers = allUsers.filter(u => u.collegeId === collegeId)
+    const collegeCourses = allCourses.filter(c => c.collegeId === collegeId)
+    
+    return {
+      totalUsers: collegeUsers.length,
+      admins: collegeUsers.filter(u => u.role === 'admin').length,
+      instructors: collegeUsers.filter(u => u.role === 'instructor').length,
+      students: collegeUsers.filter(u => u.role === 'student').length,
+      courses: collegeCourses.length,
+      activeUsers: collegeUsers.filter(u => u.isActive).length
+    }
   }
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading Super Admin dashboard...</p>
         </div>
       </div>
@@ -267,28 +252,32 @@ const SuperAdminDashboardPage = () => {
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full flex items-center justify-center">
-                <Shield size={24} className="text-white" />
+              <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                <Shield size={24} className="text-purple-600" />
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">Super Admin Dashboard</h1>
-                <p className="text-gray-600">Complete system oversight and management</p>
+                <p className="text-gray-600">
+                  System-wide management and oversight • {colleges.length} colleges, {allUsers.length} users
+                </p>
               </div>
             </div>
             <div className="flex space-x-2">
-              <Button
+              <Button 
+                variant="outline"
+                onClick={() => setShowPermissionModal(true)}
+              >
+                <Settings size={16} className="mr-2" />
+                Global Permissions
+              </Button>
+              <Button 
                 variant="outline"
                 onClick={() => setShowSystemModal(true)}
               >
                 <Server size={16} className="mr-2" />
                 System Health
               </Button>
-              <Button
-                onClick={() => {
-                  setSelectedCollege(null)
-                  setShowCollegeModal(true)
-                }}
-              >
+              <Button onClick={() => setShowCreateCollegeModal(true)}>
                 <Plus size={16} className="mr-2" />
                 Add College
               </Button>
@@ -297,22 +286,20 @@ const SuperAdminDashboardPage = () => {
         </div>
 
         {/* System Overview Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="p-6 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab('colleges')}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+          <Card className="p-6">
             <div className="flex items-center">
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                 <Building2 size={24} className="text-blue-600" />
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Colleges</p>
-                {/* FIX 2: Added full optional chaining and fallback values */}
-                <p className="text-2xl font-bold text-gray-900">{systemAnalytics?.overview?.totalColleges || 0}</p>
-                <p className="text-xs text-gray-500">Active institutions</p>
+                <p className="text-2xl font-bold text-gray-900">{systemAnalytics?.overview.totalColleges || 0}</p>
               </div>
             </div>
           </Card>
 
-          <Card className="p-6 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab('users')}>
+          <Card className="p-6">
             <div className="flex items-center">
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
                 <Users size={24} className="text-green-600" />
@@ -320,182 +307,151 @@ const SuperAdminDashboardPage = () => {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Users</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {/* FIX 2: Added full optional chaining and fallback values */}
-                  {(systemAnalytics?.overview?.totalAdmins || 0) +
-                   (systemAnalytics?.overview?.totalInstructors || 0) +
-                   (systemAnalytics?.overview?.totalStudents || 0)}
+                  {(systemAnalytics?.overview.totalAdmins || 0) + 
+                   (systemAnalytics?.overview.totalInstructors || 0) + 
+                   (systemAnalytics?.overview.totalStudents || 0)}
                 </p>
-                <p className="text-xs text-gray-500">{systemAnalytics?.overview?.activeUsers || 0} active</p>
+                <p className="text-xs text-gray-500">{systemAnalytics?.overview.activeUsers || 0} active</p>
               </div>
             </div>
           </Card>
 
-          <Card className="p-6 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab('courses')}>
+          <Card className="p-6">
             <div className="flex items-center">
               <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
                 <BookOpen size={24} className="text-purple-600" />
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Courses</p>
-                {/* FIX 2: Added full optional chaining and fallback values */}
-                <p className="text-2xl font-bold text-gray-900">{systemAnalytics?.overview?.totalCourses || 0}</p>
-                <p className="text-xs text-gray-500">{systemAnalytics?.overview?.totalModules || 0} modules</p>
+                <p className="text-2xl font-bold text-gray-900">{systemAnalytics?.overview.totalCourses || 0}</p>
+                <p className="text-xs text-gray-500">{systemAnalytics?.overview.totalModules || 0} modules</p>
               </div>
             </div>
           </Card>
 
-          <Card className="p-6 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setShowSystemModal(true)}>
+          <Card className="p-6">
             <div className="flex items-center">
               <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                <Activity size={24} className="text-yellow-600" />
+                <DollarSign size={24} className="text-yellow-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Total Revenue</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  ${(systemAnalytics?.overview.totalRevenue || 0).toLocaleString()}
+                </p>
+                <p className="text-xs text-gray-500">All colleges</p>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-6">
+            <div className="flex items-center">
+              <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                <Activity size={24} className="text-red-600" />
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">System Health</p>
-                {/* FIX 2: Added full optional chaining and fallback values */}
-                <p className="text-2xl font-bold text-gray-900">{systemAnalytics?.overview?.systemUptime || 'N/A'}</p>
+                <p className="text-2xl font-bold text-gray-900">{systemAnalytics?.overview.systemUptime || '99.9%'}</p>
                 <p className="text-xs text-gray-500">Uptime</p>
               </div>
             </div>
           </Card>
         </div>
 
-        {/* Tabs */}
+        {/* Main Content Tabs */}
         <Tabs defaultValue="overview">
           <Tabs.List className="mb-6">
-            <Tabs.Trigger value="overview">Overview</Tabs.Trigger>
+            <Tabs.Trigger value="overview">System Overview</Tabs.Trigger>
             <Tabs.Trigger value="colleges">Colleges</Tabs.Trigger>
-            <Tabs.Trigger value="users">Users</Tabs.Trigger>
-            <Tabs.Trigger value="analytics">Analytics</Tabs.Trigger>
+            <Tabs.Trigger value="users">User Management</Tabs.Trigger>
+            <Tabs.Trigger value="courses">Course Management</Tabs.Trigger>
+            <Tabs.Trigger value="permissions">Global Permissions</Tabs.Trigger>
           </Tabs.List>
 
           {/* Overview Tab */}
           <Tabs.Content value="overview">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Recent Activity */}
-              <Card>
-                <Card.Header>
-                  <Card.Title className="flex items-center">
-                    <Activity size={20} className="mr-2 text-blue-500" />
-                    Recent Activity
-                  </Card.Title>
-                </Card.Header>
-                <Card.Content>
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
-                      <CheckCircle size={16} className="text-green-600" />
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900">New college registered</p>
-                        <p className="text-xs text-gray-500">Creative Arts Institute - 2 hours ago</p>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card className="p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">College Performance</h3>
+                <div className="space-y-4">
+                  {colleges.map(college => {
+                    const stats = getCollegeStats(college.id)
+                    const performance = systemAnalytics?.collegeBreakdown?.[college.id]
+                    
+                    return (
+                      <div key={college.id} className="p-4 bg-gray-50 rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-medium text-gray-900">{college.name}</h4>
+                          <Badge variant="info" size="sm">{college.code}</Badge>
+                        </div>
+                        <div className="grid grid-cols-3 gap-4 text-sm">
+                          <div className="text-center">
+                            <div className="font-medium text-gray-900">{stats.totalUsers}</div>
+                            <div className="text-gray-500">Users</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="font-medium text-gray-900">{stats.courses}</div>
+                            <div className="text-gray-500">Courses</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="font-medium text-gray-900">
+                              ${(performance?.revenue || 0).toLocaleString()}
+                            </div>
+                            <div className="text-gray-500">Revenue</div>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
-                      <Users size={16} className="text-blue-600" />
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900">5 new students enrolled</p>
-                        <p className="text-xs text-gray-500">Across multiple colleges - 4 hours ago</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-3 p-3 bg-purple-50 rounded-lg">
-                      <BookOpen size={16} className="text-purple-600" />
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900">2 new courses published</p>
-                        <p className="text-xs text-gray-500">Tech University - 6 hours ago</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-3 p-3 bg-yellow-50 rounded-lg">
-                      <AlertTriangle size={16} className="text-yellow-600" />
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900">System maintenance scheduled</p>
-                        <p className="text-xs text-gray-500">Tomorrow 2:00 AM - 4:00 AM</p>
-                      </div>
-                    </div>
-                  </div>
-                </Card.Content>
+                    )
+                  })}
+                </div>
               </Card>
 
-              {/* System Performance */}
-              <Card>
-                <Card.Header>
-                  <Card.Title className="flex items-center">
-                    <Server size={20} className="mr-2 text-green-500" />
-                    System Performance
-                  </Card.Title>
-                </Card.Header>
-                <Card.Content>
-                  <div className="space-y-4">
+              <Card className="p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent System Activity</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
+                    <CheckCircle size={16} className="text-green-600" />
                     <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center space-x-2">
-                          <Cpu size={16} className="text-blue-500" />
-                          <span className="text-sm font-medium text-gray-700">CPU Usage</span>
-                        </div>
-                        {/* FIX 2: Added full optional chaining and fallback values */}
-                        <span className="text-sm text-gray-900">{systemAnalytics?.performanceMetrics?.cpuUsage || 0}%</span>
-                      </div>
-                      <Progress value={systemAnalytics?.performanceMetrics?.cpuUsage || 0} size="sm" />
-                    </div>
-
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center space-x-2">
-                          <Database size={16} className="text-green-500" />
-                          <span className="text-sm font-medium text-gray-700">Memory Usage</span>
-                        </div>
-                        {/* FIX 2: Added full optional chaining and fallback values */}
-                        <span className="text-sm text-gray-900">{systemAnalytics?.performanceMetrics?.memoryUsage || 0}%</span>
-                      </div>
-                      <Progress value={systemAnalytics?.performanceMetrics?.memoryUsage || 0} size="sm" variant="accent" />
-                    </div>
-
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center space-x-2">
-                          <HardDrive size={16} className="text-purple-500" />
-                          <span className="text-sm font-medium text-gray-700">Disk Usage</span>
-                        </div>
-                        {/* FIX 2: Added full optional chaining and fallback values */}
-                        <span className="text-sm text-gray-900">{systemAnalytics?.performanceMetrics?.diskUsage || 0}%</span>
-                      </div>
-                      <Progress value={systemAnalytics?.performanceMetrics?.diskUsage || 0} size="sm" variant="secondary" />
-                    </div>
-
-                    <div className="pt-2 border-t border-gray-200">
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div className="text-center">
-                          {/* FIX 2: Added full optional chaining and fallback values */}
-                          <div className="font-medium text-gray-900">{systemAnalytics?.performanceMetrics?.responseTime || 0}ms</div>
-                          <div className="text-gray-500">Avg Response</div>
-                        </div>
-                        <div className="text-center">
-                          {/* FIX 2: Added full optional chaining and fallback values */}
-                          <div className="font-medium text-gray-900">{systemAnalytics?.performanceMetrics?.errorRate || 0}%</div>
-                          <div className="text-gray-500">Error Rate</div>
-                        </div>
-                      </div>
+                      <p className="text-sm font-medium text-gray-900">New college registered</p>
+                      <p className="text-xs text-gray-500">Creative Arts Institute - 2 hours ago</p>
                     </div>
                   </div>
-                </Card.Content>
+                  <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
+                    <Users size={16} className="text-blue-600" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">Admin permissions updated</p>
+                      <p className="text-xs text-gray-500">Course creation enabled - 4 hours ago</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3 p-3 bg-purple-50 rounded-lg">
+                    <BookOpen size={16} className="text-purple-600" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">System backup completed</p>
+                      <p className="text-xs text-gray-500">All data secured - 6 hours ago</p>
+                    </div>
+                  </div>
+                </div>
               </Card>
             </div>
           </Tabs.Content>
 
-          {/* ... (Colleges Tab remains the same) ... */}
+          {/* Colleges Tab */}
           <Tabs.Content value="colleges">
-            <Card>
-              <Card.Header className="flex items-center justify-between">
-                <Card.Title>College Management</Card.Title>
-                <Button onClick={() => {
-                  setSelectedCollege(null)
-                  setShowCollegeModal(true)
-                }}>
+            <Card className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-lg font-semibold text-gray-900">College Management</h3>
+                <Button onClick={() => setShowCreateCollegeModal(true)}>
                   <Plus size={16} className="mr-2" />
                   Add College
                 </Button>
-              </Card.Header>
-              <Card.Content>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {colleges.map((college) => (
-                    <div key={college.id} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {colleges.map(college => {
+                  const stats = getCollegeStats(college.id)
+                  
+                  return (
+                    <div key={college.id} className="border border-gray-200 rounded-lg p-6 hover:shadow-sm transition-shadow">
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex items-center space-x-3">
                           <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100">
@@ -506,152 +462,92 @@ const SuperAdminDashboardPage = () => {
                             />
                           </div>
                           <div>
-                            <h3 className="font-semibold text-gray-900">{college.name}</h3>
+                            <h4 className="font-medium text-gray-900">{college.name}</h4>
                             <p className="text-sm text-gray-600">{college.code}</p>
-                            <Badge 
-                              variant={college.status === 'active' ? 'success' : 'danger'} 
-                              size="sm"
-                            >
+                            <Badge variant={college.status === 'active' ? 'success' : 'secondary'} size="sm">
                               {college.status}
                             </Badge>
                           </div>
                         </div>
-                      </div>
-                      
-                      <div className="space-y-2 mb-4">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-gray-600">Students</span>
-                          <span className="font-medium">{college.totalStudents}</span>
+                        <div className="flex space-x-1">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => {
+                              setSelectedCollege(college)
+                              setShowCollegeModal(true)
+                            }}
+                          >
+                            <Eye size={14} />
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => toast('Edit college functionality coming soon')}
+                          >
+                            <Edit size={14} />
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => deleteCollege(college.id)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 size={14} />
+                          </Button>
                         </div>
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-gray-600">Instructors</span>
-                          <span className="font-medium">{college.totalInstructors}</span>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div className="text-center p-2 bg-blue-50 rounded">
+                            <div className="font-medium text-blue-900">{stats.totalUsers}</div>
+                            <div className="text-blue-700">Total Users</div>
+                          </div>
+                          <div className="text-center p-2 bg-green-50 rounded">
+                            <div className="font-medium text-green-900">{stats.courses}</div>
+                            <div className="text-green-700">Courses</div>
+                          </div>
                         </div>
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-gray-600">Courses</span>
-                          <span className="font-medium">{college.totalCourses}</span>
+                        
+                        <div className="text-xs text-gray-500 space-y-1">
+                          <div className="flex justify-between">
+                            <span>Admins:</span>
+                            <span>{stats.admins}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Instructors:</span>
+                            <span>{stats.instructors}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Students:</span>
+                            <span>{stats.students}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Active Users:</span>
+                            <span>{stats.activeUsers}</span>
+                          </div>
                         </div>
-                      </div>
-                      
-                      {/* College Admin Assignment */}
-                      <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-                        <h5 className="text-sm font-medium text-gray-700 mb-2">College Admin:</h5>
-                        {(() => {
-                          const collegeAdmin = admins.find(admin => admin.collegeId === college.id);
-                          return collegeAdmin ? (
-                            <div className="flex items-center space-x-2">
-                              <div className="w-6 h-6 rounded-full overflow-hidden bg-gray-200">
-                                <img src={collegeAdmin.avatar} alt={collegeAdmin.name} className="w-full h-full object-cover" />
-                              </div>
-                              <span className="text-sm text-gray-900">{collegeAdmin.name}</span>
-                            </div>
-                          ) : (
-                            <span className="text-sm text-gray-500">No admin assigned</span>
-                          );
-                        })()}
-                      </div>
-                      
-                      <div className="flex items-center space-x-2 text-xs text-gray-500 mb-4">
-                        <Calendar size={12} />
-                        <span>Est. {college.establishedYear}</span>
-                        <span>•</span>
-                        <Globe size={12} />
-                        <span>{college.website?.replace('https://', '')}</span>
-                      </div>
-                      
-                      <div className="flex space-x-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleCollegeAction(college.id, 'view')}
-                        >
-                          <Eye size={14} />
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleCollegeAction(college.id, 'edit')}
-                        >
-                          <Edit size={14} />
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleCollegeAction(college.id, college.status === 'active' ? 'deactivate' : 'activate')}
-                        >
-                          {college.status === 'active' ? <UserX size={14} /> : <UserCheck size={14} />}
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleCollegeAction(college.id, 'delete')}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 size={14} />
-                        </Button>
                       </div>
                     </div>
-                  ))}
-                </div>
-              </Card.Content>
+                  )
+                })}
+              </div>
             </Card>
           </Tabs.Content>
-          
-          {/* ... (Users Tab and Analytics tab now work because `courses` is defined) ... */}
+
           {/* Users Tab */}
           <Tabs.Content value="users">
-            <Card>
-              <Card.Header>
-                <div className="flex items-center justify-between">
-                  <Card.Title>User Management</Card.Title>
-                  <div className="flex space-x-2">
-                    {selectedUsers.length > 0 && (
-                      <>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleBulkAction('activate')}
-                        >
-                          <UserCheck size={14} className="mr-1" />
-                          Activate ({selectedUsers.length})
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleBulkAction('deactivate')}
-                        >
-                          <UserX size={14} className="mr-1" />
-                          Deactivate ({selectedUsers.length})
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleBulkAction('verify')}
-                        >
-                          <CheckCircle size={14} className="mr-1" />
-                          Verify ({selectedUsers.length})
-                        </Button>
-                      </>
-                    )}
-                    <Button 
-                      variant="outline"
-                      onClick={() => toast('Export functionality coming soon!')}
-                    >
-                      <Download size={16} className="mr-1" />
-                      Export
-                    </Button>
-                  </div>
-                </div>
-                
-                {/* Filters */}
-                <div className="flex items-center space-x-4 mt-4">
-                  <div className="flex-1">
-                    <Input
-                      placeholder="Search users..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                  </div>
+            <Card className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-lg font-semibold text-gray-900">User Management</h3>
+                <div className="flex space-x-2">
+                  <Input
+                    placeholder="Search users..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-64"
+                  />
                   <select
                     value={filterRole}
                     onChange={(e) => setFilterRole(e.target.value)}
@@ -673,359 +569,457 @@ const SuperAdminDashboardPage = () => {
                     ))}
                   </select>
                 </div>
-              </Card.Header>
-              <Card.Content>
-                {/* Admin-Course Assignments Overview */}
-                <div className="mb-8 p-4 bg-blue-50 rounded-lg">
-                  <h4 className="font-medium text-blue-900 mb-3">Admin-Course Assignments</h4>
-                  <div className="space-y-2">
-                    {admins.map(admin => {
-                      const adminCourses = courses.filter(course => course.createdBy === admin.id);
-                      const college = colleges.find(c => c.id === admin.collegeId);
-                      return (
-                        <div key={admin.id} className="flex items-center justify-between p-2 bg-white rounded">
-                          <div className="flex items-center space-x-2">
-                            <img src={admin.avatar} alt={admin.name} className="w-6 h-6 rounded-full" />
-                            <span className="text-sm font-medium">{admin.name}</span>
-                            <span className="text-xs text-gray-500">({college?.name})</span>
-                          </div>
-                          <div className="text-sm text-gray-600">
-                            {adminCourses.length} courses managed
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Course-User Assignments Overview */}
-                <div className="mb-8 p-4 bg-green-50 rounded-lg">
-                  <h4 className="font-medium text-green-900 mb-3">Course Assignments</h4>
-                  <div className="space-y-3">
-                    {courses.map(course => {
-                      const assignedStudents = students.filter(student => 
-                        student.assignedCourses.includes(course.id)
-                      );
-                      const assignedInstructors = instructors.filter(instructor => 
-                        course.assignedInstructors.includes(instructor.id)
-                      );
-                      const college = colleges.find(c => c.id === course.collegeId);
+              </div>
+              
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">College</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Joined</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {getFilteredUsers().map(user => {
+                      const college = colleges.find(c => c.id === user.collegeId)
                       
                       return (
-                        <div key={course.id} className="p-3 bg-white rounded-lg border">
-                          <div className="flex items-center justify-between mb-2">
-                            <div>
-                              <h5 className="font-medium text-gray-900">{course.title}</h5>
-                              <p className="text-xs text-gray-500">{college?.name}</p>
+                        <tr key={user.id}>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100">
+                                <img 
+                                  src={user.avatar} 
+                                  alt={user.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                              <div className="ml-4">
+                                <div className="text-sm font-medium text-gray-900">{user.name}</div>
+                                <div className="text-sm text-gray-500">{user.email}</div>
+                              </div>
                             </div>
-                            <Badge variant={course.status === 'published' ? 'success' : 'warning'} size="sm">
-                              {course.status}
-                            </Badge>
-                          </div>
-                          <div className="grid grid-cols-2 gap-4 text-sm">
-                            <div>
-                              <span className="text-gray-600">Instructors: </span>
-                              <span className="font-medium">
-                                {assignedInstructors.map(i => i.name).join(', ') || 'None'}
-                              </span>
-                            </div>
-                            <div>
-                              <span className="text-gray-600">Students: </span>
-                              <span className="font-medium">{assignedStudents.length}</span>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left">
-                          <input
-                            type="checkbox"
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setSelectedUsers(getFilteredUsers().map(u => u.id))
-                              } else {
-                                setSelectedUsers([])
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <Badge 
+                              variant={
+                                user.role === 'admin' ? 'danger' : 
+                                user.role === 'instructor' ? 'warning' : 'info'
                               }
-                            }}
-                            className="rounded border-gray-300"
-                          />
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">College</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assignments</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Login</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {getFilteredUsers().map(user => {
-                        const college = colleges.find(c => c.id === user.collegeId)
-                        const userAssignments = user.role === 'instructor' 
-                          ? courses.filter(c => c.assignedInstructors.includes(user.id))
-                          : user.role === 'student' 
-                            ? courses.filter(c => user.assignedCourses?.includes(c.id))
-                            : courses.filter(c => c.createdBy === user.id);
-                        
-                        return (
-                          <tr key={user.id} className="hover:bg-gray-50">
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <input
-                                type="checkbox"
-                                checked={selectedUsers.includes(user.id)}
-                                onChange={(e) => {
-                                  if (e.target.checked) {
-                                    setSelectedUsers([...selectedUsers, user.id])
-                                  } else {
-                                    setSelectedUsers(selectedUsers.filter(id => id !== user.id))
-                                  }
+                            >
+                              {user.role}
+                            </Badge>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {college?.name || 'Unassigned'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <Badge variant={user.isActive ? 'success' : 'secondary'}>
+                              {user.isActive ? 'Active' : 'Inactive'}
+                            </Badge>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {new Date(user.joinedDate).toLocaleDateString()}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <div className="flex space-x-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedUser(user)
+                                  setShowUserModal(true)
                                 }}
-                                className="rounded border-gray-300"
-                              />
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="flex items-center">
-                                <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100">
-                                  <img 
-                                    src={user.avatar} 
-                                    alt={user.name}
-                                    className="w-full h-full object-cover"
-                                  />
-                                </div>
-                                <div className="ml-4">
-                                  <div className="text-sm font-medium text-gray-900">{user.name}</div>
-                                  <div className="text-sm text-gray-500">{user.email}</div>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <Badge 
-                                variant={
-                                  user.role === 'admin' ? 'danger' : 
-                                  user.role === 'instructor' ? 'warning' : 'info'
-                                }
                               >
-                                {user.role}
-                              </Badge>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {college?.name || 'N/A'}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-sm text-gray-900">
-                                {userAssignments.length} course{userAssignments.length !== 1 ? 's' : ''}
-                              </div>
-                              {userAssignments.length > 0 && (
-                                <div className="text-xs text-gray-500">
-                                  {userAssignments.slice(0, 2).map(c => c.title).join(', ')}
-                                  {userAssignments.length > 2 && ` +${userAssignments.length - 2} more`}
-                                </div>
-                              )}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="flex items-center space-x-2">
-                                <Badge variant={user.isActive ? 'success' : 'secondary'} size="sm">
-                                  {user.isActive ? 'Active' : 'Inactive'}
-                                </Badge>
-                                {user.isVerified && (
-                                  <CheckCircle size={14} className="text-green-500" />
-                                )}
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'Never'}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                              <div className="flex space-x-1">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleUserAction(user.id, 'view')}
-                                >
-                                  <Eye size={14} />
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleUserAction(user.id, user.isActive ? 'deactivate' : 'activate')}
-                                >
-                                  {user.isActive ? <UserX size={14} /> : <UserCheck size={14} />}
-                                </Button>
-                                {!user.isVerified && (
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleUserAction(user.id, 'verify')}
-                                  >
-                                    <CheckCircle size={14} />
-                                  </Button>
-                                )}
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleUserAction(user.id, 'delete')}
-                                  className="text-red-600 hover:text-red-700"
-                                >
-                                  <Trash2 size={14} />
-                                </Button>
-                              </div>
-                            </td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </Card.Content>
+                                <Eye size={14} />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => updateUserStatus(user.id, !user.isActive)}
+                              >
+                                {user.isActive ? <UserX size={14} /> : <UserCheck size={14} />}
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => deleteUser(user.id)}
+                                className="text-red-600 hover:text-red-700"
+                              >
+                                <Trash2 size={14} />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </Card>
           </Tabs.Content>
 
-          {/* Analytics Tab */}
-          <Tabs.Content value="analytics">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <Card>
-                <Card.Header>
-                  <Card.Title>College Performance</Card.Title>
-                </Card.Header>
-                <Card.Content>
-                  <div className="space-y-4">
-                    {colleges.map(college => {
-                      const breakdown = systemAnalytics?.collegeBreakdown[college.id]
-                      const collegeAdmin = admins.find(admin => admin.collegeId === college.id);
-                      const collegeInstructors = instructors.filter(instructor => instructor.collegeId === college.id);
-                      const collegeStudents = students.filter(student => student.collegeId === college.id);
-                      const collegeCourses = courses.filter(course => course.collegeId === college.id);
-                      
-                      return (
-                        <div key={college.id} className="p-4 border border-gray-200 rounded-lg">
-                          <div className="flex items-center justify-between mb-3">
-                            <h4 className="font-medium text-gray-900">{college.name}</h4>
-                            <div className="flex items-center space-x-2">
-                              <Badge variant="info" size="sm">{college.code}</Badge>
-                              <img src={college.logo} alt={college.name} className="w-8 h-8 rounded object-cover" />
-                            </div>
-                            <Badge variant="info" size="sm">${breakdown?.revenue || 0}</Badge>
+          {/* Courses Tab */}
+          <Tabs.Content value="courses">
+            <Card className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-lg font-semibold text-gray-900">Course Management</h3>
+                <Button onClick={() => toast('Super Admin course creation coming soon!')}>
+                  <Plus size={16} className="mr-2" />
+                  Create Course
+                </Button>
+              </div>
+              
+              <div className="space-y-4">
+                {allCourses.map(course => {
+                  const college = colleges.find(c => c.id === course.collegeId)
+                  const instructor = allUsers.find(u => course.assignedInstructors.includes(u.id))
+                  
+                  return (
+                    <div key={course.id} className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center space-x-4">
+                          <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100">
+                            <img 
+                              src={course.thumbnail} 
+                              alt={course.title}
+                              className="w-full h-full object-cover"
+                            />
                           </div>
-                          
-                          <div className="mb-3 p-2 bg-gray-50 rounded">
-                            <div className="text-xs text-gray-600 mb-1">Admin: {collegeAdmin?.name || 'Unassigned'}</div>
-                            <div className="text-xs text-gray-500">
-                              Manages {collegeCourses.length} courses with {collegeInstructors.length} instructors
-                            </div>
-                          </div>
-                          
-                          <div className="grid grid-cols-3 gap-4 text-sm">
-                            <div className="text-center">
-                              <div className="font-medium text-gray-900">{collegeStudents.length}</div>
-                              <div className="text-gray-500">Students</div>
-                            </div>
-                            <div className="text-center">
-                              <div className="font-medium text-gray-900">{collegeInstructors.length}</div>
-                              <div className="text-gray-500">Instructors</div>
-                            </div>
-                            <div className="text-center">
-                              <div className="font-medium text-gray-900">{collegeCourses.length}</div>
-                              <div className="text-gray-500">Courses</div>
+                          <div>
+                            <h4 className="font-medium text-gray-900">{course.title}</h4>
+                            <p className="text-sm text-gray-600">by {instructor?.name || 'Unassigned'}</p>
+                            <p className="text-sm text-gray-500">{college?.name || 'Unknown College'}</p>
+                            <div className="flex items-center space-x-2 mt-2">
+                              <Badge variant={course.status === 'published' ? 'success' : 'warning'}>
+                                {course.status}
+                              </Badge>
+                              <Badge variant="info" size="sm">{course.level}</Badge>
+                              <Badge variant="default" size="sm">{course.category}</Badge>
                             </div>
                           </div>
                         </div>
-                      )
-                    })}
-                  </div>
-                </Card.Content>
-              </Card>
-
-              <Card>
-                <Card.Header>
-                  <Card.Title>Revenue Analytics</Card.Title>
-                </Card.Header>
-                <Card.Content>
-                  <div className="space-y-4">
-                    <div className="text-center p-6 bg-green-50 rounded-lg">
-                      <div className="text-3xl font-bold text-green-600 mb-2">
-                        {/* FIX 2: Added full optional chaining and fallback values */}
-                        ${(systemAnalytics?.overview?.totalRevenue || 0).toLocaleString()}
+                        
+                        <div className="text-right">
+                          <div className="text-sm text-gray-600 mb-2">
+                            {course.enrolledStudents?.length || 0} students • ${course.price}
+                          </div>
+                          <div className="flex space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => toast('Course details coming soon')}
+                            >
+                              <Eye size={14} />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => toast('Course editing coming soon')}
+                            >
+                              <Edit size={14} />
+                            </Button>
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-sm text-green-800">Total Revenue</div>
+                    </div>
+                  )
+                })}
+              </div>
+            </Card>
+          </Tabs.Content>
+
+          {/* Global Permissions Tab */}
+          <Tabs.Content value="permissions">
+            <Card className="p-6">
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Global Permission Management</h3>
+                <p className="text-gray-600">
+                  Control system-wide permissions for course and test creation across all colleges.
+                </p>
+              </div>
+              
+              <div className="space-y-6">
+                {/* Admin Permissions */}
+                <div className="p-6 bg-red-50 border border-red-200 rounded-lg">
+                  <h4 className="text-lg font-medium text-red-900 mb-4 flex items-center">
+                    <Shield size={20} className="mr-2" />
+                    College Admin Permissions
+                  </h4>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h5 className="font-medium text-gray-900">Course Creation</h5>
+                        <p className="text-sm text-gray-600">Allow college admins to create new courses</p>
+                      </div>
+                      <button
+                        onClick={() => handlePermissionToggle('adminsCanCreateCourses')}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                          globalPermissions.adminsCanCreateCourses ? 'bg-green-600' : 'bg-gray-200'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            globalPermissions.adminsCanCreateCourses ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
                     </div>
                     
-                    <div className="space-y-3">
-                      {colleges.map(college => {
-                        const breakdown = systemAnalytics?.collegeBreakdown[college.id]
-                        const percentage = breakdown?.revenue && systemAnalytics?.overview?.totalRevenue ? 
-                          (breakdown.revenue / systemAnalytics.overview.totalRevenue) * 100 : 0
-                        
-                        return (
-                          <div key={college.id}>
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-sm font-medium text-gray-700">{college.name}</span>
-                              <span className="text-sm text-gray-900">${breakdown?.revenue || 0}</span>
-                            </div>
-                            <Progress value={percentage} size="sm" variant="accent" />
-                          </div>
-                        )
-                      })}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h5 className="font-medium text-gray-900">Test Creation</h5>
+                        <p className="text-sm text-gray-600">Allow college admins to create and manage tests</p>
+                      </div>
+                      <button
+                        onClick={() => handlePermissionToggle('adminsCanCreateTests')}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                          globalPermissions.adminsCanCreateTests ? 'bg-green-600' : 'bg-gray-200'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            globalPermissions.adminsCanCreateTests ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
                     </div>
                   </div>
-                </Card.Content>
-              </Card>
-            </div>
+                </div>
+
+                {/* Instructor Permissions */}
+                <div className="p-6 bg-green-50 border border-green-200 rounded-lg">
+                  <h4 className="text-lg font-medium text-green-900 mb-4 flex items-center">
+                    <BookOpen size={20} className="mr-2" />
+                    Instructor Permissions
+                  </h4>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h5 className="font-medium text-gray-900">Course Creation</h5>
+                        <p className="text-sm text-gray-600">Allow instructors to create new courses</p>
+                      </div>
+                      <button
+                        onClick={() => handlePermissionToggle('instructorsCanCreateCourses')}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                          globalPermissions.instructorsCanCreateCourses ? 'bg-green-600' : 'bg-gray-200'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            globalPermissions.instructorsCanCreateCourses ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h5 className="font-medium text-gray-900">Test Creation</h5>
+                        <p className="text-sm text-gray-600">Allow instructors to create and manage tests</p>
+                      </div>
+                      <button
+                        onClick={() => handlePermissionToggle('instructorsCanCreateTests')}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                          globalPermissions.instructorsCanCreateTests ? 'bg-green-600' : 'bg-gray-200'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            globalPermissions.instructorsCanCreateTests ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Permission Summary */}
+                <div className="p-6 bg-blue-50 border border-blue-200 rounded-lg">
+                  <h4 className="text-lg font-medium text-blue-900 mb-4">Current Permission Status</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <h5 className="font-medium text-gray-900 mb-2">Admins Can:</h5>
+                      <ul className="space-y-1 text-sm">
+                        <li className="flex items-center space-x-2">
+                          {globalPermissions.adminsCanCreateCourses ? (
+                            <CheckCircle size={16} className="text-green-600" />
+                          ) : (
+                            <X size={16} className="text-red-600" />
+                          )}
+                          <span>Create Courses</span>
+                        </li>
+                        <li className="flex items-center space-x-2">
+                          {globalPermissions.adminsCanCreateTests ? (
+                            <CheckCircle size={16} className="text-green-600" />
+                          ) : (
+                            <X size={16} className="text-red-600" />
+                          )}
+                          <span>Create Tests</span>
+                        </li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h5 className="font-medium text-gray-900 mb-2">Instructors Can:</h5>
+                      <ul className="space-y-1 text-sm">
+                        <li className="flex items-center space-x-2">
+                          {globalPermissions.instructorsCanCreateCourses ? (
+                            <CheckCircle size={16} className="text-green-600" />
+                          ) : (
+                            <X size={16} className="text-red-600" />
+                          )}
+                          <span>Create Courses</span>
+                        </li>
+                        <li className="flex items-center space-x-2">
+                          {globalPermissions.instructorsCanCreateTests ? (
+                            <CheckCircle size={16} className="text-green-600" />
+                          ) : (
+                            <X size={16} className="text-red-600" />
+                          )}
+                          <span>Create Tests</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Card>
           </Tabs.Content>
         </Tabs>
       </div>
 
-      {/* College Modal */}
+      {/* College Details Modal */}
       <Modal
         isOpen={showCollegeModal}
-        onClose={() => {
-          setShowCollegeModal(false)
-          setSelectedCollege(null)
-        }}
-        title={selectedCollege ? 'Edit College' : 'Add New College'}
+        onClose={() => setShowCollegeModal(false)}
+        title={selectedCollege?.name}
         size="lg"
       >
-        <CollegeForm
-          college={selectedCollege}
-          onSubmit={selectedCollege ?
-            (data) => updateCollege(selectedCollege.id, data) :
-            createCollege
-          }
-          onCancel={() => {
-            setShowCollegeModal(false)
-            setSelectedCollege(null)
-          }}
-        />
+        {selectedCollege && (
+          <CollegeDetailsView 
+            college={selectedCollege} 
+            stats={getCollegeStats(selectedCollege.id)}
+            onClose={() => setShowCollegeModal(false)}
+          />
+        )}
       </Modal>
 
       {/* User Details Modal */}
       <Modal
         isOpen={showUserModal}
-        onClose={() => {
-          setShowUserModal(false)
-          setSelectedUser(null)
-        }}
+        onClose={() => setShowUserModal(false)}
         title={selectedUser?.name}
         size="lg"
       >
         {selectedUser && (
-          <UserDetailsView
-            user={selectedUser}
+          <UserDetailsView 
+            user={selectedUser} 
             college={colleges.find(c => c.id === selectedUser.collegeId)}
-            courses={courses} // FIX 3: Passed the courses prop
-            onClose={() => {
-              setShowUserModal(false)
-              setSelectedUser(null)
-            }}
+            courses={allCourses.filter(c => 
+              selectedUser.role === 'instructor' ? c.assignedInstructors.includes(selectedUser.id) :
+              selectedUser.role === 'student' ? selectedUser.assignedCourses?.includes(c.id) :
+              c.collegeId === selectedUser.collegeId
+            )}
+            onClose={() => setShowUserModal(false)}
           />
         )}
+      </Modal>
+
+      {/* Global Permissions Modal */}
+      <Modal
+        isOpen={showPermissionModal}
+        onClose={() => setShowPermissionModal(false)}
+        title="Global Permission Management"
+        size="lg"
+      >
+        <div className="space-y-6">
+          <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <div className="flex items-center space-x-2 mb-2">
+              <AlertTriangle size={16} className="text-yellow-600" />
+              <span className="font-medium text-yellow-800">Important Notice</span>
+            </div>
+            <p className="text-sm text-yellow-700">
+              These settings affect all colleges and users system-wide. Changes will be applied immediately.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Admin Permissions */}
+            <div className="p-6 bg-red-50 border border-red-200 rounded-lg">
+              <h4 className="text-lg font-medium text-red-900 mb-4 flex items-center">
+                <Shield size={20} className="mr-2" />
+                College Admin Rights
+              </h4>
+              <div className="space-y-4">
+                <PermissionToggle
+                  title="Course Creation"
+                  description="Allow college admins to create new courses"
+                  enabled={globalPermissions.adminsCanCreateCourses}
+                  onToggle={() => handlePermissionToggle('adminsCanCreateCourses')}
+                />
+                <PermissionToggle
+                  title="Test Management"
+                  description="Allow college admins to create and manage tests"
+                  enabled={globalPermissions.adminsCanCreateTests}
+                  onToggle={() => handlePermissionToggle('adminsCanCreateTests')}
+                />
+              </div>
+            </div>
+
+            {/* Instructor Permissions */}
+            <div className="p-6 bg-green-50 border border-green-200 rounded-lg">
+              <h4 className="text-lg font-medium text-green-900 mb-4 flex items-center">
+                <BookOpen size={20} className="mr-2" />
+                Instructor Rights
+              </h4>
+              <div className="space-y-4">
+                <PermissionToggle
+                  title="Course Creation"
+                  description="Allow instructors to create new courses"
+                  enabled={globalPermissions.instructorsCanCreateCourses}
+                  onToggle={() => handlePermissionToggle('instructorsCanCreateCourses')}
+                />
+                <PermissionToggle
+                  title="Test Management"
+                  description="Allow instructors to create and manage tests"
+                  enabled={globalPermissions.instructorsCanCreateTests}
+                  onToggle={() => handlePermissionToggle('instructorsCanCreateTests')}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <h5 className="font-medium text-blue-900 mb-2">Affected Users</h5>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="text-blue-800">College Admins: </span>
+                <span className="font-medium">{allUsers.filter(u => u.role === 'admin').length}</span>
+              </div>
+              <div>
+                <span className="text-blue-800">Instructors: </span>
+                <span className="font-medium">{allUsers.filter(u => u.role === 'instructor').length}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Create College Modal */}
+      <Modal
+        isOpen={showCreateCollegeModal}
+        onClose={() => setShowCreateCollegeModal(false)}
+        title="Create New College"
+        size="lg"
+      >
+        <CreateCollegeForm 
+          onSubmit={createCollege}
+          onCancel={() => setShowCreateCollegeModal(false)}
+        />
       </Modal>
 
       {/* System Health Modal */}
@@ -1033,33 +1027,128 @@ const SuperAdminDashboardPage = () => {
         isOpen={showSystemModal}
         onClose={() => setShowSystemModal(false)}
         title="System Health & Performance"
-        size="xl"
+        size="lg"
       >
-        <SystemHealthView
-          analytics={systemAnalytics}
-          onRefresh={fetchSuperAdminData}
-        />
+        <SystemHealthView analytics={systemAnalytics} />
       </Modal>
     </div>
   )
 }
 
-// ... (The sub-components UserDetailsView, CollegeForm, and SystemHealthView remain the same as they were correct) ...
+// Permission Toggle Component
+const PermissionToggle = ({ title, description, enabled, onToggle }) => {
+  return (
+    <div className="flex items-center justify-between">
+      <div>
+        <h5 className="font-medium text-gray-900">{title}</h5>
+        <p className="text-sm text-gray-600">{description}</p>
+      </div>
+      <button
+        onClick={onToggle}
+        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+          enabled ? 'bg-green-600' : 'bg-gray-200'
+        }`}
+      >
+        <span
+          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+            enabled ? 'translate-x-6' : 'translate-x-1'
+          }`}
+        />
+      </button>
+    </div>
+  )
+}
+
+// College Details Component
+const CollegeDetailsView = ({ college, stats, onClose }) => {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center space-x-4">
+        <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100">
+          <img 
+            src={college.logo} 
+            alt={college.name}
+            className="w-full h-full object-cover"
+          />
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900">{college.name}</h3>
+          <p className="text-gray-600">{college.code}</p>
+          <Badge variant={college.status === 'active' ? 'success' : 'secondary'}>
+            {college.status}
+          </Badge>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="text-sm font-medium text-gray-600">Address</label>
+          <p className="text-gray-900">{college.address}</p>
+        </div>
+        <div>
+          <label className="text-sm font-medium text-gray-600">Phone</label>
+          <p className="text-gray-900">{college.phone}</p>
+        </div>
+        <div>
+          <label className="text-sm font-medium text-gray-600">Email</label>
+          <p className="text-gray-900">{college.email}</p>
+        </div>
+        <div>
+          <label className="text-sm font-medium text-gray-600">Website</label>
+          <p className="text-gray-900">{college.website}</p>
+        </div>
+        <div>
+          <label className="text-sm font-medium text-gray-600">Established</label>
+          <p className="text-gray-900">{college.establishedYear}</p>
+        </div>
+        <div>
+          <label className="text-sm font-medium text-gray-600">Created</label>
+          <p className="text-gray-900">{new Date(college.createdAt).toLocaleDateString()}</p>
+        </div>
+      </div>
+
+      <div>
+        <h4 className="font-medium text-gray-900 mb-3">Current Statistics</h4>
+        <div className="grid grid-cols-3 gap-4">
+          <div className="text-center p-3 bg-blue-50 rounded-lg">
+            <div className="text-xl font-bold text-blue-600">{stats.totalUsers}</div>
+            <div className="text-sm text-blue-800">Total Users</div>
+          </div>
+          <div className="text-center p-3 bg-green-50 rounded-lg">
+            <div className="text-xl font-bold text-green-600">{stats.courses}</div>
+            <div className="text-sm text-green-800">Courses</div>
+          </div>
+          <div className="text-center p-3 bg-purple-50 rounded-lg">
+            <div className="text-xl font-bold text-purple-600">{stats.activeUsers}</div>
+            <div className="text-sm text-purple-800">Active Users</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex justify-end space-x-3">
+        <Button variant="outline" onClick={onClose}>
+          Close
+        </Button>
+        <Button onClick={() => toast('College editing functionality coming soon')}>
+          <Edit size={16} className="mr-2" />
+          Edit College
+        </Button>
+      </div>
+    </div>
+  )
+}
 
 // User Details Component
 const UserDetailsView = ({ user, college, courses, onClose }) => {
-  // Now receives 'courses' correctly
-  const userCourses = user.role === 'instructor' 
-    ? courses.filter(c => c.assignedInstructors.includes(user.id))
-    : user.role === 'student' 
-      ? courses.filter(c => user.assignedCourses?.includes(c.id))
-      : courses.filter(c => c.createdBy === user.id);
-
   return (
     <div className="space-y-6">
       <div className="flex items-center space-x-4">
         <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-100">
-          <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+          <img 
+            src={user.avatar} 
+            alt={user.name}
+            className="w-full h-full object-cover"
+          />
         </div>
         <div>
           <h3 className="text-lg font-semibold text-gray-900">{user.name}</h3>
@@ -1075,7 +1164,7 @@ const UserDetailsView = ({ user, college, courses, onClose }) => {
               {user.isActive ? 'Active' : 'Inactive'}
             </Badge>
             {user.isVerified && (
-              <Badge variant="success" size="sm">Verified</Badge>
+              <Badge variant="info">Verified</Badge>
             )}
           </div>
         </div>
@@ -1084,7 +1173,7 @@ const UserDetailsView = ({ user, college, courses, onClose }) => {
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="text-sm font-medium text-gray-600">College</label>
-          <p className="text-gray-900">{college?.name || 'N/A'}</p>
+          <p className="text-gray-900">{college?.name || 'Unassigned'}</p>
         </div>
         <div>
           <label className="text-sm font-medium text-gray-600">Joined Date</label>
@@ -1098,46 +1187,66 @@ const UserDetailsView = ({ user, college, courses, onClose }) => {
         </div>
         <div>
           <label className="text-sm font-medium text-gray-600">
-            {user.role === 'instructor' ? 'Teaching Courses' : 
-             user.role === 'student' ? 'Enrolled Courses' : 'Managed Courses'}
+            {user.role === 'instructor' ? 'Students' : user.role === 'student' ? 'Courses' : 'Managed Users'}
           </label>
-          <p className="text-gray-900">{userCourses.length}</p>
+          <p className="text-gray-900">
+            {user.role === 'instructor' 
+              ? user.students?.length || 0
+              : user.role === 'student' 
+                ? user.assignedCourses?.length || 0
+                : 'N/A'
+            }
+          </p>
         </div>
       </div>
 
-      {userCourses.length > 0 && (
-        <div>
-          <label className="text-sm font-medium text-gray-600 mb-2 block">Course Assignments</label>
-          <div className="space-y-2">
-            {userCourses.map(course => (
-              <div key={course.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                <span className="text-sm text-gray-900">{course.title}</span>
-                <Badge variant={course.status === 'published' ? 'success' : 'warning'} size="sm">
-                  {course.status}
-                </Badge>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {user.role === 'instructor' && user.permissions && (
+      {user.permissions && (
         <div>
           <label className="text-sm font-medium text-gray-600 mb-2 block">Permissions</label>
           <div className="grid grid-cols-2 gap-2">
             {Object.entries(user.permissions).map(([key, value]) => (
               <div key={key} className="flex items-center space-x-2">
                 <div className={`w-3 h-3 rounded-full ${value ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                <span className="text-sm text-gray-700">{key.replace(/([A-Z])/g, ' $1').toLowerCase()}</span>
+                <span className="text-sm text-gray-700">
+                  {key.replace(/([A-Z])/g, ' $1').toLowerCase()}
+                </span>
               </div>
             ))}
           </div>
         </div>
       )}
 
+      {courses.length > 0 && (
+        <div>
+          <label className="text-sm font-medium text-gray-600 mb-2 block">
+            {user.role === 'instructor' ? 'Teaching Courses' : user.role === 'student' ? 'Enrolled Courses' : 'College Courses'}
+          </label>
+          <div className="space-y-2">
+            {courses.slice(0, 5).map(course => (
+              <div key={course.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div>
+                  <h4 className="text-sm font-medium text-gray-900">{course.title}</h4>
+                  <p className="text-xs text-gray-500">{course.category} • {course.level}</p>
+                </div>
+                <Badge variant={course.status === 'published' ? 'success' : 'warning'} size="sm">
+                  {course.status}
+                </Badge>
+              </div>
+            ))}
+            {courses.length > 5 && (
+              <p className="text-sm text-gray-500 text-center">
+                +{courses.length - 5} more courses
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="flex justify-end space-x-3">
-        <Button variant="outline" onClick={onClose}>Close</Button>
-        <Button onClick={() => toast('User editing coming soon!')}>
+        <Button variant="outline" onClick={onClose}>
+          Close
+        </Button>
+        <Button onClick={() => toast('User editing functionality coming soon')}>
           <Edit size={16} className="mr-2" />
           Edit User
         </Button>
@@ -1145,16 +1254,17 @@ const UserDetailsView = ({ user, college, courses, onClose }) => {
     </div>
   )
 }
-// College Form Component
-const CollegeForm = ({ college, onSubmit, onCancel }) => {
+
+// Create College Form Component
+const CreateCollegeForm = ({ onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({
-    name: college?.name || '',
-    code: college?.code || '',
-    address: college?.address || '',
-    phone: college?.phone || '',
-    email: college?.email || '',
-    website: college?.website || '',
-    establishedYear: college?.establishedYear || new Date().getFullYear()
+    name: '',
+    code: '',
+    address: '',
+    phone: '',
+    email: '',
+    website: '',
+    establishedYear: new Date().getFullYear()
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -1168,114 +1278,184 @@ const CollegeForm = ({ college, onSubmit, onCancel }) => {
     }
   }
 
+  const handleChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         <Input
           label="College Name"
           value={formData.name}
-          onChange={(e) => setFormData({...formData, name: e.target.value})}
+          onChange={(e) => handleChange('name', e.target.value)}
+          placeholder="Enter college name"
           required
         />
         <Input
           label="College Code"
           value={formData.code}
-          onChange={(e) => setFormData({...formData, code: e.target.value})}
+          onChange={(e) => handleChange('code', e.target.value)}
+          placeholder="e.g., TECH001"
+          required
+        />
+      </div>
+      
+      <Input
+        label="Address"
+        value={formData.address}
+        onChange={(e) => handleChange('address', e.target.value)}
+        placeholder="Enter full address"
+        required
+      />
+      
+      <div className="grid grid-cols-2 gap-4">
+        <Input
+          label="Phone"
+          value={formData.phone}
+          onChange={(e) => handleChange('phone', e.target.value)}
+          placeholder="+1-555-0123"
           required
         />
         <Input
           label="Email"
           type="email"
           value={formData.email}
-          onChange={(e) => setFormData({...formData, email: e.target.value})}
+          onChange={(e) => handleChange('email', e.target.value)}
+          placeholder="admin@college.edu"
           required
         />
-        <Input
-          label="Phone"
-          value={formData.phone}
-          onChange={(e) => setFormData({...formData, phone: e.target.value})}
-          required
-        />
+      </div>
+      
+      <div className="grid grid-cols-2 gap-4">
         <Input
           label="Website"
           value={formData.website}
-          onChange={(e) => setFormData({...formData, website: e.target.value})}
+          onChange={(e) => handleChange('website', e.target.value)}
+          placeholder="https://college.edu"
         />
         <Input
           label="Established Year"
           type="number"
           value={formData.establishedYear}
-          onChange={(e) => setFormData({...formData, establishedYear: parseInt(e.target.value)})}
+          onChange={(e) => handleChange('establishedYear', parseInt(e.target.value))}
+          min="1800"
+          max={new Date().getFullYear()}
           required
         />
       </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
-        <textarea
-          value={formData.address}
-          onChange={(e) => setFormData({...formData, address: e.target.value})}
-          rows={3}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-          required
-        />
-      </div>
+
       <div className="flex justify-end space-x-3 pt-4">
-        <Button variant="outline" onClick={onCancel}>Cancel</Button>
+        <Button variant="outline" onClick={onCancel} disabled={isSubmitting}>
+          Cancel
+        </Button>
         <Button type="submit" loading={isSubmitting}>
-          {college ? 'Update' : 'Create'} College
+          Create College
         </Button>
       </div>
     </form>
   )
 }
 
-// System Health Component
-const SystemHealthView = ({ analytics, onRefresh }) => {
-  const [refreshing, setRefreshing] = useState(false)
-
-  const handleRefresh = async () => {
-    setRefreshing(true)
-    await onRefresh()
-    setRefreshing(false)
-    toast.success('System data refreshed')
+// System Health View Component
+const SystemHealthView = ({ analytics }) => {
+  const performanceMetrics = analytics?.performanceMetrics || {}
+  
+  const getHealthColor = (value, thresholds) => {
+    if (value < thresholds.good) return 'success'
+    if (value < thresholds.warning) return 'warning'
+    return 'danger'
   }
+
+  const metrics = [
+    {
+      name: 'CPU Usage',
+      value: performanceMetrics.cpuUsage || 45,
+      unit: '%',
+      icon: <Cpu size={20} />,
+      thresholds: { good: 70, warning: 85 }
+    },
+    {
+      name: 'Memory Usage',
+      value: performanceMetrics.memoryUsage || 62,
+      unit: '%',
+      icon: <Database size={20} />,
+      thresholds: { good: 75, warning: 90 }
+    },
+    {
+      name: 'Disk Usage',
+      value: performanceMetrics.diskUsage || 38,
+      unit: '%',
+      icon: <HardDrive size={20} />,
+      thresholds: { good: 80, warning: 95 }
+    },
+    {
+      name: 'Network Latency',
+      value: performanceMetrics.networkLatency || 12,
+      unit: 'ms',
+      icon: <Wifi size={20} />,
+      thresholds: { good: 50, warning: 100 }
+    }
+  ]
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900">System Status</h3>
-        <Button 
-          variant="outline" 
-          onClick={handleRefresh}
-          loading={refreshing}
-        >
-          <RefreshCw size={16} className="mr-2" />
-          Refresh
-        </Button>
+      <div className="grid grid-cols-2 gap-4">
+        {metrics.map(metric => {
+          const healthColor = getHealthColor(metric.value, metric.thresholds)
+          
+          return (
+            <div key={metric.name} className="p-4 border border-gray-200 rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center space-x-2">
+                  <div className={`p-2 rounded-lg ${
+                    healthColor === 'success' ? 'bg-green-100 text-green-600' :
+                    healthColor === 'warning' ? 'bg-yellow-100 text-yellow-600' :
+                    'bg-red-100 text-red-600'
+                  }`}>
+                    {metric.icon}
+                  </div>
+                  <span className="font-medium text-gray-900">{metric.name}</span>
+                </div>
+                <Badge variant={healthColor}>
+                  {metric.value}{metric.unit}
+                </Badge>
+              </div>
+              <Progress 
+                value={metric.value} 
+                max={metric.name === 'Network Latency' ? 200 : 100}
+                variant={healthColor === 'success' ? 'success' : healthColor === 'warning' ? 'warning' : 'danger'}
+                size="sm"
+                showLabel={false}
+              />
+            </div>
+          )
+        })}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="text-center p-4 bg-green-50 rounded-lg">
-          <CheckCircle size={32} className="mx-auto text-green-600 mb-2" />
-          <div className="text-lg font-bold text-green-600">System Online</div>
-          <div className="text-sm text-green-800">All services operational</div>
-        </div>
-        
-        <div className="text-center p-4 bg-blue-50 rounded-lg">
-          <Activity size={32} className="mx-auto text-blue-600 mb-2" />
-          <div className="text-lg font-bold text-blue-600">{analytics?.overview?.systemUptime || 'N/A'}</div>
-          <div className="text-sm text-blue-800">Uptime</div>
-        </div>
-        
-        <div className="text-center p-4 bg-purple-50 rounded-lg">
-          <Server size={32} className="mx-auto text-purple-600 mb-2" />
-          <div className="text-lg font-bold text-purple-600">Healthy</div>
-          <div className="text-sm text-purple-800">Server Status</div>
+      <div className="p-4 bg-gray-50 rounded-lg">
+        <h4 className="font-medium text-gray-900 mb-3">System Information</h4>
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <div>
+            <span className="text-gray-600">Uptime:</span>
+            <span className="ml-2 font-medium">{analytics?.overview.systemUptime || '99.9%'}</span>
+          </div>
+          <div>
+            <span className="text-gray-600">Error Rate:</span>
+            <span className="ml-2 font-medium">{performanceMetrics.errorRate || 0.02}%</span>
+          </div>
+          <div>
+            <span className="text-gray-600">Response Time:</span>
+            <span className="ml-2 font-medium">{performanceMetrics.responseTime || 145}ms</span>
+          </div>
+          <div>
+            <span className="text-gray-600">Active Sessions:</span>
+            <span className="ml-2 font-medium">{analytics?.overview.monthlyActiveUsers || 11}</span>
+          </div>
         </div>
       </div>
     </div>
   )
 }
-
 
 export default SuperAdminDashboardPage
