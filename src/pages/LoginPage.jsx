@@ -215,7 +215,7 @@ const LoginPage = () => {
         
         <div className="text-center">
           <h2 className="text-3xl font-bold text-gray-900 mb-2">
-            Welcome to EduSphere
+            Welcome to Pugarch
           </h2>
           <p className="text-gray-600 mb-2">
             Sign in to access your learning dashboard
@@ -358,7 +358,7 @@ const LoginPage = () => {
                     Locked ({formatLockTime(lockTimer)})
                   </>
                 ) : (
-                  'Sign in to EduSphere'
+                  'Sign in to pugarch'
                 )}
               </Button>
             </div>
@@ -412,7 +412,7 @@ const LoginPage = () => {
                   <ol className="list-decimal list-inside space-y-1 text-blue-700">
                     <li>Click any demo account button above</li>
                     <li>Credentials will be automatically filled</li>
-                    <li>Click "Sign in to EduSphere" to access the dashboard</li>
+                    <li>Click "Sign in to Pugarch" to access the dashboard</li>
                   </ol>
                 </div>
               </div>
@@ -492,7 +492,7 @@ const LoginPage = () => {
           <Link to="/terms" className="hover:text-gray-700 transition-colors">Terms</Link>
         </div>
         <p className="mt-2 text-xs text-gray-400">
-          © 2024 EduSphere. All rights reserved.
+          © 2025 Pugarch. All rights reserved.
         </p>
       </div>
     </div>

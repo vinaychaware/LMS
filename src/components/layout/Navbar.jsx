@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { Menu, X, User, BookOpen, GraduationCap, Settings, LogOut, Shield } from 'lucide-react'
 import useAuthStore from '../../store/useAuthStore'
 import Button from '../ui/Button'
+import logo from "../../assets/logo.png"; // adjust path based on where Navbar.jsx is
 
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -53,12 +54,20 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
-              <BookOpen size={20} className="text-white" />
-            </div>
-            <span className="text-xl font-bold text-gray-900">EduSphere</span>
-          </Link>
+         <Link to="/" className="flex items-center space-x-3">
+  <div className="flex items-center">
+    <img 
+      src={logo} 
+      alt="Pugarch Logo" 
+      className="h-10 w-auto max-h-12 object-contain"
+    />
+  </div>
+  <span className="text-2xl font-extrabold text-gray-900 tracking-wide">
+    Pugarch
+  </span>
+</Link>
+
+
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
