@@ -14,8 +14,12 @@ import {
 import { toast } from 'react-hot-toast'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
+import useAuthStore from '../store/useAuthStore'
+import { mockData } from '../services/mockData'
+import { useEffect } from 'react'
 
 const CreateCoursePage = () => {
+  const { user } = useAuthStore()
   const [isLoading, setIsLoading] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
   const [courseImage, setCourseImage] = useState(null)
@@ -24,6 +28,14 @@ const CreateCoursePage = () => {
   ])
   const navigate = useNavigate()
 
+  // Check permissions on component mount
+  useEffect(() => {
+    const currentUser = mockData.users.find(u => u.id === user.id)
+    if (!currentUser?.permissions?.canCreateCourses) {
+      toast.error('You do not have permission to create courses. Contact your admin.')
+      navigate(-1) // Go back to previous page
+    }
+  }, [user.id, navigate])
   const {
     register,
     handleSubmit,

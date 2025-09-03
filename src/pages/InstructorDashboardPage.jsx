@@ -163,11 +163,11 @@ const InstructorDashboardPage = () => {
 
   const createNewCourse = () => {
     const instructor = mockData.users.find(u => u.id === user.id)
-    if (!instructor.permissions.canCreateCourses) {
+    if (!instructor?.permissions?.canCreateCourses) {
       toast.error('You do not have permission to create courses. Contact admin.')
       return
     }
-    setShowCreateCourseModal(true)
+    navigate('/courses/create')
   }
 
   const handleCourseAction = async (courseId, action) => {

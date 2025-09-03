@@ -116,13 +116,13 @@ export const mockData = {
       collegeId: '2',
       assignedBy: '0',
       permissions: {
-        canCreateCourses: true,
+        canCreateCourses: false,
         canManageUsers: true,
         canManageCollegeCourses: true,
         canAssignInstructors: true,
         canViewCollegeAnalytics: true,
-        canCreateTests: true,
-        canManageTests: true
+        canCreateTests: false,
+        canManageTests: false
       }
     },
     {
@@ -143,7 +143,7 @@ export const mockData = {
         canManageCollegeCourses: true,
         canAssignInstructors: true,
         canViewCollegeAnalytics: true,
-        canCreateTests: true,
+        canCreateTests: false,
         canManageTests: true
       }
     },
@@ -161,11 +161,11 @@ export const mockData = {
       collegeId: '1',
       assignedBy: '1', // College Admin
       permissions: {
-        canCreateCourses: true,
+        canCreateCourses: false,
         canManageStudents: true,
         canViewAnalytics: true,
-        canCreateTests: true,
-        canManageTests: true
+        canCreateTests: false,
+        canManageTests: false
       },
       assignedCourses: ['1', '2'],
       students: ['3', '4', '5']
@@ -205,10 +205,10 @@ export const mockData = {
       collegeId: '3',
       assignedBy: '21',
       permissions: {
-        canCreateCourses: true,
+        canCreateCourses: false,
         canManageStudents: true,
         canViewAnalytics: true,
-        canCreateTests: true,
+        canCreateTests: false,
         canManageTests: true
       },
       assignedCourses: ['4'],
@@ -1179,7 +1179,11 @@ export const mockAPI = {
     const user = mockData.users.find(u => u.id === userId)
     if (user) {
       user.permissions = { ...user.permissions, ...permissions }
-      user.updatedAt = new Date().toISOString()
+      // Update the user in the original mockData
+      const userIndex = mockData.users.findIndex(u => u.id === userId)
+      if (userIndex !== -1) {
+        mockData.users[userIndex] = user
+      }
       return user
     }
     throw new Error('User not found')
