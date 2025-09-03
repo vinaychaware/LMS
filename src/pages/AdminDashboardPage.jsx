@@ -155,7 +155,10 @@ export default function AdminDashboardPage() {
 
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="p-6">
+          <Card 
+            className="p-6 cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => setActiveTab('students')}
+          >
             <div className="flex items-center">
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                 <Users size={24} className="text-blue-600" />
@@ -168,7 +171,10 @@ export default function AdminDashboardPage() {
             </div>
           </Card>
 
-          <Card className="p-6">
+          <Card 
+            className="p-6 cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => setActiveTab('courses')}
+          >
             <div className="flex items-center">
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
                 <BookOpen size={24} className="text-green-600" />
@@ -181,7 +187,10 @@ export default function AdminDashboardPage() {
             </div>
           </Card>
 
-          <Card className="p-6">
+          <Card 
+            className="p-6 cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => setActiveTab('instructors')}
+          >
             <div className="flex items-center">
               <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
                 <Award size={24} className="text-purple-600" />
@@ -194,7 +203,10 @@ export default function AdminDashboardPage() {
             </div>
           </Card>
 
-          <Card className="p-6">
+          <Card 
+            className="p-6 cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => setActiveTab('overview')}
+          >
             <div className="flex items-center">
               <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
                 <DollarSign size={24} className="text-yellow-600" />
@@ -209,7 +221,7 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="overview">
+        <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab}>
           <Tabs.List className="mb-6">
             <Tabs.Trigger value="overview">Overview</Tabs.Trigger>
             <Tabs.Trigger value="instructors">Instructors</Tabs.Trigger>
