@@ -54,18 +54,19 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-         <Link to="/" className="flex items-center space-x-3">
-  <div className="flex items-center">
-    <img 
-      src={logo} 
-      alt="Pugarch Logo" 
-      className="h-10 w-auto max-h-12 object-contain"
-    />
-  </div>
-  <span className="text-2xl font-extrabold text-gray-900 tracking-wide">
-    Pugarch
-  </span>
-</Link>
+          <Link to="/" className="flex items-center space-x-3">
+            <div className="flex items-center">
+              <img
+                src={logo}
+                alt="Pugarch Logo"
+                className="h-16 sm:h-20 md:h-28 lg:h-36 w-auto object-contain mx-auto"
+              />
+
+            </div>
+            {/* <span className="text-2xl font-extrabold text-gray-900 tracking-wide">
+              Pugarch
+            </span> */}
+          </Link>
 
 
 
@@ -76,43 +77,39 @@ const Navbar = () => {
                 {userRole === 'superadmin' ? (
                   <Link
                     to="/superadmin"
-                    className={`text-sm font-medium transition-colors ${
-                      isActive('/superadmin') 
-                        ? 'text-primary-600' 
-                        : 'text-gray-700 hover:text-primary-600'
-                    }`}
+                    className={`text-sm font-medium transition-colors ${isActive('/superadmin')
+                      ? 'text-primary-600'
+                      : 'text-gray-700 hover:text-primary-600'
+                      }`}
                   >
                     Super Admin
                   </Link>
                 ) : userRole === 'admin' ? (
                   <Link
                     to="/admin"
-                    className={`text-sm font-medium transition-colors ${
-                      isActive('/admin') 
-                        ? 'text-primary-600' 
-                        : 'text-gray-700 hover:text-primary-600'
-                    }`}
+                    className={`text-sm font-medium transition-colors ${isActive('/admin')
+                      ? 'text-primary-600'
+                      : 'text-gray-700 hover:text-primary-600'
+                      }`}
                   >
                     Admin Panel
                   </Link>
                 ) : userRole === 'instructor' ? (
                   <Link
                     to="/instructor"
-                    className={`text-sm font-medium transition-colors ${
-                      isActive('/instructor') 
-                        ? 'text-primary-600' 
-                        : 'text-gray-700 hover:text-primary-600'
-                    }`}
+                    className={`text-sm font-medium transition-colors ${isActive('/instructor')
+                      ? 'text-primary-600'
+                      : 'text-gray-700 hover:text-primary-600'
+                      }`}
                   >
                     My Courses
                   </Link>
                 ) : (
                   <Link
                     to="/dashboard"
-                    className={`text-sm font-medium transition-colors ${
-                      isActive('/dashboard') 
-                        ? 'text-primary-600' 
-                        : 'text-gray-700 hover:text-primary-600'
+                    className={`text-sm font-medium transition-colors ${isActive('/dashboard')
+                      ? 'text-primary-600'
+                      : 'text-gray-700 hover:text-primary-600'
                       }`}
                   >
                     My Learning
@@ -120,11 +117,10 @@ const Navbar = () => {
                 )}
                 <Link
                   to="/courses"
-                  className={`text-sm font-medium transition-colors ${
-                    isActive('/courses') 
-                      ? 'text-primary-600' 
-                      : 'text-gray-700 hover:text-primary-600'
-                  }`}
+                  className={`text-sm font-medium transition-colors ${isActive('/courses')
+                    ? 'text-primary-600'
+                    : 'text-gray-700 hover:text-primary-600'
+                    }`}
                 >
                   Browse Courses
                 </Link>
@@ -204,11 +200,10 @@ const Navbar = () => {
                 {userRole === 'superadmin' ? (
                   <Link
                     to="/superadmin"
-                    className={`block px-3 py-2 rounded-md text-base font-medium ${
-                      isActive('/superadmin')
-                        ? 'text-primary-600 bg-primary-50'
-                        : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
-                    }`}
+                    className={`block px-3 py-2 rounded-md text-base font-medium ${isActive('/superadmin')
+                      ? 'text-primary-600 bg-primary-50'
+                      : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
+                      }`}
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     Super Admin
@@ -216,11 +211,10 @@ const Navbar = () => {
                 ) : userRole === 'admin' ? (
                   <Link
                     to="/admin"
-                    className={`block px-3 py-2 rounded-md text-base font-medium ${
-                      isActive('/admin')
-                        ? 'text-primary-600 bg-primary-50'
-                        : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
-                    }`}
+                    className={`block px-3 py-2 rounded-md text-base font-medium ${isActive('/admin')
+                      ? 'text-primary-600 bg-primary-50'
+                      : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
+                      }`}
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     Admin Panel
@@ -228,11 +222,10 @@ const Navbar = () => {
                 ) : userRole === 'instructor' ? (
                   <Link
                     to="/instructor"
-                    className={`block px-3 py-2 rounded-md text-base font-medium ${
-                      isActive('/instructor')
-                        ? 'text-primary-600 bg-primary-50'
-                        : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
-                    }`}
+                    className={`block px-3 py-2 rounded-md text-base font-medium ${isActive('/instructor')
+                      ? 'text-primary-600 bg-primary-50'
+                      : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
+                      }`}
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     My Courses
@@ -240,11 +233,10 @@ const Navbar = () => {
                 ) : (
                   <Link
                     to="/dashboard"
-                    className={`block px-3 py-2 rounded-md text-base font-medium ${
-                      isActive('/dashboard')
-                        ? 'text-primary-600 bg-primary-50'
-                        : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
-                    }`}
+                    className={`block px-3 py-2 rounded-md text-base font-medium ${isActive('/dashboard')
+                      ? 'text-primary-600 bg-primary-50'
+                      : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
+                      }`}
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     My Learning
@@ -252,11 +244,10 @@ const Navbar = () => {
                 )}
                 <Link
                   to="/courses"
-                  className={`block px-3 py-2 rounded-md text-base font-medium ${
-                    isActive('/courses')
-                      ? 'text-primary-600 bg-primary-50'
-                      : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
-                  }`}
+                  className={`block px-3 py-2 rounded-md text-base font-medium ${isActive('/courses')
+                    ? 'text-primary-600 bg-primary-50'
+                    : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
+                    }`}
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   Browse Courses
