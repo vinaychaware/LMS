@@ -46,6 +46,31 @@ export default function SuperAdminDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [selectedCollege, setSelectedCollege] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedCourse, setSelectedCourse] = useState(null);
+  const [showCreateCourseModal, setShowCreateCourseModal] = useState(false);
+  const [showCreateTestModal, setShowCreateTestModal] = useState(false);
+  const [newCourse, setNewCourse] = useState({
+    title: '',
+    description: '',
+    category: '',
+    level: 'beginner',
+    collegeId: '',
+    instructorId: '',
+    estimatedDuration: '',
+    price: 0
+  });
+  const [newTest, setNewTest] = useState({
+    title: '',
+    description: '',
+    type: 'module',
+    courseId: '',
+    moduleId: '',
+    questions: 20,
+    duration: 60,
+    passingScore: 70,
+    maxAttempts: 3
+  });
+  const [userPermissions, setUserPermissions] = useState({});
   const [showCollegeModal, setShowCollegeModal] = useState(false);
   const [showUserModal, setShowUserModal] = useState(false);
   const [showPermissionsModal, setShowPermissionsModal] = useState(false);
