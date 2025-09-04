@@ -46,31 +46,6 @@ export default function SuperAdminDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [selectedCollege, setSelectedCollege] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [selectedCourse, setSelectedCourse] = useState(null);
-  const [showCreateCourseModal, setShowCreateCourseModal] = useState(false);
-  const [showCreateTestModal, setShowCreateTestModal] = useState(false);
-  const [newCourse, setNewCourse] = useState({
-    title: '',
-    description: '',
-    category: '',
-    level: 'beginner',
-    collegeId: '',
-    instructorId: '',
-    estimatedDuration: '',
-    price: 0
-  });
-  const [newTest, setNewTest] = useState({
-    title: '',
-    description: '',
-    type: 'module',
-    courseId: '',
-    moduleId: '',
-    questions: 20,
-    duration: 60,
-    passingScore: 70,
-    maxAttempts: 3
-  });
-  const [userPermissions, setUserPermissions] = useState({});
   const [showCollegeModal, setShowCollegeModal] = useState(false);
   const [showUserModal, setShowUserModal] = useState(false);
   const [showPermissionsModal, setShowPermissionsModal] = useState(false);
@@ -257,15 +232,37 @@ export default function SuperAdminDashboardPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center space-x-4 mb-4">
-            <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-              <Shield size={24} className="text-purple-600" />
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                <Shield size={24} className="text-purple-600" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Super Admin Dashboard</h1>
+                <p className="text-gray-600 mt-1">
+                  System-wide management and analytics across all institutions
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Super Admin Dashboard</h1>
-              <p className="text-gray-600 mt-1">
-                System-wide management and analytics across all institutions
-              </p>
+            <div className="flex space-x-3">
+              <Button 
+                onClick={() => setShowCreateCourseModal(true)}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <Plus size={16} className="mr-2" />
+                Create Course
+              </Button>
+              <Button 
+                onClick={() => setShowCreateTestModal(true)}
+                className="bg-purple-600 hover:bg-purple-700"
+              >
+                <Plus size={16} className="mr-2" />
+                Create Test
+              </Button>
+              <Button onClick={() => setShowCollegeModal(true)}>
+                <Plus size={16} className="mr-2" />
+                Add College
+              </Button>
             </div>
           </div>
         </div>
