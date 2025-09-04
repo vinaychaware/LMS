@@ -1,1624 +1,1160 @@
-// Enhanced mock data service for LMS with proper hierarchy and Super Admin support
-export const mockData = {
-  // Colleges/Organizations
-  colleges: [
-    {
-      id: '1',
-      name: 'Tech University',
-      code: 'TECH001',
-      address: '123 Innovation Drive, Tech City, TC 12345',
-      phone: '+1-555-0123',
-      email: 'admin@techuniversity.edu',
-      website: 'https://techuniversity.edu',
-      establishedYear: 2010,
-      totalStudents: 1250,
-      totalInstructors: 45,
-      totalCourses: 120,
-      status: 'active',
-      logo: 'https://images.pexels.com/photos/267885/pexels-photo-267885.jpeg?auto=compress&cs=tinysrgb&w=150',
-      createdAt: '2024-01-01T00:00:00Z',
-      updatedAt: '2024-01-20T10:00:00Z'
-    },
-    {
-      id: '2',
-      name: 'Business Academy',
-      code: 'BIZ002',
-      address: '456 Commerce Street, Business City, BC 67890',
-      phone: '+1-555-0456',
-      email: 'contact@businessacademy.edu',
-      website: 'https://businessacademy.edu',
-      establishedYear: 2015,
-      totalStudents: 890,
-      totalInstructors: 32,
-      totalCourses: 85,
-      status: 'active',
-      logo: 'https://images.pexels.com/photos/159711/books-bookstore-book-reading-159711.jpeg?auto=compress&cs=tinysrgb&w=150',
-      createdAt: '2024-01-05T00:00:00Z',
-      updatedAt: '2024-01-18T15:30:00Z'
-    },
-    {
-      id: '3',
-      name: 'Creative Arts Institute',
-      code: 'ART003',
-      address: '789 Artist Lane, Creative City, CC 13579',
-      phone: '+1-555-0789',
-      email: 'info@creativearts.edu',
-      website: 'https://creativearts.edu',
-      establishedYear: 2018,
-      totalStudents: 650,
-      totalInstructors: 28,
-      totalCourses: 95,
-      status: 'active',
-      logo: 'https://images.pexels.com/photos/1181533/pexels-photo-1181533.jpeg?auto=compress&cs=tinysrgb&w=150',
-      createdAt: '2024-01-10T00:00:00Z',
-      updatedAt: '2024-01-19T09:45:00Z'
-    }
-  ],
+import React, { useState, useEffect } from 'react';
+import Card from '../components/ui/Card';
+import Button from '../components/ui/Button';
+import Input from '../components/ui/Input';
+import Badge from '../components/ui/Badge';
+import Modal from '../components/ui/Modal';
+import Tabs from '../components/ui/Tabs';
+import useAuthStore from '../store/useAuthStore';
+import { mockAPI, mockData } from '../services/mockData';
+import toast from 'react-hot-toast';
+import { 
+  Shield, 
+  Building2, 
+  Users, 
+  BookOpen, 
+  Settings,
+  Plus,
+  Edit,
+  Eye,
+  Trash2,
+  UserCheck,
+  UserX,
+  Award,
+  Activity,
+  TrendingUp,
+  DollarSign,
+  Clock,
+  Search,
+  Filter,
+  Download,
+  AlertCircle,
+  CheckCircle,
+  X,
+  Save,
+  RotateCcw
+} from 'lucide-react';
 
-  // Users with proper hierarchy and college assignments
-  users: [
-    // Super Admin
-    {
-      id: '0',
-      name: 'Super Administrator',
-      email: 'superadmin@edusphere.com',
-      role: 'superadmin',
-      avatar: 'https://images.pexels.com/photos/2182970/pexels-photo-2182970.jpeg?auto=compress&cs=tinysrgb&w=150',
-      isActive: true,
-      isVerified: true,
-      joinedDate: '2024-01-01T00:00:00Z',
-      lastLogin: '2024-01-20T08:00:00Z',
-      collegeId: null, // Super admin oversees all colleges
-      permissions: {
-        canManageColleges: true,
-        canManageAllUsers: true,
-        canManageSystem: true,
-        canViewAllData: true,
-        canCreateAdmins: true,
-        canCreateCourses: true,
-        canCreateTests: true,
-        canManageTests: true
-      }
-    },
-    // College Admins
-    {
-      id: '1',
-      name: 'Dr. Sarah Johnson',
-      email: 'admin@demo.com',
-      role: 'admin',
-      avatar: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=150',
-      isActive: true,
-      isVerified: true,
-      joinedDate: '2024-01-01T00:00:00Z',
-      lastLogin: '2024-01-20T08:00:00Z',
-      collegeId: '1',
-      assignedBy: '0', // Super Admin
-      permissions: {
-        canCreateCourses: true,
-        canManageUsers: true,
-        canManageCollegeCourses: true,
-        canAssignInstructors: true,
-        canViewCollegeAnalytics: true,
-        canCreateTests: true,
-        canManageTests: true
-      }
-    },
-    {
-      id: '11',
-      name: 'Prof. Michael Chen',
-      email: 'admin@businessacademy.edu',
-      role: 'admin',
-      avatar: 'https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg?auto=compress&cs=tinysrgb&w=150',
-      isActive: true,
-      isVerified: true,
-      joinedDate: '2024-01-05T00:00:00Z',
-      lastLogin: '2024-01-19T16:30:00Z',
-      collegeId: '2',
-      assignedBy: '0',
-      permissions: {
-        canCreateCourses: false,
-        canManageUsers: true,
-        canManageCollegeCourses: true,
-        canAssignInstructors: true,
-        canViewCollegeAnalytics: true,
-        canCreateTests: false,
-        canManageTests: false
-      }
-    },
-    {
-      id: '21',
-      name: 'Dr. Emily Rodriguez',
-      email: 'admin@creativearts.edu',
-      role: 'admin',
-      avatar: 'https://images.pexels.com/photos/1181686/pexels-photo-1181686.jpeg?auto=compress&cs=tinysrgb&w=150',
-      isActive: true,
-      isVerified: true,
-      joinedDate: '2024-01-10T00:00:00Z',
-      lastLogin: '2024-01-20T11:15:00Z',
-      collegeId: '3',
-      assignedBy: '0',
-      permissions: {
-        canCreateCourses: true,
-        canManageUsers: true,
-        canManageCollegeCourses: true,
-        canAssignInstructors: true,
-        canViewCollegeAnalytics: true,
-        canCreateTests: false,
-        canManageTests: true
-      }
-    },
-    // Instructors
-    {
-      id: '2',
-      name: 'Sarah Instructor',
-      email: 'instructor@demo.com',
-      role: 'instructor',
-      avatar: 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=150',
-      isActive: true,
-      isVerified: true,
-      joinedDate: '2024-01-10T00:00:00Z',
-      lastLogin: '2024-01-20T09:15:00Z',
-      collegeId: '1',
-      assignedBy: '1', // College Admin
-      permissions: {
-        canCreateCourses: false,
-        canManageStudents: true,
-        canViewAnalytics: true,
-        canCreateTests: false,
-        canManageTests: false
-      },
-      assignedCourses: ['1', '2'],
-      students: ['3', '4', '5']
-    },
-    {
-      id: '12',
-      name: 'Prof. David Wilson',
-      email: 'dwilson@businessacademy.edu',
-      role: 'instructor',
-      avatar: 'https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=150',
-      isActive: true,
-      isVerified: true,
-      joinedDate: '2024-01-12T00:00:00Z',
-      lastLogin: '2024-01-19T14:20:00Z',
-      collegeId: '2',
-      assignedBy: '11',
-      permissions: {
-        canCreateCourses: true,
-        canManageStudents: true,
-        canViewAnalytics: true,
-        canCreateTests: true,
-        canManageTests: true
-      },
-      assignedCourses: ['3'],
-      students: ['13', '14']
-    },
-    {
-      id: '22',
-      name: 'Ms. Lisa Thompson',
-      email: 'lthompson@creativearts.edu',
-      role: 'instructor',
-      avatar: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=150',
-      isActive: true,
-      isVerified: true,
-      joinedDate: '2024-01-15T00:00:00Z',
-      lastLogin: '2024-01-20T13:45:00Z',
-      collegeId: '3',
-      assignedBy: '21',
-      permissions: {
-        canCreateCourses: false,
-        canManageStudents: true,
-        canViewAnalytics: true,
-        canCreateTests: false,
-        canManageTests: true
-      },
-      assignedCourses: ['4'],
-      students: ['23', '24']
-    },
-    // Students
-    {
-      id: '3',
-      name: 'John Student',
-      email: 'student@demo.com',
-      role: 'student',
-      avatar: 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150',
-      isActive: true,
-      isVerified: true,
-      joinedDate: '2024-01-15T00:00:00Z',
-      lastLogin: '2024-01-20T10:30:00Z',
-      collegeId: '1',
-      instructorId: '2',
-      assignedBy: '2', // Instructor
-      assignedCourses: ['1'],
-      progress: {
-        '1': {
-          currentModule: '1',
-          currentChapter: '1-1',
-          completedChapters: [],
-          completedModules: [],
-          moduleTestResults: {},
-          courseTestResult: null,
-          aiInterviewResult: null,
-          overallProgress: 0,
-          timeSpent: 0,
-          lastAccessed: '2024-01-20T10:30:00Z'
-        }
-      }
-    },
-    {
-      id: '4',
-      name: 'Emily Johnson',
-      email: 'emily@techuniversity.edu',
-      role: 'student',
-      avatar: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=150',
-      isActive: true,
-      isVerified: true,
-      joinedDate: '2024-01-18T00:00:00Z',
-      lastLogin: '2024-01-19T16:45:00Z',
-      collegeId: '1',
-      instructorId: '2',
-      assignedBy: '2',
-      assignedCourses: ['1', '2'],
-      progress: {
-        '1': {
-          currentModule: '2',
-          currentChapter: '2-1',
-          completedChapters: ['1-1', '1-2', '1-3'],
-          completedModules: ['1'],
-          moduleTestResults: { 
-            '1': { score: 85, passed: true, attemptedAt: '2024-01-19T14:00:00Z', attempts: 1 }
-          },
-          courseTestResult: null,
-          aiInterviewResult: null,
-          overallProgress: 35,
-          timeSpent: 180,
-          lastAccessed: '2024-01-19T16:45:00Z'
-        },
-        '2': {
-          currentModule: '4',
-          currentChapter: '4-1',
-          completedChapters: [],
-          completedModules: [],
-          moduleTestResults: {},
-          courseTestResult: null,
-          aiInterviewResult: null,
-          overallProgress: 5,
-          timeSpent: 30,
-          lastAccessed: '2024-01-19T15:20:00Z'
-        }
-      }
-    },
-    {
-      id: '5',
-      name: 'Michael Brown',
-      email: 'michael@techuniversity.edu',
-      role: 'student',
-      avatar: 'https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=150',
-      isActive: true,
-      isVerified: true,
-      joinedDate: '2024-01-16T00:00:00Z',
-      lastLogin: '2024-01-19T14:20:00Z',
-      collegeId: '1',
-      instructorId: '2',
-      assignedBy: '2',
-      assignedCourses: ['2'],
-      progress: {
-        '2': {
-          currentModule: '4',
-          currentChapter: '4-1',
-          completedChapters: [],
-          completedModules: [],
-          moduleTestResults: {},
-          courseTestResult: null,
-          aiInterviewResult: null,
-          overallProgress: 5,
-          timeSpent: 45,
-          lastAccessed: '2024-01-19T14:20:00Z'
-        }
-      }
-    },
-    // Business Academy Students
-    {
-      id: '13',
-      name: 'Alex Martinez',
-      email: 'alex@businessacademy.edu',
-      role: 'student',
-      avatar: 'https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg?auto=compress&cs=tinysrgb&w=150',
-      isActive: true,
-      isVerified: true,
-      joinedDate: '2024-01-12T00:00:00Z',
-      lastLogin: '2024-01-20T09:30:00Z',
-      collegeId: '2',
-      instructorId: '12',
-      assignedBy: '12',
-      assignedCourses: ['3'],
-      progress: {
-        '3': {
-          currentModule: '6',
-          currentChapter: '6-1',
-          completedChapters: [],
-          completedModules: [],
-          moduleTestResults: {},
-          courseTestResult: null,
-          aiInterviewResult: null,
-          overallProgress: 10,
-          timeSpent: 60,
-          lastAccessed: '2024-01-20T09:30:00Z'
-        }
-      }
-    },
-    {
-      id: '14',
-      name: 'Jessica Lee',
-      email: 'jessica@businessacademy.edu',
-      role: 'student',
-      avatar: 'https://images.pexels.com/photos/1181686/pexels-photo-1181686.jpeg?auto=compress&cs=tinysrgb&w=150',
-      isActive: true,
-      isVerified: true,
-      joinedDate: '2024-01-14T00:00:00Z',
-      lastLogin: '2024-01-19T11:15:00Z',
-      collegeId: '2',
-      instructorId: '12',
-      assignedBy: '12',
-      assignedCourses: ['3'],
-      progress: {
-        '3': {
-          currentModule: '6',
-          currentChapter: '6-2',
-          completedChapters: ['6-1'],
-          completedModules: [],
-          moduleTestResults: {},
-          courseTestResult: null,
-          aiInterviewResult: null,
-          overallProgress: 15,
-          timeSpent: 90,
-          lastAccessed: '2024-01-19T11:15:00Z'
-        }
-      }
-    },
-    // Creative Arts Students
-    {
-      id: '23',
-      name: 'Ryan Cooper',
-      email: 'ryan@creativearts.edu',
-      role: 'student',
-      avatar: 'https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg?auto=compress&cs=tinysrgb&w=150',
-      isActive: true,
-      isVerified: true,
-      joinedDate: '2024-01-16T00:00:00Z',
-      lastLogin: '2024-01-20T14:00:00Z',
-      collegeId: '3',
-      instructorId: '22',
-      assignedBy: '22',
-      assignedCourses: ['4'],
-      progress: {
-        '4': {
-          currentModule: '7',
-          currentChapter: '7-1',
-          completedChapters: [],
-          completedModules: [],
-          moduleTestResults: {},
-          courseTestResult: null,
-          aiInterviewResult: null,
-          overallProgress: 8,
-          timeSpent: 40,
-          lastAccessed: '2024-01-20T14:00:00Z'
-        }
-      }
-    },
-    {
-      id: '24',
-      name: 'Sophia Davis',
-      email: 'sophia@creativearts.edu',
-      role: 'student',
-      avatar: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=150',
-      isActive: true,
-      isVerified: true,
-      joinedDate: '2024-01-17T00:00:00Z',
-      lastLogin: '2024-01-20T12:30:00Z',
-      collegeId: '3',
-      instructorId: '22',
-      assignedBy: '22',
-      assignedCourses: ['4'],
-      progress: {
-        '4': {
-          currentModule: '7',
-          currentChapter: '7-2',
-          completedChapters: ['7-1'],
-          completedModules: [],
-          moduleTestResults: {},
-          courseTestResult: null,
-          aiInterviewResult: null,
-          overallProgress: 12,
-          timeSpent: 75,
-          lastAccessed: '2024-01-20T12:30:00Z'
-        }
-      }
-    }
-  ],
+export default function SuperAdminDashboardPage() {
+  const { user } = useAuthStore();
+  const [colleges, setColleges] = useState([]);
+  const [allAdmins, setAllAdmins] = useState([]);
+  const [allInstructors, setAllInstructors] = useState([]);
+  const [allStudents, setAllStudents] = useState([]);
+  const [allCourses, setAllCourses] = useState([]);
+  const [systemAnalytics, setSystemAnalytics] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [selectedCollege, setSelectedCollege] = useState(null);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [showCollegeModal, setShowCollegeModal] = useState(false);
+  const [showUserModal, setShowUserModal] = useState(false);
+  const [showPermissionsModal, setShowPermissionsModal] = useState(false);
+  const [showCreateCollegeModal, setShowCreateCollegeModal] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterRole, setFilterRole] = useState('all');
+  const [editingPermissions, setEditingPermissions] = useState({});
 
-  // Courses with proper college assignments
-  courses: [
-    {
-      id: '1',
-      title: 'Complete Web Development Bootcamp',
-      description: 'Master web development from frontend to backend with hands-on projects and real-world applications.',
-      instructor: {
-        id: '2',
-        name: 'Sarah Instructor',
-        avatar: 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=150'
-      },
-      thumbnail: 'https://images.pexels.com/photos/11035380/pexels-photo-11035380.jpeg?auto=compress&cs=tinysrgb&w=400',
-      category: 'Programming',
-      level: 'beginner',
-      status: 'published',
-      isActive: true,
-      collegeId: '1',
-      createdBy: '1',
-      assignedInstructors: ['2'],
-      enrolledStudents: ['3', '4'],
-      totalModules: 3,
-      totalChapters: 9,
-      estimatedDuration: '40 hours',
-      price: 299,
-      rating: 4.8,
-      reviewCount: 156,
-      createdAt: '2024-01-10T00:00:00Z',
-      updatedAt: '2024-01-19T00:00:00Z',
-      courseTest: {
-        id: 'ct-1',
-        title: 'Web Development Final Assessment',
-        questions: 50,
-        duration: 120,
-        passingScore: 70,
-        maxAttempts: 2
-      }
-    },
-    {
-      id: '2',
-      title: 'Advanced JavaScript Concepts',
-      description: 'Deep dive into advanced JavaScript concepts, design patterns, and modern ES6+ features.',
-      instructor: {
-        id: '2',
-        name: 'Sarah Instructor',
-        avatar: 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=150'
-      },
-      thumbnail: 'https://images.pexels.com/photos/4164418/pexels-photo-4164418.jpeg?auto=compress&cs=tinysrgb&w=400',
-      category: 'Programming',
-      level: 'advanced',
-      status: 'published',
-      isActive: true,
-      collegeId: '1',
-      createdBy: '1',
-      assignedInstructors: ['2'],
-      enrolledStudents: ['4', '5'],
-      totalModules: 2,
-      totalChapters: 6,
-      estimatedDuration: '25 hours',
-      price: 199,
-      rating: 4.9,
-      reviewCount: 89,
-      createdAt: '2024-01-12T00:00:00Z',
-      updatedAt: '2024-01-18T00:00:00Z',
-      courseTest: {
-        id: 'ct-2',
-        title: 'Advanced JavaScript Final Test',
-        questions: 40,
-        duration: 90,
-        passingScore: 75,
-        maxAttempts: 2
-      }
-    },
-    {
-      id: '3',
-      title: 'Business Strategy Fundamentals',
-      description: 'Learn essential business strategy concepts and frameworks for modern organizations.',
-      instructor: {
-        id: '12',
-        name: 'Prof. David Wilson',
-        avatar: 'https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=150'
-      },
-      thumbnail: 'https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=400',
-      category: 'Business',
-      level: 'intermediate',
-      status: 'published',
-      isActive: true,
-      collegeId: '2',
-      createdBy: '11',
-      assignedInstructors: ['12'],
-      enrolledStudents: ['13', '14'],
-      totalModules: 2,
-      totalChapters: 8,
-      estimatedDuration: '30 hours',
-      price: 249,
-      rating: 4.7,
-      reviewCount: 67,
-      createdAt: '2024-01-13T00:00:00Z',
-      updatedAt: '2024-01-19T00:00:00Z',
-      courseTest: {
-        id: 'ct-3',
-        title: 'Business Strategy Assessment',
-        questions: 35,
-        duration: 75,
-        passingScore: 70,
-        maxAttempts: 3
-      }
-    },
-    {
-      id: '4',
-      title: 'Digital Art & Design Mastery',
-      description: 'Comprehensive course covering digital art techniques, design principles, and creative workflows.',
-      instructor: {
-        id: '22',
-        name: 'Ms. Lisa Thompson',
-        avatar: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=150'
-      },
-      thumbnail: 'https://images.pexels.com/photos/3184338/pexels-photo-3184338.jpeg?auto=compress&cs=tinysrgb&w=400',
-      category: 'Design',
-      level: 'beginner',
-      status: 'published',
-      isActive: true,
-      collegeId: '3',
-      createdBy: '21',
-      assignedInstructors: ['22'],
-      enrolledStudents: ['23', '24'],
-      totalModules: 3,
-      totalChapters: 12,
-      estimatedDuration: '35 hours',
-      price: 179,
-      rating: 4.6,
-      reviewCount: 43,
-      createdAt: '2024-01-16T00:00:00Z',
-      updatedAt: '2024-01-20T00:00:00Z',
-      courseTest: {
-        id: 'ct-4',
-        title: 'Digital Art Portfolio Assessment',
-        questions: 25,
-        duration: 60,
-        passingScore: 75,
-        maxAttempts: 2
-      }
-    }
-  ],
+  useEffect(() => {
+    fetchSystemData();
+  }, []);
 
-  // Modules with proper course assignments
-  modules: [
-    // Course 1 Modules (Web Development)
-    {
-      id: '1',
-      courseId: '1',
-      title: 'Frontend Fundamentals',
-      description: 'Learn HTML, CSS, and basic JavaScript',
-      order: 1,
-      estimatedDuration: '15 hours',
-      totalChapters: 3,
-      isActive: true,
-      createdBy: '1',
-      moduleTest: {
-        id: 'mt-1',
-        title: 'Frontend Fundamentals Test',
-        questions: 20,
-        duration: 45,
-        passingScore: 70,
-        maxAttempts: 3
-      }
-    },
-    {
-      id: '2',
-      courseId: '1',
-      title: 'Backend Development',
-      description: 'Server-side programming with Node.js and databases',
-      order: 2,
-      estimatedDuration: '20 hours',
-      totalChapters: 4,
-      isActive: true,
-      createdBy: '1',
-      moduleTest: {
-        id: 'mt-2',
-        title: 'Backend Development Test',
-        questions: 25,
-        duration: 60,
-        passingScore: 70,
-        maxAttempts: 3
-      }
-    },
-    {
-      id: '3',
-      courseId: '1',
-      title: 'Full Stack Integration',
-      description: 'Connecting frontend and backend, deployment',
-      order: 3,
-      estimatedDuration: '5 hours',
-      totalChapters: 2,
-      isActive: true,
-      createdBy: '1',
-      moduleTest: {
-        id: 'mt-3',
-        title: 'Full Stack Integration Test',
-        questions: 15,
-        duration: 30,
-        passingScore: 70,
-        maxAttempts: 3
-      }
-    },
-    // Course 2 Modules (Advanced JavaScript)
-    {
-      id: '4',
-      courseId: '2',
-      title: 'Advanced JavaScript Features',
-      description: 'ES6+, async programming, and modern JavaScript',
-      order: 1,
-      estimatedDuration: '15 hours',
-      totalChapters: 3,
-      isActive: true,
-      createdBy: '1',
-      moduleTest: {
-        id: 'mt-4',
-        title: 'Advanced JavaScript Features Test',
-        questions: 30,
-        duration: 60,
-        passingScore: 75,
-        maxAttempts: 2
-      }
-    },
-    {
-      id: '5',
-      courseId: '2',
-      title: 'JavaScript Design Patterns',
-      description: 'Common design patterns and best practices',
-      order: 2,
-      estimatedDuration: '10 hours',
-      totalChapters: 3,
-      isActive: true,
-      createdBy: '1',
-      moduleTest: {
-        id: 'mt-5',
-        title: 'Design Patterns Test',
-        questions: 25,
-        duration: 45,
-        passingScore: 75,
-        maxAttempts: 2
-      }
-    },
-    // Course 3 Modules (Business Strategy)
-    {
-      id: '6',
-      courseId: '3',
-      title: 'Strategic Planning Fundamentals',
-      description: 'Core concepts of strategic planning and analysis',
-      order: 1,
-      estimatedDuration: '18 hours',
-      totalChapters: 4,
-      isActive: true,
-      createdBy: '11',
-      moduleTest: {
-        id: 'mt-6',
-        title: 'Strategic Planning Test',
-        questions: 20,
-        duration: 50,
-        passingScore: 70,
-        maxAttempts: 3
-      }
-    },
-    {
-      id: '8',
-      courseId: '3',
-      title: 'Market Analysis & Competitive Intelligence',
-      description: 'Understanding markets and competitive landscapes',
-      order: 2,
-      estimatedDuration: '12 hours',
-      totalChapters: 4,
-      isActive: true,
-      createdBy: '11',
-      moduleTest: {
-        id: 'mt-8',
-        title: 'Market Analysis Test',
-        questions: 18,
-        duration: 40,
-        passingScore: 70,
-        maxAttempts: 3
-      }
-    },
-    // Course 4 Modules (Digital Art)
-    {
-      id: '7',
-      courseId: '4',
-      title: 'Digital Art Basics',
-      description: 'Introduction to digital art tools and techniques',
-      order: 1,
-      estimatedDuration: '12 hours',
-      totalChapters: 4,
-      isActive: true,
-      createdBy: '21',
-      moduleTest: {
-        id: 'mt-7',
-        title: 'Digital Art Basics Test',
-        questions: 15,
-        duration: 35,
-        passingScore: 75,
-        maxAttempts: 3
-      }
-    },
-    {
-      id: '9',
-      courseId: '4',
-      title: 'Advanced Design Techniques',
-      description: 'Professional design workflows and advanced techniques',
-      order: 2,
-      estimatedDuration: '15 hours',
-      totalChapters: 4,
-      isActive: true,
-      createdBy: '21',
-      moduleTest: {
-        id: 'mt-9',
-        title: 'Advanced Design Test',
-        questions: 20,
-        duration: 45,
-        passingScore: 75,
-        maxAttempts: 2
-      }
-    },
-    {
-      id: '10',
-      courseId: '4',
-      title: 'Portfolio Development',
-      description: 'Building a professional design portfolio',
-      order: 3,
-      estimatedDuration: '8 hours',
-      totalChapters: 4,
-      isActive: true,
-      createdBy: '21',
-      moduleTest: {
-        id: 'mt-10',
-        title: 'Portfolio Assessment',
-        questions: 12,
-        duration: 30,
-        passingScore: 80,
-        maxAttempts: 2
-      }
+  const fetchSystemData = async () => {
+    try {
+      setLoading(true);
+      
+      const [collegesData, adminsData, instructorsData, studentsData, analyticsData] = await Promise.all([
+        mockAPI.getAllColleges(),
+        mockAPI.getAllAdmins(),
+        mockAPI.getAllInstructors(),
+        mockAPI.getAllStudents(),
+        mockAPI.getSystemAnalytics()
+      ]);
+      
+      setColleges(collegesData);
+      setAllAdmins(adminsData);
+      setAllInstructors(instructorsData);
+      setAllStudents(studentsData);
+      setAllCourses(mockData.courses);
+      setSystemAnalytics(analyticsData);
+      
+    } catch (error) {
+      console.error('Error fetching system data:', error);
+      toast.error('Failed to load system data');
+    } finally {
+      setLoading(false);
     }
-  ],
+  };
 
-  // Chapters with proper module assignments
-  chapters: [
-    // Module 1 Chapters (Frontend Fundamentals)
-    {
-      id: '1-1',
-      moduleId: '1',
-      courseId: '1',
-      title: 'HTML Fundamentals',
-      description: 'Learn HTML structure, semantic elements, and best practices',
-      content: 'HTML (HyperText Markup Language) is the standard markup language for creating web pages. In this chapter, you will learn about HTML structure, semantic elements, forms, and accessibility best practices.',
-      order: 1,
-      estimatedDuration: '5 hours',
-      videoUrl: 'https://example.com/videos/html-fundamentals.mp4',
-      resources: [
-        { type: 'pdf', title: 'HTML Reference Guide', url: '/resources/html-guide.pdf' },
-        { type: 'link', title: 'MDN HTML Documentation', url: 'https://developer.mozilla.org/en-US/docs/Web/HTML' }
-      ],
-      isActive: true,
-      isLocked: false
-    },
-    {
-      id: '1-2',
-      moduleId: '1',
-      courseId: '1',
-      title: 'CSS Styling and Layout',
-      description: 'Master CSS for styling and responsive layouts',
-      content: 'CSS (Cascading Style Sheets) is used for styling HTML elements. Learn about selectors, box model, flexbox, grid, and responsive design principles.',
-      order: 2,
-      estimatedDuration: '6 hours',
-      videoUrl: 'https://example.com/videos/css-fundamentals.mp4',
-      resources: [
-        { type: 'pdf', title: 'CSS Flexbox Guide', url: '/resources/flexbox-guide.pdf' },
-        { type: 'codepen', title: 'CSS Examples', url: 'https://codepen.io/examples' }
-      ],
-      isActive: true,
-      isLocked: true
-    },
-    {
-      id: '1-3',
-      moduleId: '1',
-      courseId: '1',
-      title: 'JavaScript Basics',
-      description: 'Introduction to JavaScript programming',
-      content: 'JavaScript is a high-level programming language that enables interactive web pages. Learn variables, functions, DOM manipulation, and event handling.',
-      order: 3,
-      estimatedDuration: '4 hours',
-      videoUrl: 'https://example.com/videos/js-basics.mp4',
-      resources: [
-        { type: 'pdf', title: 'JavaScript Cheat Sheet', url: '/resources/js-cheatsheet.pdf' }
-      ],
-      isActive: true,
-      isLocked: true
-    },
-    // Module 2 Chapters (Backend Development)
-    {
-      id: '2-1',
-      moduleId: '2',
-      courseId: '1',
-      title: 'Node.js Introduction',
-      description: 'Server-side JavaScript with Node.js',
-      content: 'Node.js is a JavaScript runtime built on Chrome\'s V8 engine. Learn about server-side JavaScript, npm, modules, and building your first server.',
-      order: 1,
-      estimatedDuration: '5 hours',
-      videoUrl: 'https://example.com/videos/nodejs-intro.mp4',
-      resources: [],
-      isActive: true,
-      isLocked: true
-    },
-    {
-      id: '2-2',
-      moduleId: '2',
-      courseId: '1',
-      title: 'Express.js Framework',
-      description: 'Building web applications with Express.js',
-      content: 'Express.js is a minimal and flexible Node.js web application framework. Learn routing, middleware, templating, and building RESTful APIs.',
-      order: 2,
-      estimatedDuration: '6 hours',
-      videoUrl: 'https://example.com/videos/express-intro.mp4',
-      resources: [],
-      isActive: true,
-      isLocked: true
-    },
-    {
-      id: '2-3',
-      moduleId: '2',
-      courseId: '1',
-      title: 'Database Integration',
-      description: 'Working with databases in Node.js applications',
-      content: 'Learn how to integrate databases with your Node.js applications using MongoDB and Mongoose ODM.',
-      order: 3,
-      estimatedDuration: '6 hours',
-      videoUrl: 'https://example.com/videos/database-integration.mp4',
-      resources: [],
-      isActive: true,
-      isLocked: true
-    },
-    {
-      id: '2-4',
-      moduleId: '2',
-      courseId: '1',
-      title: 'API Development',
-      description: 'Creating RESTful APIs with Express.js',
-      content: 'REST APIs are the backbone of modern web applications. Learn to design, build, and test RESTful APIs.',
-      order: 4,
-      estimatedDuration: '3 hours',
-      videoUrl: 'https://example.com/videos/api-development.mp4',
-      resources: [],
-      isActive: true,
-      isLocked: true
-    },
-    // Additional chapters for other courses...
-    {
-      id: '4-1',
-      moduleId: '4',
-      courseId: '2',
-      title: 'ES6+ Features',
-      description: 'Modern JavaScript syntax and features',
-      content: 'Explore ES6+ features including arrow functions, destructuring, modules, promises, and async/await.',
-      order: 1,
-      estimatedDuration: '5 hours',
-      videoUrl: 'https://example.com/videos/es6-features.mp4',
-      resources: [],
-      isActive: true,
-      isLocked: false
-    },
-    {
-      id: '6-1',
-      moduleId: '6',
-      courseId: '3',
-      title: 'Strategic Analysis Framework',
-      description: 'Understanding strategic analysis tools',
-      content: 'Learn SWOT analysis, Porter\'s Five Forces, and other strategic analysis frameworks.',
-      order: 1,
-      estimatedDuration: '4 hours',
-      videoUrl: 'https://example.com/videos/strategic-analysis.mp4',
-      resources: [],
-      isActive: true,
-      isLocked: false
-    },
-    {
-      id: '6-2',
-      moduleId: '6',
-      courseId: '3',
-      title: 'Competitive Positioning',
-      description: 'Developing competitive strategies',
-      content: 'Learn how to position your organization competitively in the market.',
-      order: 2,
-      estimatedDuration: '5 hours',
-      videoUrl: 'https://example.com/videos/competitive-positioning.mp4',
-      resources: [],
-      isActive: true,
-      isLocked: true
-    },
-    {
-      id: '7-1',
-      moduleId: '7',
-      courseId: '4',
-      title: 'Digital Drawing Fundamentals',
-      description: 'Basic digital drawing techniques',
-      content: 'Learn the fundamentals of digital drawing using professional software tools.',
-      order: 1,
-      estimatedDuration: '3 hours',
-      videoUrl: 'https://example.com/videos/digital-drawing.mp4',
-      resources: [],
-      isActive: true,
-      isLocked: false
-    },
-    {
-      id: '7-2',
-      moduleId: '7',
-      courseId: '4',
-      title: 'Color Theory & Composition',
-      description: 'Understanding color and composition in digital art',
-      content: 'Master color theory, composition rules, and visual hierarchy in digital art.',
-      order: 2,
-      estimatedDuration: '4 hours',
-      videoUrl: 'https://example.com/videos/color-theory.mp4',
-      resources: [],
-      isActive: true,
-      isLocked: true
-    }
-  ],
+  const handleUserPermissions = (user) => {
+    setSelectedUser(user);
+    setEditingPermissions({ ...user.permissions });
+    setShowPermissionsModal(true);
+  };
 
-  // Tests data
-  tests: [
-    {
-      id: 'mt-1',
-      type: 'module',
-      moduleId: '1',
-      courseId: '1',
-      title: 'Frontend Fundamentals Test',
-      description: 'Test your knowledge of HTML, CSS, and basic JavaScript',
-      questions: 20,
-      duration: 45,
-      passingScore: 70,
-      maxAttempts: 3,
-      createdBy: '2',
-      isActive: true,
-      createdAt: '2024-01-10T00:00:00Z'
-    },
-    {
-      id: 'ct-1',
-      type: 'course',
-      courseId: '1',
-      title: 'Web Development Final Assessment',
-      description: 'Comprehensive test covering all web development concepts',
-      questions: 50,
-      duration: 120,
-      passingScore: 70,
-      maxAttempts: 2,
-      createdBy: '2',
-      isActive: true,
-      createdAt: '2024-01-10T00:00:00Z'
+  const savePermissions = async () => {
+    try {
+      await mockAPI.updateUserPermissions(selectedUser.id, editingPermissions);
+      
+      // Update local state
+      if (selectedUser.role === 'admin') {
+        setAllAdmins(prev => prev.map(admin => 
+          admin.id === selectedUser.id 
+            ? { ...admin, permissions: editingPermissions }
+            : admin
+        ));
+      } else if (selectedUser.role === 'instructor') {
+        setAllInstructors(prev => prev.map(instructor => 
+          instructor.id === selectedUser.id 
+            ? { ...instructor, permissions: editingPermissions }
+            : instructor
+        ));
+      }
+      
+      toast.success('Permissions updated successfully');
+      setShowPermissionsModal(false);
+      setSelectedUser(null);
+      setEditingPermissions({});
+    } catch (error) {
+      toast.error('Failed to update permissions');
     }
-  ],
+  };
 
-  // Test results
-  testResults: [
-    {
-      id: 'tr-1',
-      studentId: '4',
-      testId: 'mt-1',
-      courseId: '1',
-      moduleId: '1',
-      testType: 'module',
-      score: 85,
-      passed: true,
-      attemptedAt: '2024-01-19T14:00:00Z',
-      submittedAt: '2024-01-19T14:45:00Z'
-    }
-  ],
+  const togglePermission = (permission) => {
+    setEditingPermissions(prev => ({
+      ...prev,
+      [permission]: !prev[permission]
+    }));
+  };
 
-  // System analytics and metrics
-  systemAnalytics: {
-    overview: {
-      totalColleges: 3,
-      totalAdmins: 3,
-      totalInstructors: 3,
-      totalStudents: 6,
-      totalCourses: 4,
-      totalModules: 7,
-      totalChapters: 10,
-      activeUsers: 12,
-      systemUptime: '99.9%',
-      avgCourseCompletion: 23,
-      totalRevenue: 2847,
-      monthlyActiveUsers: 11
-    },
-    collegeBreakdown: {
-      '1': { students: 3, instructors: 1, courses: 2, revenue: 1494 },
-      '2': { students: 2, instructors: 1, courses: 1, revenue: 498 },
-      '3': { students: 2, instructors: 1, courses: 1, revenue: 358 }
-    },
-    performanceMetrics: {
-      cpuUsage: 45,
-      memoryUsage: 62,
-      diskUsage: 38,
-      networkLatency: 12,
-      errorRate: 0.02,
-      responseTime: 145
+  const handleCollegeAction = async (collegeId, action) => {
+    try {
+      switch (action) {
+        case 'view':
+          const college = colleges.find(c => c.id === collegeId);
+          setSelectedCollege(college);
+          setShowCollegeModal(true);
+          break;
+        case 'edit':
+          toast.info('College editing functionality coming soon!');
+          break;
+        case 'delete':
+          if (window.confirm('Are you sure you want to delete this college?')) {
+            await mockAPI.deleteCollege(collegeId);
+            toast.success('College deleted successfully');
+            fetchSystemData();
+          }
+          break;
+        default:
+          break;
+      }
+    } catch (error) {
+      toast.error(`Failed to ${action} college`);
     }
+  };
+
+  const handleUserAction = async (userId, action) => {
+    try {
+      switch (action) {
+        case 'activate':
+        case 'deactivate':
+          await mockAPI.bulkUpdateUsers([userId], { isActive: action === 'activate' });
+          toast.success(`User ${action}d successfully`);
+          fetchSystemData();
+          break;
+        case 'delete':
+          if (window.confirm('Are you sure you want to delete this user?')) {
+            await mockAPI.deleteUser(userId);
+            toast.success('User deleted successfully');
+            fetchSystemData();
+          }
+          break;
+        default:
+          break;
+      }
+    } catch (error) {
+      toast.error(`Failed to ${action} user`);
+    }
+  };
+
+  const getCollegeAdmin = (collegeId) => {
+    return allAdmins.find(admin => admin.collegeId === collegeId);
+  };
+
+  const getAdminCourses = (adminId) => {
+    const admin = allAdmins.find(a => a.id === adminId);
+    if (!admin) return [];
+    return allCourses.filter(course => course.collegeId === admin.collegeId);
+  };
+
+  const getCourseInstructors = (courseId) => {
+    const course = allCourses.find(c => c.id === courseId);
+    if (!course) return [];
+    return allInstructors.filter(instructor => 
+      course.assignedInstructors.includes(instructor.id)
+    );
+  };
+
+  const getCourseStudents = (courseId) => {
+    const course = allCourses.find(c => c.id === courseId);
+    if (!course) return [];
+    return allStudents.filter(student => 
+      student.assignedCourses && student.assignedCourses.includes(courseId)
+    );
+  };
+
+  const getFilteredUsers = (users) => {
+    let filtered = users;
+    
+    if (searchTerm) {
+      filtered = filtered.filter(user => 
+        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    
+    return filtered;
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading system dashboard...</p>
+        </div>
+      </div>
+    );
   }
-}
 
-// Enhanced API simulation functions
-export const mockAPI = {
-  delay: (ms = 1000) => new Promise(resolve => setTimeout(resolve, ms)),
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center space-x-4 mb-4">
+            <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+              <Shield size={24} className="text-purple-600" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Super Admin Dashboard</h1>
+              <p className="text-gray-600 mt-1">
+                System-wide management and analytics across all institutions
+              </p>
+            </div>
+          </div>
+        </div>
 
-  // Super Admin APIs
-  getAllColleges: async () => {
-    await mockAPI.delay(800)
-    return mockData.colleges
-  },
+        {/* System Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+          <Card className="p-6">
+            <div className="flex items-center">
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <Building2 size={24} className="text-blue-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Colleges</p>
+                <p className="text-2xl font-bold text-gray-900">{systemAnalytics?.overview.totalColleges || 0}</p>
+              </div>
+            </div>
+          </Card>
 
-  getAllAdmins: async () => {
-    await mockAPI.delay(600)
-    return mockData.users.filter(user => user.role === 'admin')
-  },
+          <Card className="p-6">
+            <div className="flex items-center">
+              <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                <Shield size={24} className="text-red-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Admins</p>
+                <p className="text-2xl font-bold text-gray-900">{systemAnalytics?.overview.totalAdmins || 0}</p>
+              </div>
+            </div>
+          </Card>
 
-  getAllInstructors: async () => {
-    await mockAPI.delay(700)
-    return mockData.users.filter(user => user.role === 'instructor')
-  },
+          <Card className="p-6">
+            <div className="flex items-center">
+              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                <Award size={24} className="text-green-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Instructors</p>
+                <p className="text-2xl font-bold text-gray-900">{systemAnalytics?.overview.totalInstructors || 0}</p>
+              </div>
+            </div>
+          </Card>
 
-  getAllStudents: async () => {
-    await mockAPI.delay(900)
-    return mockData.users.filter(user => user.role === 'student')
-  },
+          <Card className="p-6">
+            <div className="flex items-center">
+              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                <Users size={24} className="text-purple-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Students</p>
+                <p className="text-2xl font-bold text-gray-900">{systemAnalytics?.overview.totalStudents || 0}</p>
+              </div>
+            </div>
+          </Card>
 
-  getSystemAnalytics: async () => {
-    await mockAPI.delay(1200)
-    return mockData.systemAnalytics
-  },
+          <Card className="p-6">
+            <div className="flex items-center">
+              <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                <BookOpen size={24} className="text-yellow-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Courses</p>
+                <p className="text-2xl font-bold text-gray-900">{systemAnalytics?.overview.totalCourses || 0}</p>
+              </div>
+            </div>
+          </Card>
+        </div>
 
-  createCollege: async (collegeData) => {
-    await mockAPI.delay(1000)
-    const newCollege = {
-      id: String(mockData.colleges.length + 1),
-      ...collegeData,
-      totalStudents: 0,
-      totalInstructors: 0,
-      totalCourses: 0,
-      status: 'active',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    }
-    mockData.colleges.push(newCollege)
-    return newCollege
-  },
+        {/* Tabs */}
+        <Tabs defaultValue="overview">
+          <Tabs.List className="mb-6">
+            <Tabs.Trigger value="overview">System Overview</Tabs.Trigger>
+            <Tabs.Trigger value="colleges">Colleges</Tabs.Trigger>
+            <Tabs.Trigger value="permissions">User Permissions</Tabs.Trigger>
+            <Tabs.Trigger value="assignments">Course Assignments</Tabs.Trigger>
+            <Tabs.Trigger value="analytics">Analytics</Tabs.Trigger>
+          </Tabs.List>
 
-  updateCollege: async (collegeId, updates) => {
-    await mockAPI.delay(800)
-    const college = mockData.colleges.find(c => c.id === collegeId)
-    if (college) {
-      Object.assign(college, updates, { updatedAt: new Date().toISOString() })
-      return college
-    }
-    throw new Error('College not found')
-  },
+          {/* Overview Tab */}
+          <Tabs.Content value="overview">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card className="p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">System Health</h3>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">System Uptime</span>
+                    <Badge variant="success">{systemAnalytics?.overview.systemUptime || '99.9%'}</Badge>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Active Users</span>
+                    <span className="font-medium">{systemAnalytics?.overview.activeUsers || 0}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Course Completion Rate</span>
+                    <span className="font-medium">{systemAnalytics?.overview.avgCourseCompletion || 0}%</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Monthly Revenue</span>
+                    <span className="font-medium">${systemAnalytics?.overview.totalRevenue || 0}</span>
+                  </div>
+                </div>
+              </Card>
 
-  deleteCollege: async (collegeId) => {
-    await mockAPI.delay(600)
-    const index = mockData.colleges.findIndex(c => c.id === collegeId)
-    if (index !== -1) {
-      mockData.colleges.splice(index, 1)
-      return true
-    }
-    throw new Error('College not found')
-  },
+              <Card className="p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
+                    <Building2 size={16} className="text-green-600" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">New college registered</p>
+                      <p className="text-xs text-gray-500">Creative Arts Institute - 2 hours ago</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
+                    <Users size={16} className="text-blue-600" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">Admin permissions updated</p>
+                      <p className="text-xs text-gray-500">Prof. Michael Chen - 4 hours ago</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3 p-3 bg-purple-50 rounded-lg">
+                    <BookOpen size={16} className="text-purple-600" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">Course published</p>
+                      <p className="text-xs text-gray-500">Digital Art Mastery - 6 hours ago</p>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            </div>
+          </Tabs.Content>
 
-  // Admin APIs
-  getCollegeUsers: async (collegeId) => {
-    await mockAPI.delay(600)
-    return mockData.users.filter(user => user.collegeId === collegeId)
-  },
+          {/* Colleges Tab */}
+          <Tabs.Content value="colleges">
+            <Card className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-lg font-semibold text-gray-900">College Management</h3>
+                <Button onClick={() => setShowCreateCollegeModal(true)}>
+                  <Plus size={16} className="mr-2" />
+                  Add College
+                </Button>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {colleges.map(college => {
+                  const admin = getCollegeAdmin(college.id);
+                  const adminCourses = admin ? getAdminCourses(admin.id) : [];
+                  
+                  return (
+                    <div key={college.id} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100">
+                            <img 
+                              src={college.logo} 
+                              alt={college.name}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-gray-900">{college.name}</h4>
+                            <p className="text-sm text-gray-600">{college.code}</p>
+                          </div>
+                        </div>
+                        <Badge variant={college.status === 'active' ? 'success' : 'secondary'}>
+                          {college.status}
+                        </Badge>
+                      </div>
 
-  getCollegeCourses: async (collegeId) => {
-    await mockAPI.delay(700)
-    return mockData.courses.filter(course => course.collegeId === collegeId)
-  },
+                      <div className="space-y-2 mb-4">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Students</span>
+                          <span className="font-medium">{college.totalStudents}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Instructors</span>
+                          <span className="font-medium">{college.totalInstructors}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Courses</span>
+                          <span className="font-medium">{adminCourses.length}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Admin</span>
+                          <span className="font-medium">{admin?.name || 'Unassigned'}</span>
+                        </div>
+                      </div>
 
-  // Enhanced admin APIs
-  getAdminDashboardData: async (adminId) => {
-    await mockAPI.delay(800)
-    const admin = mockData.users.find(u => u.id === adminId)
-    if (!admin || admin.role !== 'admin') throw new Error('Admin not found')
-    
-    const collegeUsers = mockData.users.filter(user => user.collegeId === admin.collegeId)
-    const collegeCourses = mockData.courses.filter(course => course.collegeId === admin.collegeId)
-    
-    // Calculate payments based on course enrollments
-    const payments = []
-    collegeCourses.forEach(course => {
-      course.enrolledStudents.forEach(studentId => {
-        const student = mockData.users.find(u => u.id === studentId)
-        if (student) {
-          payments.push({
-            id: `payment-${course.id}-${studentId}`,
-            userName: student.name,
-            courseTitle: course.title,
-            amount: course.price,
-            status: 'completed',
-            createdAt: student.joinedDate
-          })
-        }
-      })
-    })
-    
-    const totalRevenue = payments.reduce((sum, p) => sum + p.amount, 0)
-    
-    return {
-      users: collegeUsers,
-      courses: collegeCourses,
-      payments,
-      stats: {
-        totalUsers: collegeUsers.length,
-        totalCourses: collegeCourses.length,
-        totalRevenue,
-        activeUsers: collegeUsers.filter(u => u.isActive).length
-      }
-    }
-  },
+                      <div className="flex space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleCollegeAction(college.id, 'view')}
+                        >
+                          <Eye size={14} />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleCollegeAction(college.id, 'edit')}
+                        >
+                          <Edit size={14} />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleCollegeAction(college.id, 'delete')}
+                        >
+                          <Trash2 size={14} />
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </Card>
+          </Tabs.Content>
 
-  createUser: async (userData) => {
-    await mockAPI.delay(800)
-    const newUser = {
-      id: String(Date.now()),
-      ...userData,
-      isActive: true,
-      isVerified: false,
-      joinedDate: new Date().toISOString(),
-      lastLogin: null,
-      progress: {},
-      assignedCourses: [],
-      students: userData.role === 'instructor' ? [] : undefined
-    }
-    mockData.users.push(newUser)
-    
-    // Update college stats
-    const college = mockData.colleges.find(c => c.id === userData.collegeId)
-    if (college) {
-      if (userData.role === 'student') college.totalStudents++
-      if (userData.role === 'instructor') college.totalInstructors++
-    }
-    
-    return newUser
-  },
+          {/* User Permissions Tab */}
+          <Tabs.Content value="permissions">
+            <div className="space-y-6">
+              {/* Search and Filter */}
+              <Card className="p-4">
+                <div className="flex items-center space-x-4">
+                  <div className="flex-1">
+                    <Input
+                      placeholder="Search users..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                  </div>
+                  <select
+                    value={filterRole}
+                    onChange={(e) => setFilterRole(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                  >
+                    <option value="all">All Roles</option>
+                    <option value="admin">Admins</option>
+                    <option value="instructor">Instructors</option>
+                  </select>
+                </div>
+              </Card>
 
-  updateUserPermissions: async (userId, permissions) => {
-    await mockAPI.delay(500)
-    const user = mockData.users.find(u => u.id === userId)
-    if (user) {
-      user.permissions = { ...user.permissions, ...permissions }
-      // Update the user in the original mockData
-      const userIndex = mockData.users.findIndex(u => u.id === userId)
-      if (userIndex !== -1) {
-        mockData.users[userIndex] = user
-      }
-      return user
-    }
-    throw new Error('User not found')
-  },
+              {/* Admins Permissions */}
+              <Card className="p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Admin Permissions</h3>
+                <div className="space-y-4">
+                  {getFilteredUsers(allAdmins).map(admin => {
+                    const college = colleges.find(c => c.id === admin.collegeId);
+                    const adminCourses = getAdminCourses(admin.id);
+                    
+                    return (
+                      <div key={admin.id} className="border border-gray-200 rounded-lg p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-4">
+                            <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-100">
+                              <img 
+                                src={admin.avatar} 
+                                alt={admin.name}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <div>
+                              <h4 className="font-medium text-gray-900">{admin.name}</h4>
+                              <p className="text-sm text-gray-600">{admin.email}</p>
+                              <p className="text-sm text-gray-500">{college?.name || 'No college assigned'}</p>
+                              <p className="text-xs text-gray-500">{adminCourses.length} courses managed</p>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center space-x-4">
+                            <div className="text-right text-sm">
+                              <div className="flex items-center space-x-2 mb-1">
+                                <span className="text-gray-600">Create Courses:</span>
+                                <Badge variant={admin.permissions?.canCreateCourses ? 'success' : 'secondary'} size="sm">
+                                  {admin.permissions?.canCreateCourses ? 'Enabled' : 'Disabled'}
+                                </Badge>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <span className="text-gray-600">Manage Tests:</span>
+                                <Badge variant={admin.permissions?.canManageTests ? 'success' : 'secondary'} size="sm">
+                                  {admin.permissions?.canManageTests ? 'Enabled' : 'Disabled'}
+                                </Badge>
+                              </div>
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleUserPermissions(admin)}
+                            >
+                              <Settings size={14} className="mr-1" />
+                              Permissions
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </Card>
 
-  assignStudentToInstructor: async (studentId, instructorId) => {
-    await mockAPI.delay(500)
-    const student = mockData.users.find(u => u.id === studentId)
-    const instructor = mockData.users.find(u => u.id === instructorId)
-    
-    if (student && instructor) {
-      student.instructorId = instructorId
-      student.assignedBy = instructorId
-      if (!instructor.students.includes(studentId)) {
-        instructor.students.push(studentId)
-      }
-      return { student, instructor }
-    }
-    throw new Error('User not found')
-  },
+              {/* Instructors Permissions */}
+              <Card className="p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Instructor Permissions</h3>
+                <div className="space-y-4">
+                  {getFilteredUsers(allInstructors).map(instructor => {
+                    const college = colleges.find(c => c.id === instructor.collegeId);
+                    const assignedCourses = instructor.assignedCourses || [];
+                    
+                    return (
+                      <div key={instructor.id} className="border border-gray-200 rounded-lg p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-4">
+                            <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-100">
+                              <img 
+                                src={instructor.avatar} 
+                                alt={instructor.name}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <div>
+                              <h4 className="font-medium text-gray-900">{instructor.name}</h4>
+                              <p className="text-sm text-gray-600">{instructor.email}</p>
+                              <p className="text-sm text-gray-500">{college?.name || 'No college assigned'}</p>
+                              <p className="text-xs text-gray-500">{assignedCourses.length} courses assigned</p>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center space-x-4">
+                            <div className="text-right text-sm">
+                              <div className="flex items-center space-x-2 mb-1">
+                                <span className="text-gray-600">Create Courses:</span>
+                                <Badge variant={instructor.permissions?.canCreateCourses ? 'success' : 'secondary'} size="sm">
+                                  {instructor.permissions?.canCreateCourses ? 'Enabled' : 'Disabled'}
+                                </Badge>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <span className="text-gray-600">Create Tests:</span>
+                                <Badge variant={instructor.permissions?.canCreateTests ? 'success' : 'secondary'} size="sm">
+                                  {instructor.permissions?.canCreateTests ? 'Enabled' : 'Disabled'}
+                                </Badge>
+                              </div>
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleUserPermissions(instructor)}
+                            >
+                              <Settings size={14} className="mr-1" />
+                              Permissions
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </Card>
+            </div>
+          </Tabs.Content>
 
-  // Course Management
-  getCoursesByInstructor: async (instructorId) => {
-    await mockAPI.delay(800)
-    return mockData.courses.filter(course => 
-      course.assignedInstructors.includes(instructorId)
-    )
-  },
+          {/* Course Assignments Tab */}
+          <Tabs.Content value="assignments">
+            <div className="space-y-6">
+              {/* Admin-Course Assignments */}
+              <Card className="p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Admin-Course Assignments</h3>
+                <div className="space-y-4">
+                  {allAdmins.map(admin => {
+                    const college = colleges.find(c => c.id === admin.collegeId);
+                    const adminCourses = getAdminCourses(admin.id);
+                    
+                    return (
+                      <div key={admin.id} className="border border-gray-200 rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100">
+                              <img 
+                                src={admin.avatar} 
+                                alt={admin.name}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <div>
+                              <h4 className="font-medium text-gray-900">{admin.name}</h4>
+                              <p className="text-sm text-gray-600">{college?.name || 'No college'}</p>
+                            </div>
+                          </div>
+                          <Badge variant="info" size="sm">
+                            {adminCourses.length} courses
+                          </Badge>
+                        </div>
+                        
+                        {adminCourses.length > 0 ? (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {adminCourses.map(course => {
+                              const instructors = getCourseInstructors(course.id);
+                              const students = getCourseStudents(course.id);
+                              
+                              return (
+                                <div key={course.id} className="p-3 bg-gray-50 rounded-lg">
+                                  <h5 className="font-medium text-gray-900 mb-1">{course.title}</h5>
+                                  <div className="text-xs text-gray-600 space-y-1">
+                                    <div>Instructors: {instructors.map(i => i.name).join(', ') || 'None'}</div>
+                                    <div>Students: {students.length}</div>
+                                    <div>Status: {course.status}</div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-gray-500 italic">No courses assigned</p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </Card>
 
-  getCourseModules: async (courseId) => {
-    await mockAPI.delay(600)
-    return mockData.modules.filter(module => module.courseId === courseId)
-      .sort((a, b) => a.order - b.order)
-  },
+              {/* Course-User Assignments */}
+              <Card className="p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Course-User Assignments</h3>
+                <div className="space-y-4">
+                  {allCourses.map(course => {
+                    const instructors = getCourseInstructors(course.id);
+                    const students = getCourseStudents(course.id);
+                    const college = colleges.find(c => c.id === course.collegeId);
+                    const admin = getCollegeAdmin(course.collegeId);
+                    
+                    return (
+                      <div key={course.id} className="border border-gray-200 rounded-lg p-4">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100">
+                              <img 
+                                src={course.thumbnail} 
+                                alt={course.title}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <div>
+                              <h4 className="font-medium text-gray-900">{course.title}</h4>
+                              <p className="text-sm text-gray-600">{college?.name || 'No college'}</p>
+                              <p className="text-xs text-gray-500">Managed by: {admin?.name || 'No admin'}</p>
+                            </div>
+                          </div>
+                          <div className="flex space-x-2">
+                            <Badge variant="info" size="sm">
+                              {instructors.length} instructors
+                            </Badge>
+                            <Badge variant="success" size="sm">
+                              {students.length} students
+                            </Badge>
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <h5 className="text-sm font-medium text-gray-700 mb-2">Assigned Instructors:</h5>
+                            {instructors.length > 0 ? (
+                              <div className="space-y-1">
+                                {instructors.map(instructor => (
+                                  <div key={instructor.id} className="flex items-center space-x-2 text-sm">
+                                    <div className="w-6 h-6 rounded-full overflow-hidden bg-gray-100">
+                                      <img 
+                                        src={instructor.avatar} 
+                                        alt={instructor.name}
+                                        className="w-full h-full object-cover"
+                                      />
+                                    </div>
+                                    <span className="text-gray-900">{instructor.name}</span>
+                                    <div className="flex space-x-1">
+                                      {instructor.permissions?.canCreateCourses && (
+                                        <Badge variant="success" size="sm">Course</Badge>
+                                      )}
+                                      {instructor.permissions?.canCreateTests && (
+                                        <Badge variant="warning" size="sm">Test</Badge>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="text-sm text-gray-500 italic">No instructors assigned</p>
+                            )}
+                          </div>
+                          
+                          <div>
+                            <h5 className="text-sm font-medium text-gray-700 mb-2">Enrolled Students:</h5>
+                            {students.length > 0 ? (
+                              <div className="space-y-1">
+                                {students.slice(0, 3).map(student => (
+                                  <div key={student.id} className="flex items-center space-x-2 text-sm">
+                                    <div className="w-6 h-6 rounded-full overflow-hidden bg-gray-100">
+                                      <img 
+                                        src={student.avatar} 
+                                        alt={student.name}
+                                        className="w-full h-full object-cover"
+                                      />
+                                    </div>
+                                    <span className="text-gray-900">{student.name}</span>
+                                  </div>
+                                ))}
+                                {students.length > 3 && (
+                                  <p className="text-xs text-gray-500">+{students.length - 3} more students</p>
+                                )}
+                              </div>
+                            ) : (
+                              <p className="text-sm text-gray-500 italic">No students enrolled</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </Card>
+            </div>
+          </Tabs.Content>
 
-  getModuleChapters: async (moduleId) => {
-    await mockAPI.delay(500)
-    return mockData.chapters.filter(chapter => chapter.moduleId === moduleId)
-      .sort((a, b) => a.order - b.order)
-  },
+          {/* Analytics Tab */}
+          <Tabs.Content value="analytics">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card className="p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">College Performance</h3>
+                <div className="space-y-4">
+                  {colleges.map(college => {
+                    const breakdown = systemAnalytics?.collegeBreakdown?.[college.id];
+                    if (!breakdown) return null;
+                    
+                    return (
+                      <div key={college.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div>
+                          <h4 className="font-medium text-gray-900">{college.name}</h4>
+                          <p className="text-sm text-gray-600">
+                            {breakdown.students} students • {breakdown.instructors} instructors
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-medium text-gray-900">${breakdown.revenue}</div>
+                          <div className="text-sm text-gray-500">{breakdown.courses} courses</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </Card>
 
-  // Student Progress Management
-  getStudentProgress: async (studentId, courseId = null) => {
-    await mockAPI.delay(600)
-    const student = mockData.users.find(user => user.id === studentId)
-    if (!student) throw new Error('Student not found')
-    
-    if (courseId) {
-      return student.progress[courseId] || null
-    }
-    return student.progress
-  },
+              <Card className="p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">System Performance</h3>
+                <div className="space-y-4">
+                  {systemAnalytics?.performanceMetrics && Object.entries(systemAnalytics.performanceMetrics).map(([key, value]) => (
+                    <div key={key} className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600 capitalize">
+                        {key.replace(/([A-Z])/g, ' $1').toLowerCase()}
+                      </span>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-20 bg-gray-200 rounded-full h-2">
+                          <div 
+                            className={`h-2 rounded-full ${
+                              value > 80 ? 'bg-red-500' : value > 60 ? 'bg-yellow-500' : 'bg-green-500'
+                            }`}
+                            style={{ width: `${Math.min(value, 100)}%` }}
+                          ></div>
+                        </div>
+                        <span className="text-sm font-medium text-gray-900">
+                          {typeof value === 'number' ? `${value}${key.includes('Usage') ? '%' : key.includes('Time') ? 'ms' : ''}` : value}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            </div>
+          </Tabs.Content>
+        </Tabs>
 
-  getStudentEnrollments: async (studentId) => {
-    await mockAPI.delay(600)
-    const student = mockData.users.find(user => user.id === studentId)
-    if (!student) return []
-    
-    return mockData.courses.filter(course => 
-      student.assignedCourses.includes(course.id)
-    )
-  },
+        {/* Permissions Modal */}
+        <Modal
+          isOpen={showPermissionsModal}
+          onClose={() => {
+            setShowPermissionsModal(false);
+            setSelectedUser(null);
+            setEditingPermissions({});
+          }}
+          title={`Manage Permissions - ${selectedUser?.name}`}
+          size="lg"
+        >
+          {selectedUser && (
+            <div className="space-y-6">
+              <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
+                <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-100">
+                  <img 
+                    src={selectedUser.avatar} 
+                    alt={selectedUser.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div>
+                  <h3 className="font-medium text-gray-900">{selectedUser.name}</h3>
+                  <p className="text-sm text-gray-600">{selectedUser.email}</p>
+                  <Badge variant={selectedUser.role === 'admin' ? 'danger' : 'warning'}>
+                    {selectedUser.role}
+                  </Badge>
+                </div>
+              </div>
 
-  updateChapterProgress: async (studentId, courseId, moduleId, chapterId) => {
-    await mockAPI.delay(500)
-    const student = mockData.users.find(user => user.id === studentId)
-    if (!student.progress[courseId]) {
-      student.progress[courseId] = {
-        currentModule: moduleId,
-        currentChapter: chapterId,
-        completedChapters: [],
-        completedModules: [],
-        moduleTestResults: {},
-        courseTestResult: null,
-        aiInterviewResult: null,
-        overallProgress: 0,
-        timeSpent: 0,
-        lastAccessed: new Date().toISOString()
-      }
-    }
-    
-    const progress = student.progress[courseId]
-    if (!progress.completedChapters.includes(chapterId)) {
-      progress.completedChapters.push(chapterId)
-      progress.timeSpent += Math.floor(Math.random() * 60) + 30 // Add random time
-    }
-    
-    // Update current position
-    progress.currentChapter = chapterId
-    progress.lastAccessed = new Date().toISOString()
-    
-    // Check if module is completed
-    const moduleChapters = mockData.chapters.filter(c => c.moduleId === moduleId)
-    const completedModuleChapters = progress.completedChapters.filter(chId => 
-      moduleChapters.some(ch => ch.id === chId)
-    )
-    
-    if (completedModuleChapters.length === moduleChapters.length) {
-      // Module completed, unlock test
-      progress.moduleTestUnlocked = moduleId
-    }
-    
-    // Calculate overall progress
-    const course = mockData.courses.find(c => c.id === courseId)
-    const totalSteps = course.totalChapters + course.totalModules + 2 // +2 for course test and AI interview
-    const completedSteps = progress.completedChapters.length + progress.completedModules.length + 
-                          (progress.courseTestResult?.passed ? 1 : 0) + (progress.aiInterviewResult ? 1 : 0)
-    progress.overallProgress = Math.round((completedSteps / totalSteps) * 100)
-    
-    return progress
-  },
+              <div>
+                <h4 className="font-medium text-gray-900 mb-4">Permission Settings</h4>
+                <div className="space-y-4">
+                  {selectedUser.role === 'admin' && (
+                    <>
+                      <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                        <div>
+                          <h5 className="font-medium text-gray-900">Create Courses</h5>
+                          <p className="text-sm text-gray-600">Allow admin to create new courses</p>
+                        </div>
+                        <button
+                          onClick={() => togglePermission('canCreateCourses')}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                            editingPermissions.canCreateCourses ? 'bg-primary-600' : 'bg-gray-200'
+                          }`}
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                              editingPermissions.canCreateCourses ? 'translate-x-6' : 'translate-x-1'
+                            }`}
+                          />
+                        </button>
+                      </div>
 
-  // Test Management
-  getAllTests: async () => {
-    await mockAPI.delay(600)
-    return mockData.tests
-  },
+                      <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                        <div>
+                          <h5 className="font-medium text-gray-900">Create Tests</h5>
+                          <p className="text-sm text-gray-600">Allow admin to create and manage tests</p>
+                        </div>
+                        <button
+                          onClick={() => togglePermission('canCreateTests')}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                            editingPermissions.canCreateTests ? 'bg-primary-600' : 'bg-gray-200'
+                          }`}
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                              editingPermissions.canCreateTests ? 'translate-x-6' : 'translate-x-1'
+                            }`}
+                          />
+                        </button>
+                      </div>
 
-  getTestsByCreator: async (creatorId) => {
-    await mockAPI.delay(500)
-    return mockData.tests.filter(test => test.createdBy === creatorId)
-  },
+                      <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                        <div>
+                          <h5 className="font-medium text-gray-900">Manage Tests</h5>
+                          <p className="text-sm text-gray-600">Allow admin to edit and delete tests</p>
+                        </div>
+                        <button
+                          onClick={() => togglePermission('canManageTests')}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                            editingPermissions.canManageTests ? 'bg-primary-600' : 'bg-gray-200'
+                          }`}
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                              editingPermissions.canManageTests ? 'translate-x-6' : 'translate-x-1'
+                            }`}
+                          />
+                        </button>
+                      </div>
+                    </>
+                  )}
 
-  createTest: async (testData) => {
-    await mockAPI.delay(800)
-    const newTest = {
-      id: `test-${Date.now()}`,
-      ...testData,
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    }
-    mockData.tests.push(newTest)
-    return newTest
-  },
+                  {selectedUser.role === 'instructor' && (
+                    <>
+                      <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                        <div>
+                          <h5 className="font-medium text-gray-900">Create Courses</h5>
+                          <p className="text-sm text-gray-600">Allow instructor to create new courses</p>
+                        </div>
+                        <button
+                          onClick={() => togglePermission('canCreateCourses')}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                            editingPermissions.canCreateCourses ? 'bg-primary-600' : 'bg-gray-200'
+                          }`}
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                              editingPermissions.canCreateCourses ? 'translate-x-6' : 'translate-x-1'
+                            }`}
+                          />
+                        </button>
+                      </div>
 
-  updateTest: async (testId, updates) => {
-    await mockAPI.delay(600)
-    const test = mockData.tests.find(t => t.id === testId)
-    if (test) {
-      Object.assign(test, updates, { updatedAt: new Date().toISOString() })
-      return test
-    }
-    throw new Error('Test not found')
-  },
+                      <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                        <div>
+                          <h5 className="font-medium text-gray-900">Create Tests</h5>
+                          <p className="text-sm text-gray-600">Allow instructor to create tests for their courses</p>
+                        </div>
+                        <button
+                          onClick={() => togglePermission('canCreateTests')}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                            editingPermissions.canCreateTests ? 'bg-primary-600' : 'bg-gray-200'
+                          }`}
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                              editingPermissions.canCreateTests ? 'translate-x-6' : 'translate-x-1'
+                            }`}
+                          />
+                        </button>
+                      </div>
 
-  deleteTest: async (testId) => {
-    await mockAPI.delay(500)
-    const index = mockData.tests.findIndex(t => t.id === testId)
-    if (index !== -1) {
-      mockData.tests.splice(index, 1)
-      return true
-    }
-    throw new Error('Test not found')
-  },
+                      <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                        <div>
+                          <h5 className="font-medium text-gray-900">Manage Tests</h5>
+                          <p className="text-sm text-gray-600">Allow instructor to edit and delete their tests</p>
+                        </div>
+                        <button
+                          onClick={() => togglePermission('canManageTests')}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                            editingPermissions.canManageTests ? 'bg-primary-600' : 'bg-gray-200'
+                          }`}
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                              editingPermissions.canManageTests ? 'translate-x-6' : 'translate-x-1'
+                            }`}
+                          />
+                        </button>
+                      </div>
 
-  getModuleTest: async (moduleId) => {
-    await mockAPI.delay(500)
-    const module = mockData.modules.find(m => m.id === moduleId)
-    return module?.moduleTest || null
-  },
+                      <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                        <div>
+                          <h5 className="font-medium text-gray-900">Manage Students</h5>
+                          <p className="text-sm text-gray-600">Allow instructor to manage their assigned students</p>
+                        </div>
+                        <button
+                          onClick={() => togglePermission('canManageStudents')}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                            editingPermissions.canManageStudents ? 'bg-primary-600' : 'bg-gray-200'
+                          }`}
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                              editingPermissions.canManageStudents ? 'translate-x-6' : 'translate-x-1'
+                            }`}
+                          />
+                        </button>
+                      </div>
 
-  getCourseTest: async (courseId) => {
-    await mockAPI.delay(500)
-    const course = mockData.courses.find(c => c.id === courseId)
-    return course?.courseTest || null
-  },
+                      <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                        <div>
+                          <h5 className="font-medium text-gray-900">View Analytics</h5>
+                          <p className="text-sm text-gray-600">Allow instructor to view course and student analytics</p>
+                        </div>
+                        <button
+                          onClick={() => togglePermission('canViewAnalytics')}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                            editingPermissions.canViewAnalytics ? 'bg-primary-600' : 'bg-gray-200'
+                          }`}
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                              editingPermissions.canViewAnalytics ? 'translate-x-6' : 'translate-x-1'
+                            }`}
+                          />
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
 
-  submitModuleTest: async (studentId, testId, answers) => {
-    await mockAPI.delay(1000)
-    const module = mockData.modules.find(m => m.moduleTest?.id === testId)
-    if (!module) throw new Error('Test not found')
-    
-    const test = module.moduleTest
-    const totalQuestions = test.questions
-    const correctAnswers = Math.floor(Math.random() * totalQuestions * 0.3) + Math.floor(totalQuestions * 0.7)
-    const score = Math.round((correctAnswers / totalQuestions) * 100)
-    const passed = score >= test.passingScore
-    
-    const result = {
-      id: `tr-${Date.now()}`,
-      studentId,
-      testId,
-      testType: 'module',
-      moduleId: module.id,
-      courseId: module.courseId,
-      score,
-      totalQuestions,
-      correctAnswers,
-      passed,
-      attemptNumber: 1,
-      timeSpent: Math.floor(Math.random() * test.duration),
-      submittedAt: new Date().toISOString(),
-      answers
-    }
-    
-    // Update student progress
-    const student = mockData.users.find(user => user.id === studentId)
-    if (student.progress[module.courseId]) {
-      student.progress[module.courseId].moduleTestResults[module.id] = {
-        score,
-        passed,
-        attemptedAt: new Date().toISOString(),
-        attempts: 1
-      }
-      
-      if (passed && !student.progress[module.courseId].completedModules.includes(module.id)) {
-        student.progress[module.courseId].completedModules.push(module.id)
-        
-        // Check if all modules are completed to unlock course test
-        const courseModules = mockData.modules.filter(m => m.courseId === module.courseId)
-        const completedModules = student.progress[module.courseId].completedModules
-        if (completedModules.length === courseModules.length) {
-          student.progress[module.courseId].courseTestUnlocked = true
-        }
-      }
-    }
-    
-    mockData.testResults.push(result)
-    return result
-  },
+              <div className="flex justify-end space-x-3">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setEditingPermissions({ ...selectedUser.permissions });
+                  }}
+                >
+                  <RotateCcw size={16} className="mr-2" />
+                  Reset
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowPermissionsModal(false);
+                    setSelectedUser(null);
+                    setEditingPermissions({});
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button onClick={savePermissions}>
+                  <Save size={16} className="mr-2" />
+                  Save Changes
+                </Button>
+              </div>
+            </div>
+          )}
+        </Modal>
 
-  submitCourseTest: async (studentId, testId, answers) => {
-    await mockAPI.delay(1500)
-    const course = mockData.courses.find(c => c.courseTest?.id === testId)
-    if (!course) throw new Error('Test not found')
-    
-    const test = course.courseTest
-    const totalQuestions = test.questions
-    const correctAnswers = Math.floor(Math.random() * totalQuestions * 0.3) + Math.floor(totalQuestions * 0.7)
-    const score = Math.round((correctAnswers / totalQuestions) * 100)
-    const passed = score >= test.passingScore
-    
-    const result = {
-      id: `ctr-${Date.now()}`,
-      studentId,
-      testId,
-      testType: 'course',
-      courseId: course.id,
-      score,
-      totalQuestions,
-      correctAnswers,
-      passed,
-      attemptNumber: 1,
-      timeSpent: Math.floor(Math.random() * test.duration),
-      submittedAt: new Date().toISOString(),
-      answers
-    }
-    
-    // Update student progress
-    const student = mockData.users.find(user => user.id === studentId)
-    if (student.progress[course.id]) {
-      student.progress[course.id].courseTestResult = {
-        score,
-        passed,
-        attemptedAt: new Date().toISOString(),
-        attempts: 1
-      }
-      
-      if (passed) {
-        student.progress[course.id].overallProgress = 90 // 90% after course test, 100% after AI interview
-        student.progress[course.id].aiInterviewUnlocked = true
-      }
-    }
-    
-    mockData.testResults.push(result)
-    return result
-  },
+        {/* College Details Modal */}
+        <Modal
+          isOpen={showCollegeModal}
+          onClose={() => {
+            setShowCollegeModal(false);
+            setSelectedCollege(null);
+          }}
+          title={selectedCollege?.name}
+          size="lg"
+        >
+          {selectedCollege && (
+            <div className="space-y-6">
+              <div className="flex items-center space-x-4">
+                <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100">
+                  <img 
+                    src={selectedCollege.logo} 
+                    alt={selectedCollege.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">{selectedCollege.name}</h3>
+                  <p className="text-gray-600">{selectedCollege.code}</p>
+                  <Badge variant={selectedCollege.status === 'active' ? 'success' : 'secondary'}>
+                    {selectedCollege.status}
+                  </Badge>
+                </div>
+              </div>
 
-  // AI Interview Integration
-  startAIInterview: async (studentId, courseId) => {
-    await mockAPI.delay(2000)
-    return {
-      sessionId: `ai-session-${Date.now()}`,
-      studentId,
-      courseId,
-      startedAt: new Date().toISOString(),
-      estimatedDuration: 45,
-      status: 'in-progress'
-    }
-  },
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Address</label>
+                  <p className="text-gray-900">{selectedCollege.address}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Phone</label>
+                  <p className="text-gray-900">{selectedCollege.phone}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Email</label>
+                  <p className="text-gray-900">{selectedCollege.email}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Established</label>
+                  <p className="text-gray-900">{selectedCollege.establishedYear}</p>
+                </div>
+              </div>
 
-  completeAIInterview: async (sessionId, responses) => {
-    await mockAPI.delay(3000)
-    const overallScore = Math.floor(Math.random() * 20) + 80 // 80-100
-    const technicalScore = Math.floor(Math.random() * 25) + 75
-    const communicationScore = Math.floor(Math.random() * 30) + 70
-    const problemSolvingScore = Math.floor(Math.random() * 20) + 80
-    
-    const result = {
-      id: `ai-${Date.now()}`,
-      sessionId,
-      overallScore,
-      technicalScore,
-      communicationScore,
-      problemSolvingScore,
-      feedback: 'Great performance! Shows strong understanding of concepts and good communication skills.',
-      interviewDuration: 42,
-      completedAt: new Date().toISOString(),
-      recommendation: overallScore >= 85 ? 'Ready for intermediate positions' : 'Continue practicing fundamentals',
-      certificateEligible: overallScore >= 70
-    }
-    
-    return result
-  },
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div className="p-3 bg-blue-50 rounded-lg">
+                  <div className="text-xl font-bold text-blue-600">{selectedCollege.totalStudents}</div>
+                  <div className="text-sm text-blue-800">Students</div>
+                </div>
+                <div className="p-3 bg-green-50 rounded-lg">
+                  <div className="text-xl font-bold text-green-600">{selectedCollege.totalInstructors}</div>
+                  <div className="text-sm text-green-800">Instructors</div>
+                </div>
+                <div className="p-3 bg-purple-50 rounded-lg">
+                  <div className="text-xl font-bold text-purple-600">{getAdminCourses(getCollegeAdmin(selectedCollege.id)?.id).length}</div>
+                  <div className="text-sm text-purple-800">Courses</div>
+                </div>
+              </div>
 
-  // Course Management APIs
-  createCourse: async (courseData) => {
-    await mockAPI.delay(1000)
-    const newCourse = {
-      id: String(Date.now()),
-      ...courseData,
-      status: 'draft',
-      isActive: true,
-      enrolledStudents: [],
-      totalModules: 0,
-      totalChapters: 0,
-      rating: 0,
-      reviewCount: 0,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    }
-    mockData.courses.push(newCourse)
-    return newCourse
-  },
+              <div className="flex space-x-3">
+                <Button 
+                  className="flex-1"
+                  onClick={() => {
+                    setShowCollegeModal(false);
+                    toast.info('College editing functionality coming soon!');
+                  }}
+                >
+                  <Edit size={16} className="mr-2" />
+                  Edit College
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    setShowCollegeModal(false);
+                    toast.info('College analytics coming soon!');
+                  }}
+                >
+                  <Activity size={16} className="mr-2" />
+                  View Analytics
+                </Button>
+              </div>
+            </div>
+          )}
+        </Modal>
 
-  updateCourse: async (courseId, updates) => {
-    await mockAPI.delay(600)
-    const course = mockData.courses.find(c => c.id === courseId)
-    if (course) {
-      Object.assign(course, updates, { updatedAt: new Date().toISOString() })
-      return course
-    }
-    throw new Error('Course not found')
-  },
-
-  deleteCourse: async (courseId) => {
-    await mockAPI.delay(500)
-    const index = mockData.courses.findIndex(c => c.id === courseId)
-    if (index !== -1) {
-      mockData.courses.splice(index, 1)
-      return true
-    }
-    throw new Error('Course not found')
-  },
-
-  // Utility functions
-  checkModuleTestEligibility: (studentId, moduleId) => {
-    const student = mockData.users.find(u => u.id === studentId)
-    if (!student) return false
-    
-    const module = mockData.modules.find(m => m.id === moduleId)
-    if (!module) return false
-    
-    const moduleChapters = mockData.chapters.filter(c => c.moduleId === moduleId)
-    const studentProgress = student.progress[module.courseId]
-    
-    if (!studentProgress) return false
-    
-    // Check if all chapters in module are completed
-    const completedModuleChapters = studentProgress.completedChapters.filter(chId => 
-      moduleChapters.some(ch => ch.id === chId)
-    )
-    
-    return completedModuleChapters.length === moduleChapters.length
-  },
-
-  checkCourseTestEligibility: (studentId, courseId) => {
-    const student = mockData.users.find(u => u.id === studentId)
-    if (!student) return false
-    
-    const courseModules = mockData.modules.filter(m => m.courseId === courseId)
-    const studentProgress = student.progress[courseId]
-    
-    if (!studentProgress) return false
-    
-    // Check if all modules are completed and tests passed
-    return courseModules.every(module => 
-      studentProgress.completedModules.includes(module.id) &&
-      studentProgress.moduleTestResults[module.id]?.passed
-    )
-  },
-
-  checkAIInterviewEligibility: (studentId, courseId) => {
-    const student = mockData.users.find(u => u.id === studentId)
-    if (!student) return false
-    
-    const studentProgress = student.progress[courseId]
-    if (!studentProgress) return false
-    
-    return studentProgress.courseTestResult?.passed === true
-  },
-
-  // Bulk operations for admin
-  bulkUpdateUsers: async (userIds, updates) => {
-    await mockAPI.delay(1200)
-    const updatedUsers = []
-    userIds.forEach(userId => {
-      const user = mockData.users.find(u => u.id === userId)
-      if (user) {
-        Object.assign(user, updates, { updatedAt: new Date().toISOString() })
-        updatedUsers.push(user)
-      }
-    })
-    return updatedUsers
-  },
-
-  deleteUser: async (userId) => {
-    await mockAPI.delay(600)
-    const userIndex = mockData.users.findIndex(u => u.id === userId)
-    if (userIndex !== -1) {
-      const user = mockData.users[userIndex]
-      
-      // Update college stats
-      const college = mockData.colleges.find(c => c.id === user.collegeId)
-      if (college) {
-        if (user.role === 'student') college.totalStudents--
-        if (user.role === 'instructor') college.totalInstructors--
-      }
-      
-      mockData.users.splice(userIndex, 1)
-      return true
-    }
-    throw new Error('User not found')
-  }
+        {/* Create College Modal */}
+        <Modal
+          isOpen={showCreateCollegeModal}
+          onClose={() => setShowCreateCollegeModal(false)}
+          title="Create New College"
+          size="lg"
+        >
+          <div className="space-y-4">
+            <p className="text-gray-600">
+              Add a new educational institution to the platform.
+            </p>
+            <div className="text-center py-8">
+              <Building2 size={48} className="mx-auto text-gray-400 mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">College Registration</h3>
+              <p className="text-gray-600 mb-4">
+                Full college creation interface coming soon!
+              </p>
+              <Button onClick={() => toast('College creation functionality coming soon!')}>
+                Create College
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      </div>
+    </div>
+  );
 }
