@@ -127,31 +127,31 @@ export default function SuperAdminDashboardPage() {
     }));
   };
 
-  // const handleCollegeAction = async (collegeId, action) => {
-  //   try {
-  //     switch (action) {
-  //       case 'view':
-  //         const college = colleges.find(c => c.id === collegeId);
-  //         setSelectedCollege(college);
-  //         setShowCollegeModal(true);
-  //         break;
-  //       case 'edit':
-  //         toast.info('College editing functionality coming soon!');
-  //         break;
-  //       case 'delete':
-  //         if (window.confirm('Are you sure you want to delete this college?')) {
-  //           await mockAPI.deleteCollege(collegeId);
-  //           toast.success('College deleted successfully');
-  //           fetchSystemData();
-  //         }
-  //         break;
-  //       default:
-  //         break;
-  //     }
-  //   } catch (error) {
-  //     toast.error(`Failed to ${action} college`);
-  //   }
-  // };
+  const handleCollegeAction = async (collegeId, action) => {
+    try {
+      switch (action) {
+        case 'view':
+          const college = colleges.find(c => c.id === collegeId);
+          setSelectedCollege(college);
+          setShowCollegeModal(true);
+          break;
+        case 'edit':
+          toast.info('College editing functionality coming soon!');
+          break;
+        case 'delete':
+          if (window.confirm('Are you sure you want to delete this college?')) {
+            await mockAPI.deleteCollege(collegeId);
+            toast.success('College deleted successfully');
+            fetchSystemData();
+          }
+          break;
+        default:
+          break;
+      }
+    } catch (error) {
+      toast.error(`Failed to ${action} college`);
+    }
+  };
 
   const handleUserAction = async (userId, action) => {
     try {
@@ -312,7 +312,7 @@ export default function SuperAdminDashboardPage() {
         <Tabs defaultValue="overview">
           <Tabs.List className="mb-6">
             <Tabs.Trigger value="overview">System Overview</Tabs.Trigger>
-            {/* <Tabs.Trigger value="colleges">Colleges</Tabs.Trigger> */}
+            <Tabs.Trigger value="colleges">Colleges</Tabs.Trigger>
             <Tabs.Trigger value="permissions">User Permissions</Tabs.Trigger>
             <Tabs.Trigger value="assignments">Course Assignments</Tabs.Trigger>
             <Tabs.Trigger value="analytics">Analytics</Tabs.Trigger>
@@ -375,13 +375,13 @@ export default function SuperAdminDashboardPage() {
           {/* Colleges Tab */}
           <Tabs.Content value="colleges">
             <Card className="p-6">
-              {/* <div className="flex justify-between items-center mb-6">
+              <div className="flex justify-between items-center mb-6">
                 <h3 className="text-lg font-semibold text-gray-900">College Management</h3>
                 <Button onClick={() => setShowCreateCollegeModal(true)}>
                   <Plus size={16} className="mr-2" />
                   Add College
                 </Button>
-              </div> */}
+              </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {colleges.map(college => {
