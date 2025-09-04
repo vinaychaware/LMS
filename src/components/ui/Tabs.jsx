@@ -1,68 +1,108 @@
-import React, { useState } from 'react'
-import { cn } from '../../utils/cn'
+// src/components/ui/Tabs.jsx
+import React, { createContext, useContext, useMemo, useState, useId } from "react";
+import { cn } from "../../utils/cn";
 
-const Tabs = ({ children, defaultValue, value, onValueChange, className = '' }) => {
-  const [internalActiveTab, setInternalActiveTab] = useState(defaultValue)
-  
-  const activeTab = value !== undefined ? value : internalActiveTab
-  const setActiveTab = onValueChange || setInternalActiveTab
+// ---------------- Context ----------------
+const TabsCtx = createContext(null);
+const useTabs = () => {
+  const ctx = useContext(TabsCtx);
+  if (!ctx) throw new Error("Tabs components must be used inside <Tabs>.");
+  return ctx;
+};
+
+// --------------- Root --------------------
+function TabsRoot({ children, defaultValue, value, onValueChange, className = "" }) {
+  const isControlled = value !== undefined;
+  const [internal, setInternal] = useState(defaultValue);
+
+  const active = isControlled ? value : internal;
+
+  const setActive = (next) => {
+    if (onValueChange) onValueChange(next);
+    if (!isControlled) setInternal(next);
+  };
+
+  const ctx = useMemo(() => ({ active, setActive }), [active]);
 
   return (
-    <div className={cn('w-full', className)}>
-      {React.Children.map(children, child =>
-        React.cloneElement(child, { activeTab, setActiveTab })
-      )}
-    </div>
-  )
+    <TabsCtx.Provider value={ctx}>
+      <div className={cn("w-full", className)}>{children}</div>
+    </TabsCtx.Provider>
+  );
 }
 
-const TabsList = ({ children, activeTab, setActiveTab, className = '' }) => {
+// --------------- List --------------------
+function TabsList({ children, className = "", ...rest }) {
   return (
-    <div className={cn(
-      'inline-flex h-10 items-center justify-center rounded-md bg-gray-100 p-1 text-gray-500',
-      className
-    )}>
-      {React.Children.map(children, child =>
-        React.cloneElement(child, { activeTab, setActiveTab })
-      )}
+    <div
+      role="tablist"
+      className={cn("inline-flex h-10 items-center justify-center rounded-md bg-gray-100 p-1 text-gray-500", className)}
+      {...rest}
+    >
+      {children}
     </div>
-  )
+  );
 }
 
-const TabsTrigger = ({ children, value, activeTab, setActiveTab, className = '' }) => {
-  const isActive = activeTab === value
+// ------------- Trigger -------------------
+function TabsTrigger({ children, value, className = "", ...rest }) {
+  const { active, setActive } = useTabs();
+  const isActive = active === value;
+  const baseId = useId();
+  const tabId = `${baseId}-tab-${value}`;
+  const panelId = `${baseId}-panel-${value}`;
 
   return (
     <button
+      type="button"
+      id={tabId}
+      role="tab"
+      aria-selected={isActive}
+      aria-controls={panelId}
+      onClick={() => setActive(value)}
       className={cn(
-        'inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
-        isActive
-          ? 'bg-white text-gray-950 shadow-sm'
-          : 'text-gray-600 hover:text-gray-900',
+        "inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+        isActive ? "bg-white text-gray-950 shadow-sm" : "text-gray-600 hover:text-gray-900",
         className
       )}
-      onClick={() => setActiveTab(value)}
+      {...rest}
     >
       {children}
     </button>
-  )
+  );
 }
 
-const TabsContent = ({ children, value, activeTab, className = '' }) => {
-  if (activeTab !== value) return null
+// ------------- Content -------------------
+function TabsContent({ children, value, className = "", ...rest }) {
+  const { active } = useTabs();
+  const baseId = useId();
+  const tabId = `${baseId}-tab-${value}`;
+  const panelId = `${baseId}-panel-${value}`;
+
+  if (active !== value) return null;
 
   return (
-    <div className={cn(
-      'mt-2 ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2',
-      className
-    )}>
+    <div
+      id={panelId}
+      role="tabpanel"
+      aria-labelledby={tabId}
+      className={cn(
+        "mt-2 ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2",
+        className
+      )}
+      {...rest}
+    >
       {children}
     </div>
-  )
+  );
 }
 
-Tabs.List = TabsList
-Tabs.Trigger = TabsTrigger
-Tabs.Content = TabsContent
+// ---------- Attach subcomponents ----------
+const Tabs = Object.assign(TabsRoot, {
+  List: TabsList,
+  Trigger: TabsTrigger,
+  Content: TabsContent,
+});
 
-export default Tabs
+export default Tabs;
+export { Tabs, TabsList, TabsTrigger, TabsContent };
