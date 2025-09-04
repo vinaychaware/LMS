@@ -612,14 +612,14 @@ const InstructorDashboardPage = () => {
                   <BarChart3 size={16} className="mr-2" />
                   View Analytics
                 </Button>
-                <Button 
+                {/* <Button 
                   variant="outline" 
                   className="w-full justify-start"
                   onClick={() => toast('Messages coming soon!')}
                 >
                   <MessageSquare size={16} className="mr-2" />
                   Student Messages
-                </Button>
+                </Button> */}
               </Card.Content>
             </Card>
           </div>
