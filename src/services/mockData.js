@@ -1127,14 +1127,26 @@ export const mockAPI = {
     
     const collegeUsers = mockData.users.filter(user => user.collegeId === admin.collegeId)
     const collegeCourses = mockData.courses.filter(course => course.collegeId === admin.collegeId)
-    const payments = mockData.testResults.map(result => ({
-      id: result.id,
-      userName: mockData.users.find(u => u.id === result.studentId)?.name,
-      courseTitle: mockData.courses.find(c => c.id === result.courseId)?.title,
-      amount: Math.floor(Math.random() * 200) + 50,
-      status: 'completed',
-      createdAt: result.submittedAt
-    }))
+    
+    // Calculate payments based on course enrollments
+    const payments = []
+    collegeCourses.forEach(course => {
+      course.enrolledStudents.forEach(studentId => {
+        const student = mockData.users.find(u => u.id === studentId)
+        if (student) {
+          payments.push({
+            id: `payment-${course.id}-${studentId}`,
+            userName: student.name,
+            courseTitle: course.title,
+            amount: course.price,
+            status: 'completed',
+            createdAt: student.joinedDate
+          })
+        }
+      })
+    })
+    
+    const totalRevenue = payments.reduce((sum, p) => sum + p.amount, 0)
     
     return {
       users: collegeUsers,
@@ -1143,7 +1155,7 @@ export const mockAPI = {
       stats: {
         totalUsers: collegeUsers.length,
         totalCourses: collegeCourses.length,
-        totalRevenue: payments.reduce((sum, p) => sum + p.amount, 0),
+        totalRevenue,
         activeUsers: collegeUsers.filter(u => u.isActive).length
       }
     }
