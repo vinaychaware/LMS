@@ -1,2830 +1,354 @@
-// import React, { useState, useEffect } from 'react';
-// import Card from '../components/ui/Card';
-// import Button from '../components/ui/Button';
-// import Input from '../components/ui/Input';
-// import Badge from '../components/ui/Badge';
-// import Modal from '../components/ui/Modal';
-// import Tabs from '../components/ui/Tabs';
-// import useAuthStore from '../store/useAuthStore';
-// import { mockAPI, mockData } from '../services/mockData';
-// import toast from 'react-hot-toast';
-// import {
-//   Shield,
-//   Building2,
-//   Users,
-//   BookOpen,
-//   Settings,
-//   Plus,
-//   Edit,
-//   Eye,
-//   Trash2,
-//   UserCheck,
-//   UserX,
-//   Award,
-//   Activity,
-//   TrendingUp,
-//   DollarSign,
-//   Clock,
-//   Search,
-//   Filter,
-//   Download,
-//   AlertCircle,
-//   CheckCircle,
-//   X,
-//   Save,
-//   RotateCcw
-// } from 'lucide-react';
-
-// export default function SuperAdminDashboardPage() {
-//   const { user } = useAuthStore();
-//   const [colleges, setColleges] = useState([]);
-//   const [allAdmins, setAllAdmins] = useState([]);
-//   const [allInstructors, setAllInstructors] = useState([]);
-//   const [allStudents, setAllStudents] = useState([]);
-//   const [allCourses, setAllCourses] = useState([]);
-//   const [systemAnalytics, setSystemAnalytics] = useState(null);
-//   const [loading, setLoading] = useState(true);
-//   const [selectedCollege, setSelectedCollege] = useState(null);
-//   const [selectedUser, setSelectedUser] = useState(null);
-//   const [showCollegeModal, setShowCollegeModal] = useState(false);
-//   const [showUserModal, setShowUserModal] = useState(false);
-//   const [showPermissionsModal, setShowPermissionsModal] = useState(false);
-//   const [showCreateCollegeModal, setShowCreateCollegeModal] = useState(false);
-//   const [activeTab, setActiveTab] = useState('overview');
-//   const [searchTerm, setSearchTerm] = useState('');
-//   const [filterRole, setFilterRole] = useState('all');
-//   const [editingPermissions, setEditingPermissions] = useState({});
-
-//   useEffect(() => {
-//     fetchSystemData();
-//   }, []);
-
-//   const fetchSystemData = async () => {
-//     try {
-//       setLoading(true);
-
-//       const [collegesData, adminsData, instructorsData, studentsData, analyticsData] = await Promise.all([
-//         mockAPI.getAllColleges(),
-//         mockAPI.getAllAdmins(),
-//         mockAPI.getAllInstructors(),
-//         mockAPI.getAllStudents(),
-//         mockAPI.getSystemAnalytics()
-//       ]);
-
-//       setColleges(collegesData);
-//       setAllAdmins(adminsData);
-//       setAllInstructors(instructorsData);
-//       setAllStudents(studentsData);
-//       setAllCourses(mockData.courses);
-//       setSystemAnalytics(analyticsData);
-
-//     } catch (error) {
-//       console.error('Error fetching system data:', error);
-//       toast.error('Failed to load system data');
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   const handleUserPermissions = (user) => {
-//     setSelectedUser(user);
-//     setEditingPermissions({ ...user.permissions });
-//     setShowPermissionsModal(true);
-//   };
-
-//   const savePermissions = async () => {
-//     try {
-//       await mockAPI.updateUserPermissions(selectedUser.id, editingPermissions);
-
-//       // Update local state
-//       if (selectedUser.role === 'admin') {
-//         setAllAdmins(prev => prev.map(admin =>
-//           admin.id === selectedUser.id
-//             ? { ...admin, permissions: editingPermissions }
-//             : admin
-//         ));
-//       } else if (selectedUser.role === 'instructor') {
-//         setAllInstructors(prev => prev.map(instructor =>
-//           instructor.id === selectedUser.id
-//             ? { ...instructor, permissions: editingPermissions }
-//             : instructor
-//         ));
-//       }
-
-//       toast.success('Permissions updated successfully');
-//       setShowPermissionsModal(false);
-//       setSelectedUser(null);
-//       setEditingPermissions({});
-//     } catch (error) {
-//       toast.error('Failed to update permissions');
-//     }
-//   };
-
-//   const togglePermission = (permission) => {
-//     setEditingPermissions(prev => ({
-//       ...prev,
-//       [permission]: !prev[permission]
-//     }));
-//   };
-
-//   // const handleCollegeAction = async (collegeId, action) => {
-//   //   try {
-//   //     switch (action) {
-//   //       case 'view':
-//   //         const college = colleges.find(c => c.id === collegeId);
-//   //         setSelectedCollege(college);
-//   //         setShowCollegeModal(true);
-//   //         break;
-//   //       case 'edit':
-//   //         toast.info('College editing functionality coming soon!');
-//   //         break;
-//   //       case 'delete':
-//   //         if (window.confirm('Are you sure you want to delete this college?')) {
-//   //           await mockAPI.deleteCollege(collegeId);
-//   //           toast.success('College deleted successfully');
-//   //           fetchSystemData();
-//   //         }
-//   //         break;
-//   //       default:
-//   //         break;
-//   //     }
-//   //   } catch (error) {
-//   //     toast.error(`Failed to ${action} college`);
-//   //   }
-//   // };
-
-//   const handleUserAction = async (userId, action) => {
-//     try {
-//       switch (action) {
-//         case 'activate':
-//         case 'deactivate':
-//           await mockAPI.bulkUpdateUsers([userId], { isActive: action === 'activate' });
-//           toast.success(`User ${action}d successfully`);
-//           fetchSystemData();
-//           break;
-//         case 'delete':
-//           if (window.confirm('Are you sure you want to delete this user?')) {
-//             await mockAPI.deleteUser(userId);
-//             toast.success('User deleted successfully');
-//             fetchSystemData();
-//           }
-//           break;
-//         default:
-//           break;
-//       }
-//     } catch (error) {
-//       toast.error(`Failed to ${action} user`);
-//     }
-//   };
-
-//   const getCollegeAdmin = (collegeId) => {
-//     return allAdmins.find(admin => admin.collegeId === collegeId);
-//   };
-
-//   const getAdminCourses = (adminId) => {
-//     const admin = allAdmins.find(a => a.id === adminId);
-//     if (!admin) return [];
-//     return allCourses.filter(course => course.collegeId === admin.collegeId);
-//   };
-
-//   const getCourseInstructors = (courseId) => {
-//     const course = allCourses.find(c => c.id === courseId);
-//     if (!course) return [];
-//     return allInstructors.filter(instructor =>
-//       course.assignedInstructors.includes(instructor.id)
-//     );
-//   };
-
-//   const getCourseStudents = (courseId) => {
-//     const course = allCourses.find(c => c.id === courseId);
-//     if (!course) return [];
-//     return allStudents.filter(student =>
-//       student.assignedCourses && student.assignedCourses.includes(courseId)
-//     );
-//   };
-
-//   const getFilteredUsers = (users) => {
-//     let filtered = users;
-
-//     if (searchTerm) {
-//       filtered = filtered.filter(user =>
-//         user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-//         user.email.toLowerCase().includes(searchTerm.toLowerCase())
-//       );
-//     }
-
-//     return filtered;
-//   };
-
-//   if (loading) {
-//     return (
-//       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-//         <div className="text-center">
-//           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-//           <p className="text-gray-600">Loading system dashboard...</p>
-//         </div>
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <div className="min-h-screen bg-gray-50">
-//       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-//         {/* Header */}
-//         <div className="mb-8">
-//           <div className="flex items-center space-x-4 mb-4">
-//             <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-//               <Shield size={24} className="text-purple-600" />
-//             </div>
-//             <div>
-//               <h1 className="text-3xl font-bold text-gray-900">Super Admin Dashboard</h1>
-//               <p className="text-gray-600 mt-1">
-//                 System-wide management and analytics across all institutions
-//               </p>
-//             </div>
-//           </div>
-//         </div>
-
-//         {/* System Stats */}
-//         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-//           {/* <Card className="p-6">
-//             <div className="flex items-center">
-//               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-//                 <Building2 size={24} className="text-blue-600" />
-//               </div>
-//               <div className="ml-4">
-//                 <p className="text-sm font-medium text-gray-600">Colleges</p>
-//                 <p className="text-2xl font-bold text-gray-900">{systemAnalytics?.overview.totalColleges || 0}</p>
-//               </div>
-//             </div>
-//           </Card> */}
-
-//           <Card className="p-6">
-//             <div className="flex items-center">
-//               <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-//                 <Shield size={24} className="text-red-600" />
-//               </div>
-//               <div className="ml-4">
-//                 <p className="text-sm font-medium text-gray-600">Admins</p>
-//                 <p className="text-2xl font-bold text-gray-900">{systemAnalytics?.overview.totalAdmins || 0}</p>
-//               </div>
-//             </div>
-//           </Card>
-
-//           <Card className="p-6">
-//             <div className="flex items-center">
-//               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-//                 <Award size={24} className="text-green-600" />
-//               </div>
-//               <div className="ml-4">
-//                 <p className="text-sm font-medium text-gray-600">Instructors</p>
-//                 <p className="text-2xl font-bold text-gray-900">{systemAnalytics?.overview.totalInstructors || 0}</p>
-//               </div>
-//             </div>
-//           </Card>
-
-//           <Card className="p-6">
-//             <div className="flex items-center">
-//               <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-//                 <Users size={24} className="text-purple-600" />
-//               </div>
-//               <div className="ml-4">
-//                 <p className="text-sm font-medium text-gray-600">Students</p>
-//                 <p className="text-2xl font-bold text-gray-900">{systemAnalytics?.overview.totalStudents || 0}</p>
-//               </div>
-//             </div>
-//           </Card>
-
-//           <Card className="p-6">
-//             <div className="flex items-center">
-//               <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-//                 <BookOpen size={24} className="text-yellow-600" />
-//               </div>
-//               <div className="ml-4">
-//                 <p className="text-sm font-medium text-gray-600">Courses</p>
-//                 <p className="text-2xl font-bold text-gray-900">{systemAnalytics?.overview.totalCourses || 0}</p>
-//               </div>
-//             </div>
-//           </Card>
-//         </div>
-
-//         {/* Tabs */}
-//         <Tabs defaultValue="overview">
-//           <Tabs.List className="mb-6">
-//             <Tabs.Trigger value="overview">System Overview</Tabs.Trigger>
-//             {/* <Tabs.Trigger value="colleges">Colleges</Tabs.Trigger> */}
-//             <Tabs.Trigger value="permissions">User Permissions</Tabs.Trigger>
-//             <Tabs.Trigger value="assignments">Course Assignments</Tabs.Trigger>
-//             <Tabs.Trigger value="analytics">Analytics</Tabs.Trigger>
-//           </Tabs.List>
-
-//           {/* Overview Tab */}
-//           <Tabs.Content value="overview">
-//             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-//               <Card className="p-6">
-//                 <h3 className="text-lg font-semibold text-gray-900 mb-4">System Health</h3>
-//                 <div className="space-y-4">
-//                   <div className="flex items-center justify-between">
-//                     <span className="text-sm text-gray-600">System Uptime</span>
-//                     <Badge variant="success">{systemAnalytics?.overview.systemUptime || '99.9%'}</Badge>
-//                   </div>
-//                   <div className="flex items-center justify-between">
-//                     <span className="text-sm text-gray-600">Active Users</span>
-//                     <span className="font-medium">{systemAnalytics?.overview.activeUsers || 0}</span>
-//                   </div>
-//                   <div className="flex items-center justify-between">
-//                     <span className="text-sm text-gray-600">Course Completion Rate</span>
-//                     <span className="font-medium">{systemAnalytics?.overview.avgCourseCompletion || 0}%</span>
-//                   </div>
-//                   <div className="flex items-center justify-between">
-//                     <span className="text-sm text-gray-600">Monthly Revenue</span>
-//                     <span className="font-medium">${systemAnalytics?.overview.totalRevenue || 0}</span>
-//                   </div>
-//                 </div>
-//               </Card>
-
-//               <Card className="p-6">
-//                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
-//                 <div className="space-y-3">
-//                   <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
-//                     <Building2 size={16} className="text-green-600" />
-//                     <div>
-//                       <p className="text-sm font-medium text-gray-900">New college registered</p>
-//                       <p className="text-xs text-gray-500">Creative Arts Institute - 2 hours ago</p>
-//                     </div>
-//                   </div>
-//                   <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
-//                     <Users size={16} className="text-blue-600" />
-//                     <div>
-//                       <p className="text-sm font-medium text-gray-900">Admin permissions updated</p>
-//                       <p className="text-xs text-gray-500">Prof. Michael Chen - 4 hours ago</p>
-//                     </div>
-//                   </div>
-//                   <div className="flex items-center space-x-3 p-3 bg-purple-50 rounded-lg">
-//                     <BookOpen size={16} className="text-purple-600" />
-//                     <div>
-//                       <p className="text-sm font-medium text-gray-900">Course published</p>
-//                       <p className="text-xs text-gray-500">Digital Art Mastery - 6 hours ago</p>
-//                     </div>
-//                   </div>
-//                 </div>
-//               </Card>
-//             </div>
-//           </Tabs.Content>
-
-//           {/* Colleges Tab */}
-//           <Tabs.Content value="colleges">
-//             <Card className="p-6">
-//               {/* <div className="flex justify-between items-center mb-6">
-//                 <h3 className="text-lg font-semibold text-gray-900">College Management</h3>
-//                 <Button onClick={() => setShowCreateCollegeModal(true)}>
-//                   <Plus size={16} className="mr-2" />
-//                   Add College
-//                 </Button>
-//               </div> */}
-
-//               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-//                 {colleges.map(college => {
-//                   const admin = getCollegeAdmin(college.id);
-//                   const adminCourses = admin ? getAdminCourses(admin.id) : [];
-
-//                   return (
-//                     <div key={college.id} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
-//                       <div className="flex items-center justify-between mb-4">
-//                         <div className="flex items-center space-x-3">
-//                           <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100">
-//                             <img
-//                               src={college.logo}
-//                               alt={college.name}
-//                               className="w-full h-full object-cover"
-//                             />
-//                           </div>
-//                           <div>
-//                             <h4 className="font-semibold text-gray-900">{college.name}</h4>
-//                             <p className="text-sm text-gray-600">{college.code}</p>
-//                           </div>
-//                         </div>
-//                         <Badge variant={college.status === 'active' ? 'success' : 'secondary'}>
-//                           {college.status}
-//                         </Badge>
-//                       </div>
-
-//                       <div className="space-y-2 mb-4">
-//                         <div className="flex justify-between text-sm">
-//                           <span className="text-gray-600">Students</span>
-//                           <span className="font-medium">{college.totalStudents}</span>
-//                         </div>
-//                         <div className="flex justify-between text-sm">
-//                           <span className="text-gray-600">Instructors</span>
-//                           <span className="font-medium">{college.totalInstructors}</span>
-//                         </div>
-//                         <div className="flex justify-between text-sm">
-//                           <span className="text-gray-600">Courses</span>
-//                           <span className="font-medium">{adminCourses.length}</span>
-//                         </div>
-//                         <div className="flex justify-between text-sm">
-//                           <span className="text-gray-600">Admin</span>
-//                           <span className="font-medium">{admin?.name || 'Unassigned'}</span>
-//                         </div>
-//                       </div>
-
-//                       <div className="flex space-x-2">
-//                         <Button
-//                           variant="outline"
-//                           size="sm"
-//                           onClick={() => handleCollegeAction(college.id, 'view')}
-//                         >
-//                           <Eye size={14} />
-//                         </Button>
-//                         <Button
-//                           variant="outline"
-//                           size="sm"
-//                           onClick={() => handleCollegeAction(college.id, 'edit')}
-//                         >
-//                           <Edit size={14} />
-//                         </Button>
-//                         <Button
-//                           variant="outline"
-//                           size="sm"
-//                           onClick={() => handleCollegeAction(college.id, 'delete')}
-//                         >
-//                           <Trash2 size={14} />
-//                         </Button>
-//                       </div>
-//                     </div>
-//                   );
-//                 })}
-//               </div>
-//             </Card>
-//           </Tabs.Content>
-
-//           {/* User Permissions Tab */}
-//           <Tabs.Content value="permissions">
-//             <div className="space-y-6">
-//               {/* Search and Filter */}
-//               <Card className="p-4">
-//                 <div className="flex items-center space-x-4">
-//                   <div className="flex-1">
-//                     <Input
-//                       placeholder="Search users..."
-//                       value={searchTerm}
-//                       onChange={(e) => setSearchTerm(e.target.value)}
-//                     />
-//                   </div>
-//                   <select
-//                     value={filterRole}
-//                     onChange={(e) => setFilterRole(e.target.value)}
-//                     className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-//                   >
-//                     <option value="all">All Roles</option>
-//                     <option value="admin">Admins</option>
-//                     <option value="instructor">Instructors</option>
-//                   </select>
-//                 </div>
-//               </Card>
-
-//               {/* Admins Permissions */}
-//               <Card className="p-6">
-//                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Admin Permissions</h3>
-//                 <div className="space-y-4">
-//                   {getFilteredUsers(allAdmins).map(admin => {
-//                     const college = colleges.find(c => c.id === admin.collegeId);
-//                     const adminCourses = getAdminCourses(admin.id);
-
-//                     return (
-//                       <div key={admin.id} className="border border-gray-200 rounded-lg p-4">
-//                         <div className="flex items-center justify-between">
-//                           <div className="flex items-center space-x-4">
-//                             <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-100">
-//                               <img
-//                                 src={admin.avatar}
-//                                 alt={admin.name}
-//                                 className="w-full h-full object-cover"
-//                               />
-//                             </div>
-//                             <div>
-//                               <h4 className="font-medium text-gray-900">{admin.name}</h4>
-//                               <p className="text-sm text-gray-600">{admin.email}</p>
-//                               <p className="text-sm text-gray-500">{college?.name || 'No college assigned'}</p>
-//                               <p className="text-xs text-gray-500">{adminCourses.length} courses managed</p>
-//                             </div>
-//                           </div>
-
-//                           <div className="flex items-center space-x-4">
-//                             <div className="text-right text-sm">
-//                               <div className="flex items-center space-x-2 mb-1">
-//                                 <span className="text-gray-600">Create Courses:</span>
-//                                 <Badge variant={admin.permissions?.canCreateCourses ? 'success' : 'secondary'} size="sm">
-//                                   {admin.permissions?.canCreateCourses ? 'Enabled' : 'Disabled'}
-//                                 </Badge>
-//                               </div>
-//                               <div className="flex items-center space-x-2">
-//                                 <span className="text-gray-600">Manage Tests:</span>
-//                                 <Badge variant={admin.permissions?.canManageTests ? 'success' : 'secondary'} size="sm">
-//                                   {admin.permissions?.canManageTests ? 'Enabled' : 'Disabled'}
-//                                 </Badge>
-//                               </div>
-//                             </div>
-//                             <Button
-//                               variant="outline"
-//                               size="sm"
-//                               onClick={() => handleUserPermissions(admin)}
-//                             >
-//                               <Settings size={14} className="mr-1" />
-//                               Permissions
-//                             </Button>
-//                           </div>
-//                         </div>
-//                       </div>
-//                     );
-//                   })}
-//                 </div>
-//               </Card>
-
-//               {/* Instructors Permissions */}
-//               <Card className="p-6">
-//                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Instructor Permissions</h3>
-//                 <div className="space-y-4">
-//                   {getFilteredUsers(allInstructors).map(instructor => {
-//                     const college = colleges.find(c => c.id === instructor.collegeId);
-//                     const assignedCourses = instructor.assignedCourses || [];
-
-//                     return (
-//                       <div key={instructor.id} className="border border-gray-200 rounded-lg p-4">
-//                         <div className="flex items-center justify-between">
-//                           <div className="flex items-center space-x-4">
-//                             <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-100">
-//                               <img
-//                                 src={instructor.avatar}
-//                                 alt={instructor.name}
-//                                 className="w-full h-full object-cover"
-//                               />
-//                             </div>
-//                             <div>
-//                               <h4 className="font-medium text-gray-900">{instructor.name}</h4>
-//                               <p className="text-sm text-gray-600">{instructor.email}</p>
-//                               <p className="text-sm text-gray-500">{college?.name || 'No college assigned'}</p>
-//                               <p className="text-xs text-gray-500">{assignedCourses.length} courses assigned</p>
-//                             </div>
-//                           </div>
-
-//                           <div className="flex items-center space-x-4">
-//                             <div className="text-right text-sm">
-//                               <div className="flex items-center space-x-2 mb-1">
-//                                 <span className="text-gray-600">Create Courses:</span>
-//                                 <Badge variant={instructor.permissions?.canCreateCourses ? 'success' : 'secondary'} size="sm">
-//                                   {instructor.permissions?.canCreateCourses ? 'Enabled' : 'Disabled'}
-//                                 </Badge>
-//                               </div>
-//                               <div className="flex items-center space-x-2">
-//                                 <span className="text-gray-600">Create Tests:</span>
-//                                 <Badge variant={instructor.permissions?.canCreateTests ? 'success' : 'secondary'} size="sm">
-//                                   {instructor.permissions?.canCreateTests ? 'Enabled' : 'Disabled'}
-//                                 </Badge>
-//                               </div>
-//                             </div>
-//                             <Button
-//                               variant="outline"
-//                               size="sm"
-//                               onClick={() => handleUserPermissions(instructor)}
-//                             >
-//                               <Settings size={14} className="mr-1" />
-//                               Permissions
-//                             </Button>
-//                           </div>
-//                         </div>
-//                       </div>
-//                     );
-//                   })}
-//                 </div>
-//               </Card>
-//             </div>
-//           </Tabs.Content>
-
-//           {/* Course Assignments Tab */}
-//           <Tabs.Content value="assignments">
-//             <div className="space-y-6">
-//               {/* Admin-Course Assignments */}
-//               <Card className="p-6">
-//                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Admin-Course Assignments</h3>
-//                 <div className="space-y-4">
-//                   {allAdmins.map(admin => {
-//                     const college = colleges.find(c => c.id === admin.collegeId);
-//                     const adminCourses = getAdminCourses(admin.id);
-
-//                     return (
-//                       <div key={admin.id} className="border border-gray-200 rounded-lg p-4">
-//                         <div className="flex items-center justify-between mb-3">
-//                           <div className="flex items-center space-x-3">
-//                             <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100">
-//                               <img
-//                                 src={admin.avatar}
-//                                 alt={admin.name}
-//                                 className="w-full h-full object-cover"
-//                               />
-//                             </div>
-//                             <div>
-//                               <h4 className="font-medium text-gray-900">{admin.name}</h4>
-//                               <p className="text-sm text-gray-600">{college?.name || 'No college'}</p>
-//                             </div>
-//                           </div>
-//                           <Badge variant="info" size="sm">
-//                             {adminCourses.length} courses
-//                           </Badge>
-//                         </div>
-
-//                         {adminCourses.length > 0 ? (
-//                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-//                             {adminCourses.map(course => {
-//                               const instructors = getCourseInstructors(course.id);
-//                               const students = getCourseStudents(course.id);
-
-//                               return (
-//                                 <div key={course.id} className="p-3 bg-gray-50 rounded-lg">
-//                                   <h5 className="font-medium text-gray-900 mb-1">{course.title}</h5>
-//                                   <div className="text-xs text-gray-600 space-y-1">
-//                                     <div>Instructors: {instructors.map(i => i.name).join(', ') || 'None'}</div>
-//                                     <div>Students: {students.length}</div>
-//                                     <div>Status: {course.status}</div>
-//                                   </div>
-//                                 </div>
-//                               );
-//                             })}
-//                           </div>
-//                         ) : (
-//                           <p className="text-sm text-gray-500 italic">No courses assigned</p>
-//                         )}
-//                       </div>
-//                     );
-//                   })}
-//                 </div>
-//               </Card>
-
-//               {/* Course-User Assignments */}
-//               <Card className="p-6">
-//                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Course-User Assignments</h3>
-//                 <div className="space-y-4">
-//                   {allCourses.map(course => {
-//                     const instructors = getCourseInstructors(course.id);
-//                     const students = getCourseStudents(course.id);
-//                     const college = colleges.find(c => c.id === course.collegeId);
-//                     const admin = getCollegeAdmin(course.collegeId);
-
-//                     return (
-//                       <div key={course.id} className="border border-gray-200 rounded-lg p-4">
-//                         <div className="flex items-start justify-between mb-3">
-//                           <div className="flex items-center space-x-3">
-//                             <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100">
-//                               <img
-//                                 src={course.thumbnail}
-//                                 alt={course.title}
-//                                 className="w-full h-full object-cover"
-//                               />
-//                             </div>
-//                             <div>
-//                               <h4 className="font-medium text-gray-900">{course.title}</h4>
-//                               <p className="text-sm text-gray-600">{college?.name || 'No college'}</p>
-//                               <p className="text-xs text-gray-500">Managed by: {admin?.name || 'No admin'}</p>
-//                             </div>
-//                           </div>
-//                           <div className="flex space-x-2">
-//                             <Badge variant="info" size="sm">
-//                               {instructors.length} instructors
-//                             </Badge>
-//                             <Badge variant="success" size="sm">
-//                               {students.length} students
-//                             </Badge>
-//                           </div>
-//                         </div>
-
-//                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-//                           <div>
-//                             <h5 className="text-sm font-medium text-gray-700 mb-2">Assigned Instructors:</h5>
-//                             {instructors.length > 0 ? (
-//                               <div className="space-y-1">
-//                                 {instructors.map(instructor => (
-//                                   <div key={instructor.id} className="flex items-center space-x-2 text-sm">
-//                                     <div className="w-6 h-6 rounded-full overflow-hidden bg-gray-100">
-//                                       <img
-//                                         src={instructor.avatar}
-//                                         alt={instructor.name}
-//                                         className="w-full h-full object-cover"
-//                                       />
-//                                     </div>
-//                                     <span className="text-gray-900">{instructor.name}</span>
-//                                     <div className="flex space-x-1">
-//                                       {instructor.permissions?.canCreateCourses && (
-//                                         <Badge variant="success" size="sm">Course</Badge>
-//                                       )}
-//                                       {instructor.permissions?.canCreateTests && (
-//                                         <Badge variant="warning" size="sm">Test</Badge>
-//                                       )}
-//                                     </div>
-//                                   </div>
-//                                 ))}
-//                               </div>
-//                             ) : (
-//                               <p className="text-sm text-gray-500 italic">No instructors assigned</p>
-//                             )}
-//                           </div>
-
-//                           <div>
-//                             <h5 className="text-sm font-medium text-gray-700 mb-2">Enrolled Students:</h5>
-//                             {students.length > 0 ? (
-//                               <div className="space-y-1">
-//                                 {students.slice(0, 3).map(student => (
-//                                   <div key={student.id} className="flex items-center space-x-2 text-sm">
-//                                     <div className="w-6 h-6 rounded-full overflow-hidden bg-gray-100">
-//                                       <img
-//                                         src={student.avatar}
-//                                         alt={student.name}
-//                                         className="w-full h-full object-cover"
-//                                       />
-//                                     </div>
-//                                     <span className="text-gray-900">{student.name}</span>
-//                                   </div>
-//                                 ))}
-//                                 {students.length > 3 && (
-//                                   <p className="text-xs text-gray-500">+{students.length - 3} more students</p>
-//                                 )}
-//                               </div>
-//                             ) : (
-//                               <p className="text-sm text-gray-500 italic">No students enrolled</p>
-//                             )}
-//                           </div>
-//                         </div>
-//                       </div>
-//                     );
-//                   })}
-//                 </div>
-//               </Card>
-//             </div>
-//           </Tabs.Content>
-
-//           {/* Analytics Tab */}
-//           <Tabs.Content value="analytics">
-//             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-//               <Card className="p-6">
-//                 <h3 className="text-lg font-semibold text-gray-900 mb-4">College Performance</h3>
-//                 <div className="space-y-4">
-//                   {colleges.map(college => {
-//                     const breakdown = systemAnalytics?.collegeBreakdown?.[college.id];
-//                     if (!breakdown) return null;
-
-//                     return (
-//                       <div key={college.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-//                         <div>
-//                           <h4 className="font-medium text-gray-900">{college.name}</h4>
-//                           <p className="text-sm text-gray-600">
-//                             {breakdown.students} students • {breakdown.instructors} instructors
-//                           </p>
-//                         </div>
-//                         <div className="text-right">
-//                           <div className="font-medium text-gray-900">${breakdown.revenue}</div>
-//                           <div className="text-sm text-gray-500">{breakdown.courses} courses</div>
-//                         </div>
-//                       </div>
-//                     );
-//                   })}
-//                 </div>
-//               </Card>
-
-//               <Card className="p-6">
-//                 <h3 className="text-lg font-semibold text-gray-900 mb-4">System Performance</h3>
-//                 <div className="space-y-4">
-//                   {systemAnalytics?.performanceMetrics && Object.entries(systemAnalytics.performanceMetrics).map(([key, value]) => (
-//                     <div key={key} className="flex items-center justify-between">
-//                       <span className="text-sm text-gray-600 capitalize">
-//                         {key.replace(/([A-Z])/g, ' $1').toLowerCase()}
-//                       </span>
-//                       <div className="flex items-center space-x-2">
-//                         <div className="w-20 bg-gray-200 rounded-full h-2">
-//                           <div
-//                             className={`h-2 rounded-full ${
-//                               value > 80 ? 'bg-red-500' : value > 60 ? 'bg-yellow-500' : 'bg-green-500'
-//                             }`}
-//                             style={{ width: `${Math.min(value, 100)}%` }}
-//                           ></div>
-//                         </div>
-//                         <span className="text-sm font-medium text-gray-900">
-//                           {typeof value === 'number' ? `${value}${key.includes('Usage') ? '%' : key.includes('Time') ? 'ms' : ''}` : value}
-//                         </span>
-//                       </div>
-//                     </div>
-//                   ))}
-//                 </div>
-//               </Card>
-//             </div>
-//           </Tabs.Content>
-//         </Tabs>
-
-//         {/* Permissions Modal */}
-//         <Modal
-//           isOpen={showPermissionsModal}
-//           onClose={() => {
-//             setShowPermissionsModal(false);
-//             setSelectedUser(null);
-//             setEditingPermissions({});
-//           }}
-//           title={`Manage Permissions - ${selectedUser?.name}`}
-//           size="lg"
-//         >
-//           {selectedUser && (
-//             <div className="space-y-6">
-//               <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
-//                 <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-100">
-//                   <img
-//                     src={selectedUser.avatar}
-//                     alt={selectedUser.name}
-//                     className="w-full h-full object-cover"
-//                   />
-//                 </div>
-//                 <div>
-//                   <h3 className="font-medium text-gray-900">{selectedUser.name}</h3>
-//                   <p className="text-sm text-gray-600">{selectedUser.email}</p>
-//                   <Badge variant={selectedUser.role === 'admin' ? 'danger' : 'warning'}>
-//                     {selectedUser.role}
-//                   </Badge>
-//                 </div>
-//               </div>
-
-//               <div>
-//                 <h4 className="font-medium text-gray-900 mb-4">Permission Settings</h4>
-//                 <div className="space-y-4">
-//                   {selectedUser.role === 'admin' && (
-//                     <>
-//                       <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-//                         <div>
-//                           <h5 className="font-medium text-gray-900">Create Courses</h5>
-//                           <p className="text-sm text-gray-600">Allow admin to create new courses</p>
-//                         </div>
-//                         <button
-//                           onClick={() => togglePermission('canCreateCourses')}
-//                           className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-//                             editingPermissions.canCreateCourses ? 'bg-primary-600' : 'bg-gray-200'
-//                           }`}
-//                         >
-//                           <span
-//                             className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-//                               editingPermissions.canCreateCourses ? 'translate-x-6' : 'translate-x-1'
-//                             }`}
-//                           />
-//                         </button>
-//                       </div>
-
-//                       <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-//                         <div>
-//                           <h5 className="font-medium text-gray-900">Create Tests</h5>
-//                           <p className="text-sm text-gray-600">Allow admin to create and manage tests</p>
-//                         </div>
-//                         <button
-//                           onClick={() => togglePermission('canCreateTests')}
-//                           className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-//                             editingPermissions.canCreateTests ? 'bg-primary-600' : 'bg-gray-200'
-//                           }`}
-//                         >
-//                           <span
-//                             className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-//                               editingPermissions.canCreateTests ? 'translate-x-6' : 'translate-x-1'
-//                             }`}
-//                           />
-//                         </button>
-//                       </div>
-
-//                       <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-//                         <div>
-//                           <h5 className="font-medium text-gray-900">Manage Tests</h5>
-//                           <p className="text-sm text-gray-600">Allow admin to edit and delete tests</p>
-//                         </div>
-//                         <button
-//                           onClick={() => togglePermission('canManageTests')}
-//                           className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-//                             editingPermissions.canManageTests ? 'bg-primary-600' : 'bg-gray-200'
-//                           }`}
-//                         >
-//                           <span
-//                             className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-//                               editingPermissions.canManageTests ? 'translate-x-6' : 'translate-x-1'
-//                             }`}
-//                           />
-//                         </button>
-//                       </div>
-//                     </>
-//                   )}
-
-//                   {selectedUser.role === 'instructor' && (
-//                     <>
-//                       <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-//                         <div>
-//                           <h5 className="font-medium text-gray-900">Create Courses</h5>
-//                           <p className="text-sm text-gray-600">Allow instructor to create new courses</p>
-//                         </div>
-//                         <button
-//                           onClick={() => togglePermission('canCreateCourses')}
-//                           className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-//                             editingPermissions.canCreateCourses ? 'bg-primary-600' : 'bg-gray-200'
-//                           }`}
-//                         >
-//                           <span
-//                             className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-//                               editingPermissions.canCreateCourses ? 'translate-x-6' : 'translate-x-1'
-//                             }`}
-//                           />
-//                         </button>
-//                       </div>
-
-//                       <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-//                         <div>
-//                           <h5 className="font-medium text-gray-900">Create Tests</h5>
-//                           <p className="text-sm text-gray-600">Allow instructor to create tests for their courses</p>
-//                         </div>
-//                         <button
-//                           onClick={() => togglePermission('canCreateTests')}
-//                           className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-//                             editingPermissions.canCreateTests ? 'bg-primary-600' : 'bg-gray-200'
-//                           }`}
-//                         >
-//                           <span
-//                             className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-//                               editingPermissions.canCreateTests ? 'translate-x-6' : 'translate-x-1'
-//                             }`}
-//                           />
-//                         </button>
-//                       </div>
-
-//                       <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-//                         <div>
-//                           <h5 className="font-medium text-gray-900">Manage Tests</h5>
-//                           <p className="text-sm text-gray-600">Allow instructor to edit and delete their tests</p>
-//                         </div>
-//                         <button
-//                           onClick={() => togglePermission('canManageTests')}
-//                           className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-//                             editingPermissions.canManageTests ? 'bg-primary-600' : 'bg-gray-200'
-//                           }`}
-//                         >
-//                           <span
-//                             className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-//                               editingPermissions.canManageTests ? 'translate-x-6' : 'translate-x-1'
-//                             }`}
-//                           />
-//                         </button>
-//                       </div>
-
-//                       <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-//                         <div>
-//                           <h5 className="font-medium text-gray-900">Manage Students</h5>
-//                           <p className="text-sm text-gray-600">Allow instructor to manage their assigned students</p>
-//                         </div>
-//                         <button
-//                           onClick={() => togglePermission('canManageStudents')}
-//                           className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-//                             editingPermissions.canManageStudents ? 'bg-primary-600' : 'bg-gray-200'
-//                           }`}
-//                         >
-//                           <span
-//                             className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-//                               editingPermissions.canManageStudents ? 'translate-x-6' : 'translate-x-1'
-//                             }`}
-//                           />
-//                         </button>
-//                       </div>
-
-//                       <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-//                         <div>
-//                           <h5 className="font-medium text-gray-900">View Analytics</h5>
-//                           <p className="text-sm text-gray-600">Allow instructor to view course and student analytics</p>
-//                         </div>
-//                         <button
-//                           onClick={() => togglePermission('canViewAnalytics')}
-//                           className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-//                             editingPermissions.canViewAnalytics ? 'bg-primary-600' : 'bg-gray-200'
-//                           }`}
-//                         >
-//                           <span
-//                             className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-//                               editingPermissions.canViewAnalytics ? 'translate-x-6' : 'translate-x-1'
-//                             }`}
-//                           />
-//                         </button>
-//                       </div>
-//                     </>
-//                   )}
-//                 </div>
-//               </div>
-
-//               <div className="flex justify-end space-x-3">
-//                 <Button
-//                   variant="outline"
-//                   onClick={() => {
-//                     setEditingPermissions({ ...selectedUser.permissions });
-//                   }}
-//                 >
-//                   <RotateCcw size={16} className="mr-2" />
-//                   Reset
-//                 </Button>
-//                 <Button
-//                   variant="outline"
-//                   onClick={() => {
-//                     setShowPermissionsModal(false);
-//                     setSelectedUser(null);
-//                     setEditingPermissions({});
-//                   }}
-//                 >
-//                   Cancel
-//                 </Button>
-//                 <Button onClick={savePermissions}>
-//                   <Save size={16} className="mr-2" />
-//                   Save Changes
-//                 </Button>
-//               </div>
-//             </div>
-//           )}
-//         </Modal>
-
-//         {/* College Details Modal */}
-//         <Modal
-//           isOpen={showCollegeModal}
-//           onClose={() => {
-//             setShowCollegeModal(false);
-//             setSelectedCollege(null);
-//           }}
-//           title={selectedCollege?.name}
-//           size="lg"
-//         >
-//           {selectedCollege && (
-//             <div className="space-y-6">
-//               <div className="flex items-center space-x-4">
-//                 <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100">
-//                   <img
-//                     src={selectedCollege.logo}
-//                     alt={selectedCollege.name}
-//                     className="w-full h-full object-cover"
-//                   />
-//                 </div>
-//                 <div>
-//                   <h3 className="text-lg font-semibold text-gray-900">{selectedCollege.name}</h3>
-//                   <p className="text-gray-600">{selectedCollege.code}</p>
-//                   <Badge variant={selectedCollege.status === 'active' ? 'success' : 'secondary'}>
-//                     {selectedCollege.status}
-//                   </Badge>
-//                 </div>
-//               </div>
-
-//               <div className="grid grid-cols-2 gap-4">
-//                 <div>
-//                   <label className="text-sm font-medium text-gray-600">Address</label>
-//                   <p className="text-gray-900">{selectedCollege.address}</p>
-//                 </div>
-//                 <div>
-//                   <label className="text-sm font-medium text-gray-600">Phone</label>
-//                   <p className="text-gray-900">{selectedCollege.phone}</p>
-//                 </div>
-//                 <div>
-//                   <label className="text-sm font-medium text-gray-600">Email</label>
-//                   <p className="text-gray-900">{selectedCollege.email}</p>
-//                 </div>
-//                 <div>
-//                   <label className="text-sm font-medium text-gray-600">Established</label>
-//                   <p className="text-gray-900">{selectedCollege.establishedYear}</p>
-//                 </div>
-//               </div>
-
-//               <div className="grid grid-cols-3 gap-4 text-center">
-//                 <div className="p-3 bg-blue-50 rounded-lg">
-//                   <div className="text-xl font-bold text-blue-600">{selectedCollege.totalStudents}</div>
-//                   <div className="text-sm text-blue-800">Students</div>
-//                 </div>
-//                 <div className="p-3 bg-green-50 rounded-lg">
-//                   <div className="text-xl font-bold text-green-600">{selectedCollege.totalInstructors}</div>
-//                   <div className="text-sm text-green-800">Instructors</div>
-//                 </div>
-//                 <div className="p-3 bg-purple-50 rounded-lg">
-//                   <div className="text-xl font-bold text-purple-600">{getAdminCourses(getCollegeAdmin(selectedCollege.id)?.id).length}</div>
-//                   <div className="text-sm text-purple-800">Courses</div>
-//                 </div>
-//               </div>
-
-//               <div className="flex space-x-3">
-//                 <Button
-//                   className="flex-1"
-//                   onClick={() => {
-//                     setShowCollegeModal(false);
-//                     toast.info('College editing functionality coming soon!');
-//                   }}
-//                 >
-//                   <Edit size={16} className="mr-2" />
-//                   Edit College
-//                 </Button>
-//                 <Button
-//                   variant="outline"
-//                   onClick={() => {
-//                     setShowCollegeModal(false);
-//                     toast.info('College analytics coming soon!');
-//                   }}
-//                 >
-//                   <Activity size={16} className="mr-2" />
-//                   View Analytics
-//                 </Button>
-//               </div>
-//             </div>
-//           )}
-//         </Modal>
-
-//         {/* Create College Modal */}
-//         <Modal
-//           isOpen={showCreateCollegeModal}
-//           onClose={() => setShowCreateCollegeModal(false)}
-//           title="Create New College"
-//           size="lg"
-//         >
-//           <div className="space-y-4">
-//             <p className="text-gray-600">
-//               Add a new educational institution to the platform.
-//             </p>
-//             <div className="text-center py-8">
-//               <Building2 size={48} className="mx-auto text-gray-400 mb-4" />
-//               <h3 className="text-lg font-medium text-gray-900 mb-2">College Registration</h3>
-//               <p className="text-gray-600 mb-4">
-//                 Full college creation interface coming soon!
-//               </p>
-//               <Button onClick={() => toast('College creation functionality coming soon!')}>
-//                 Create College
-//               </Button>
-//             </div>
-//           </div>
-//         </Modal>
-//       </div>
-//     </div>
-//   );
-// }
-
-// import React, { useState, useEffect } from "react";
-// import Card from "../components/ui/Card";
-// import Button from "../components/ui/Button";
-// import Input from "../components/ui/Input";
-// import Badge from "../components/ui/Badge";
-// import Modal from "../components/ui/Modal";
-// import Tabs from "../components/ui/Tabs";
-// import useAuthStore from "../store/useAuthStore";
-// import { mockAPI, mockData } from "../services/mockData";
-// import toast from "react-hot-toast";
-// import {
-//   Shield,
-//   Building2,
-//   Users,
-//   BookOpen,
-//   Settings,
-//   Edit,
-//   Eye,
-//   Trash2,
-//   Award,
-//   Activity,
-//   Search,
-//   Save,
-//   RotateCcw,
-// } from "lucide-react";
-// import {  TabsList, TabsTrigger, TabsContent } from "../components/ui/Tabs";
-// export default function SuperAdminDashboardPage() {
-//   const { user } = useAuthStore();
-//   const [colleges, setColleges] = useState([]);
-//   const [allAdmins, setAllAdmins] = useState([]);
-//   const [allInstructors, setAllInstructors] = useState([]);
-//   const [allStudents, setAllStudents] = useState([]);
-//   const [allCourses, setAllCourses] = useState([]);
-//   const [systemAnalytics, setSystemAnalytics] = useState(null);
-//   const [loading, setLoading] = useState(true);
-//   const [selectedCollege, setSelectedCollege] = useState(null);
-//   const [selectedUser, setSelectedUser] = useState(null);
-//   const [showCollegeModal, setShowCollegeModal] = useState(false);
-//   const [showPermissionsModal, setShowPermissionsModal] = useState(false);
-//   const [showCreateCollegeModal, setShowCreateCollegeModal] = useState(false);
-//   const [searchTerm, setSearchTerm] = useState("");
-//   const [filterRole, setFilterRole] = useState("all");
-//   const [editingPermissions, setEditingPermissions] = useState({});
-
-//   useEffect(() => {
-//     fetchSystemData();
-//   }, []);
-
-//   const fetchSystemData = async () => {
-//     try {
-//       setLoading(true);
-//       const [
-//         collegesData,
-//         adminsData,
-//         instructorsData,
-//         studentsData,
-//         analyticsData,
-//       ] = await Promise.all([
-//         mockAPI.getAllColleges(),
-//         mockAPI.getAllAdmins(),
-//         mockAPI.getAllInstructors(),
-//         mockAPI.getAllStudents(),
-//         mockAPI.getSystemAnalytics(),
-//       ]);
-//       setColleges(collegesData);
-//       setAllAdmins(adminsData);
-//       setAllInstructors(instructorsData);
-//       setAllStudents(studentsData);
-//       setAllCourses(mockData.courses);
-//       setSystemAnalytics(analyticsData);
-//     } catch (error) {
-//       console.error("Error fetching system data:", error);
-//       toast.error("Failed to load system data");
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   const handleUserPermissions = (user) => {
-//     setSelectedUser(user);
-//     setEditingPermissions({ ...user.permissions });
-//     setShowPermissionsModal(true);
-//   };
-
-//   const savePermissions = async () => {
-//     try {
-//       await mockAPI.updateUserPermissions(selectedUser.id, editingPermissions);
-//       if (selectedUser.role === "admin") {
-//         setAllAdmins((prev) =>
-//           prev.map((a) =>
-//             a.id === selectedUser.id
-//               ? { ...a, permissions: editingPermissions }
-//               : a
-//           )
-//         );
-//       } else if (selectedUser.role === "instructor") {
-//         setAllInstructors((prev) =>
-//           prev.map((i) =>
-//             i.id === selectedUser.id
-//               ? { ...i, permissions: editingPermissions }
-//               : i
-//           )
-//         );
-//       }
-//       toast.success("Permissions updated successfully");
-//       setShowPermissionsModal(false);
-//       setSelectedUser(null);
-//       setEditingPermissions({});
-//     } catch {
-//       toast.error("Failed to update permissions");
-//     }
-//   };
-
-//   const togglePermission = (permission) => {
-//     setEditingPermissions((prev) => ({
-//       ...prev,
-//       [permission]: !prev[permission],
-//     }));
-//   };
-
-//   const handleCollegeAction = async (collegeId, action) => {
-//     try {
-//       switch (action) {
-//         case "view":
-//           setSelectedCollege(colleges.find((c) => c.id === collegeId));
-//           setShowCollegeModal(true);
-//           break;
-//         case "edit":
-//           toast.info("College editing functionality coming soon!");
-//           break;
-//         case "delete":
-//           if (window.confirm("Are you sure you want to delete this college?")) {
-//             await mockAPI.deleteCollege(collegeId);
-//             toast.success("College deleted successfully");
-//             fetchSystemData();
-//           }
-//           break;
-//         default:
-//           break;
-//       }
-//     } catch {
-//       toast.error(`Failed to ${action} college`);
-//     }
-//   };
-
-//   const getCollegeAdmin = (collegeId) =>
-//     allAdmins.find((a) => a.collegeId === collegeId);
-//   const getAdminCourses = (adminId) => {
-//     const admin = allAdmins.find((a) => a.id === adminId);
-//     if (!admin) return [];
-//     return allCourses.filter((c) => c.collegeId === admin.collegeId);
-//   };
-//   const getCourseInstructors = (courseId) => {
-//     const course = allCourses.find((c) => c.id === courseId);
-//     if (!course) return [];
-//     return allInstructors.filter((i) =>
-//       course.assignedInstructors.includes(i.id)
-//     );
-//   };
-//   const getCourseStudents = (courseId) => {
-//     const course = allCourses.find((c) => c.id === courseId);
-//     if (!course) return [];
-//     return allStudents.filter(
-//       (s) => s.assignedCourses && s.assignedCourses.includes(courseId)
-//     );
-//   };
-
-//   const getFilteredUsers = (users) => {
-//     let filtered = users;
-//     if (filterRole !== "all")
-//       filtered = filtered.filter((u) => u.role === filterRole);
-//     if (searchTerm) {
-//       const q = searchTerm.toLowerCase();
-//       filtered = filtered.filter(
-//         (u) =>
-//           u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)
-//       );
-//     }
-//     return filtered;
-//   };
-
-//   if (loading) {
-//     return (
-//       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
-//         <div className="text-center">
-//           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-//           <p className="text-gray-600">Loading system dashboard...</p>
-//         </div>
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <div className="min-h-screen bg-gray-50">
-//       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
-
-//         <div className="mb-6 lg:mb-8">
-//           <div className="flex items-center sm:items-start sm:flex-row gap-4">
-//             <div className="w-12 h-12 flex-none bg-purple-100 rounded-full flex items-center justify-center">
-//               <Shield size={24} className="text-purple-600" />
-//             </div>
-//             <div className="min-w-0">
-//               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 truncate">
-//                 Super Admin Dashboard
-//               </h1>
-//               <p className="text-gray-600 mt-1 text-sm sm:text-base">
-//                 System-wide management and analytics across all institutions
-//               </p>
-//             </div>
-//           </div>
-//         </div>
-
-//         <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6 mb-6 lg:mb-8">
-//           <Card className="p-4 sm:p-6">
-//             <div className="flex items-center">
-//               <div className="w-10 h-10 sm:w-12 sm:h-12 bg-red-100 rounded-lg flex items-center justify-center flex-none">
-//                 <Shield size={20} className="text-red-600 sm:w-6 sm:h-6" />
-//               </div>
-//               <div className="ml-3 sm:ml-4 min-w-0">
-//                 <p className="text-xs sm:text-sm font-medium text-gray-600">
-//                   Admins
-//                 </p>
-//                 <p className="text-xl sm:text-2xl font-bold text-gray-900 truncate">
-//                   {systemAnalytics?.overview.totalAdmins || 0}
-//                 </p>
-//               </div>
-//             </div>
-//           </Card>
-
-//           <Card className="p-4 sm:p-6">
-//             <div className="flex items-center">
-//               <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-lg flex items-center justify-center flex-none">
-//                 <Award size={20} className="text-green-600 sm:w-6 sm:h-6" />
-//               </div>
-//               <div className="ml-3 sm:ml-4 min-w-0">
-//                 <p className="text-xs sm:text-sm font-medium text-gray-600">
-//                   Instructors
-//                 </p>
-//                 <p className="text-xl sm:text-2xl font-bold text-gray-900 truncate">
-//                   {systemAnalytics?.overview.totalInstructors || 0}
-//                 </p>
-//               </div>
-//             </div>
-//           </Card>
-
-//           <Card className="p-4 sm:p-6">
-//             <div className="flex items-center">
-//               <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-none">
-//                 <Users size={20} className="text-purple-600 sm:w-6 sm:h-6" />
-//               </div>
-//               <div className="ml-3 sm:ml-4 min-w-0">
-//                 <p className="text-xs sm:text-sm font-medium text-gray-600">
-//                   Students
-//                 </p>
-//                 <p className="text-xl sm:text-2xl font-bold text-gray-900 truncate">
-//                   {systemAnalytics?.overview.totalStudents || 0}
-//                 </p>
-//               </div>
-//             </div>
-//           </Card>
-
-//           <Card className="p-4 sm:p-6">
-//             <div className="flex items-center">
-//               <div className="w-10 h-10 sm:w-12 sm:h-12 bg-yellow-100 rounded-lg flex items-center justify-center flex-none">
-//                 <BookOpen size={20} className="text-yellow-600 sm:w-6 sm:h-6" />
-//               </div>
-//               <div className="ml-3 sm:ml-4 min-w-0">
-//                 <p className="text-xs sm:text-sm font-medium text-gray-600">
-//                   Courses
-//                 </p>
-//                 <p className="text-xl sm:text-2xl font-bold text-gray-900 truncate">
-//                   {systemAnalytics?.overview.totalCourses || 0}
-//                 </p>
-//               </div>
-//             </div>
-//           </Card>
-//         </div>
-
-//         <Tabs defaultValue="overview">
-//          <div className="mb-4 sm:mb-6 sticky top-0 z-10 bg-gray-50 -mx-4 px-4 sm:mx-0 sm:px-0">
-//     <div className="relative overflow-x-auto no-scrollbar">
-//       <TabsList className="flex gap-2 min-w-max snap-x snap-mandatory" aria-label="Dashboard sections">
-//         <TabsTrigger value="overview" className="whitespace-nowrap snap-start px-3 sm:px-4 py-2 text-xs sm:text-sm">
-//           System Overview
-//         </TabsTrigger>
-//         <TabsTrigger value="permissions" className="whitespace-nowrap snap-start px-3 sm:px-4 py-2 text-xs sm:text-sm">
-//           User Permissions
-//         </TabsTrigger>
-//         <TabsTrigger value="assignments" className="whitespace-nowrap snap-start px-3 sm:px-4 py-2 text-xs sm:text-sm">
-//           Course Assignments
-//         </TabsTrigger>
-//         <TabsTrigger value="analytics" className="whitespace-nowrap snap-start px-3 sm:px-4 py-2 text-xs sm:text-sm">
-//           Analytics
-//         </TabsTrigger>
-//       </TabsList>
-//     </div>
-//   </div>
-
-//           <TabsContent value="overview">
-//             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-//               <Card className="p-5 sm:p-6">
-//                 <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">
-//                   System Health
-//                 </h3>
-//                 <div className="space-y-4">
-//                   <div className="flex items-center justify-between">
-//                     <span className="text-sm text-gray-600">System Uptime</span>
-//                     <Badge variant="success">
-//                       {systemAnalytics?.overview.systemUptime || "99.9%"}
-//                     </Badge>
-//                   </div>
-//                   <div className="flex items-center justify-between">
-//                     <span className="text-sm text-gray-600">Active Users</span>
-//                     <span className="font-medium">
-//                       {systemAnalytics?.overview.activeUsers || 0}
-//                     </span>
-//                   </div>
-//                   <div className="flex items-center justify-between">
-//                     <span className="text-sm text-gray-600">
-//                       Course Completion Rate
-//                     </span>
-//                     <span className="font-medium">
-//                       {systemAnalytics?.overview.avgCourseCompletion || 0}%
-//                     </span>
-//                   </div>
-//                   <div className="flex items-center justify-between">
-//                     <span className="text-sm text-gray-600">
-//                       Monthly Revenue
-//                     </span>
-//                     <span className="font-medium">
-//                       ${systemAnalytics?.overview.totalRevenue || 0}
-//                     </span>
-//                   </div>
-//                 </div>
-//               </Card>
-
-//               <Card className="p-5 sm:p-6">
-//                 <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">
-//                   Recent Activity
-//                 </h3>
-//                 <div className="space-y-3">
-//                   <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
-//                     <Building2 size={16} className="text-green-600 flex-none" />
-//                     <div className="min-w-0">
-//                       <p className="text-sm font-medium text-gray-900 truncate">
-//                         New college registered
-//                       </p>
-//                       <p className="text-xs text-gray-500 truncate">
-//                         Creative Arts Institute - 2 hours ago
-//                       </p>
-//                     </div>
-//                   </div>
-//                   <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
-//                     <Users size={16} className="text-blue-600 flex-none" />
-//                     <div className="min-w-0">
-//                       <p className="text-sm font-medium text-gray-900 truncate">
-//                         Admin permissions updated
-//                       </p>
-//                       <p className="text-xs text-gray-500 truncate">
-//                         Prof. Michael Chen - 4 hours ago
-//                       </p>
-//                     </div>
-//                   </div>
-//                   <div className="flex items-center space-x-3 p-3 bg-purple-50 rounded-lg">
-//                     <BookOpen size={16} className="text-purple-600 flex-none" />
-//                     <div className="min-w-0">
-//                       <p className="text-sm font-medium text-gray-900 truncate">
-//                         Course published
-//                       </p>
-//                       <p className="text-xs text-gray-500 truncate">
-//                         Digital Art Mastery - 6 hours ago
-//                       </p>
-//                     </div>
-//                   </div>
-//                 </div>
-//               </Card>
-//             </div>
-//           </TabsContent>
-
-//           {/* <Tabs.Content value="colleges">
-//             <Card className="p-5 sm:p-6">
-//               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-//                 {colleges.map((college) => {
-//                   const admin = getCollegeAdmin(college.id);
-//                   const adminCourses = admin ? getAdminCourses(admin.id) : [];
-//                   return (
-//                     <div
-//                       key={college.id}
-//                       className="border border-gray-200 rounded-lg p-5 hover:shadow-md transition-shadow"
-//                     >
-//                       <div className="flex items-center justify-between mb-4 gap-3">
-//                         <div className="flex items-center gap-3 min-w-0">
-//                           <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex-none">
-//                             <img
-//                               src={college.logo}
-//                               alt={college.name}
-//                               className="w-full h-full object-cover"
-//                             />
-//                           </div>
-//                           <div className="min-w-0">
-//                             <h4 className="font-semibold text-gray-900 truncate">
-//                               {college.name}
-//                             </h4>
-//                             <p className="text-sm text-gray-600 truncate">
-//                               {college.code}
-//                             </p>
-//                           </div>
-//                         </div>
-//                         <Badge
-//                           variant={
-//                             college.status === "active"
-//                               ? "success"
-//                               : "secondary"
-//                           }
-//                         >
-//                           {college.status}
-//                         </Badge>
-//                       </div>
-
-//                       <div className="space-y-2 mb-4">
-//                         <div className="flex justify-between text-sm">
-//                           <span className="text-gray-600">Students</span>
-//                           <span className="font-medium">
-//                             {college.totalStudents}
-//                           </span>
-//                         </div>
-//                         <div className="flex justify-between text-sm">
-//                           <span className="text-gray-600">Instructors</span>
-//                           <span className="font-medium">
-//                             {college.totalInstructors}
-//                           </span>
-//                         </div>
-//                         <div className="flex justify-between text-sm">
-//                           <span className="text-gray-600">Courses</span>
-//                           <span className="font-medium">
-//                             {adminCourses.length}
-//                           </span>
-//                         </div>
-//                         <div className="flex justify-between text-sm">
-//                           <span className="text-gray-600">Admin</span>
-//                           <span className="font-medium truncate">
-//                             {admin?.name || "Unassigned"}
-//                           </span>
-//                         </div>
-//                       </div>
-
-//                       <div className="flex flex-wrap gap-2">
-//                         <Button
-//                           variant="outline"
-//                           size="sm"
-//                           onClick={() =>
-//                             handleCollegeAction(college.id, "view")
-//                           }
-//                         >
-//                           <Eye size={14} />
-//                         </Button>
-//                         <Button
-//                           variant="outline"
-//                           size="sm"
-//                           onClick={() =>
-//                             handleCollegeAction(college.id, "edit")
-//                           }
-//                         >
-//                           <Edit size={14} />
-//                         </Button>
-//                         <Button
-//                           variant="outline"
-//                           size="sm"
-//                           onClick={() =>
-//                             handleCollegeAction(college.id, "delete")
-//                           }
-//                         >
-//                           <Trash2 size={14} />
-//                         </Button>
-//                       </div>
-//                     </div>
-//                   );
-//                 })}
-//               </div>
-//             </Card>
-//           </Tabs.Content> */}
-
-//           <TabsContent value="permissions">
-//             <div className="space-y-6">
-//               <Card className="p-4">
-//                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center">
-//                   <div className="sm:col-span-2">
-//                     <div className="relative">
-//                       <Input
-//                         placeholder="Search users..."
-//                         value={searchTerm}
-//                         onChange={(e) => setSearchTerm(e.target.value)}
-//                         className="w-full pr-10"
-//                       />
-//                       <Search className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
-//                     </div>
-//                   </div>
-//                   <select
-//                     value={filterRole}
-//                     onChange={(e) => setFilterRole(e.target.value)}
-//                     className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 w-full"
-//                   >
-//                     <option value="all">All Roles</option>
-//                     <option value="admin">Admins</option>
-//                     <option value="instructor">Instructors</option>
-//                   </select>
-//                 </div>
-//               </Card>
-
-//               <Card className="p-5 sm:p-6">
-//                 <h3 className="text-lg font-semibold text-gray-900 mb-4">
-//                   Admin Permissions
-//                 </h3>
-//                 <div className="space-y-4">
-//                   {getFilteredUsers(allAdmins).map((admin) => {
-//                     const college = colleges.find(
-//                       (c) => c.id === admin.collegeId
-//                     );
-//                     const adminCourses = getAdminCourses(admin.id);
-//                     return (
-//                       <div
-//                         key={admin.id}
-//                         className="border border-gray-200 rounded-lg p-4"
-//                       >
-//                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-//                           <div className="flex items-center gap-4 min-w-0">
-//                             <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-100 flex-none">
-//                               <img
-//                                 src={admin.avatar}
-//                                 alt={admin.name}
-//                                 className="w-full h-full object-cover"
-//                               />
-//                             </div>
-//                             <div className="min-w-0">
-//                               <h4 className="font-medium text-gray-900 truncate">
-//                                 {admin.name}
-//                               </h4>
-//                               <p className="text-sm text-gray-600 truncate">
-//                                 {admin.email}
-//                               </p>
-//                               <p className="text-sm text-gray-500 truncate">
-//                                 {college?.name || "No college assigned"}
-//                               </p>
-//                               <p className="text-xs text-gray-500">
-//                                 {adminCourses.length} courses managed
-//                               </p>
-//                             </div>
-//                           </div>
-
-//                           <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-//                             <div className="text-sm">
-//                               <div className="flex items-center gap-2 mb-1">
-//                                 <span className="text-gray-600">
-//                                   Create Courses:
-//                                 </span>
-//                                 <Badge
-//                                   variant={
-//                                     admin.permissions?.canCreateCourses
-//                                       ? "success"
-//                                       : "secondary"
-//                                   }
-//                                   size="sm"
-//                                 >
-//                                   {admin.permissions?.canCreateCourses
-//                                     ? "Enabled"
-//                                     : "Disabled"}
-//                                 </Badge>
-//                               </div>
-//                               <div className="flex items-center gap-2">
-//                                 <span className="text-gray-600">
-//                                   Manage Tests:
-//                                 </span>
-//                                 <Badge
-//                                   variant={
-//                                     admin.permissions?.canManageTests
-//                                       ? "success"
-//                                       : "secondary"
-//                                   }
-//                                   size="sm"
-//                                 >
-//                                   {admin.permissions?.canManageTests
-//                                     ? "Enabled"
-//                                     : "Disabled"}
-//                                 </Badge>
-//                               </div>
-//                             </div>
-//                             <Button
-//                               variant="outline"
-//                               size="sm"
-//                               onClick={() => handleUserPermissions(admin)}
-//                             >
-//                               <Settings size={14} className="mr-1" />
-//                               Permissions
-//                             </Button>
-//                           </div>
-//                         </div>
-//                       </div>
-//                     );
-//                   })}
-//                 </div>
-//               </Card>
-
-//               <Card className="p-5 sm:p-6">
-//                 <h3 className="text-lg font-semibold text-gray-900 mb-4">
-//                   Instructor Permissions
-//                 </h3>
-//                 <div className="space-y-4">
-//                   {getFilteredUsers(allInstructors).map((instructor) => {
-//                     const college = colleges.find(
-//                       (c) => c.id === instructor.collegeId
-//                     );
-//                     const assignedCourses = instructor.assignedCourses || [];
-//                     return (
-//                       <div
-//                         key={instructor.id}
-//                         className="border border-gray-200 rounded-lg p-4"
-//                       >
-//                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-//                           <div className="flex items-center gap-4 min-w-0">
-//                             <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-100 flex-none">
-//                               <img
-//                                 src={instructor.avatar}
-//                                 alt={instructor.name}
-//                                 className="w-full h-full object-cover"
-//                               />
-//                             </div>
-//                             <div className="min-w-0">
-//                               <h4 className="font-medium text-gray-900 truncate">
-//                                 {instructor.name}
-//                               </h4>
-//                               <p className="text-sm text-gray-600 truncate">
-//                                 {instructor.email}
-//                               </p>
-//                               <p className="text-sm text-gray-500 truncate">
-//                                 {college?.name || "No college assigned"}
-//                               </p>
-//                               <p className="text-xs text-gray-500">
-//                                 {assignedCourses.length} courses assigned
-//                               </p>
-//                             </div>
-//                           </div>
-
-//                           <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-//                             <div className="text-sm">
-//                               <div className="flex items-center gap-2 mb-1">
-//                                 <span className="text-gray-600">
-//                                   Create Courses:
-//                                 </span>
-//                                 <Badge
-//                                   variant={
-//                                     instructor.permissions?.canCreateCourses
-//                                       ? "success"
-//                                       : "secondary"
-//                                   }
-//                                   size="sm"
-//                                 >
-//                                   {instructor.permissions?.canCreateCourses
-//                                     ? "Enabled"
-//                                     : "Disabled"}
-//                                 </Badge>
-//                               </div>
-//                               <div className="flex items-center gap-2">
-//                                 <span className="text-gray-600">
-//                                   Create Tests:
-//                                 </span>
-//                                 <Badge
-//                                   variant={
-//                                     instructor.permissions?.canCreateTests
-//                                       ? "success"
-//                                       : "secondary"
-//                                   }
-//                                   size="sm"
-//                                 >
-//                                   {instructor.permissions?.canCreateTests
-//                                     ? "Enabled"
-//                                     : "Disabled"}
-//                                 </Badge>
-//                               </div>
-//                             </div>
-//                             <Button
-//                               variant="outline"
-//                               size="sm"
-//                               onClick={() => handleUserPermissions(instructor)}
-//                             >
-//                               <Settings size={14} className="mr-1" />
-//                               Permissions
-//                             </Button>
-//                           </div>
-//                         </div>
-//                       </div>
-//                     );
-//                   })}
-//                 </div>
-//               </Card>
-//             </div>
-//           </TabsContent>
-
-//           <TabsContent value="assignments">
-//             <div className="space-y-6">
-//               <Card className="p-5 sm:p-6">
-//                 <h3 className="text-lg font-semibold text-gray-900 mb-4">
-//                   Admin-Course Assignments
-//                 </h3>
-//                 <div className="space-y-4">
-//                   {allAdmins.map((admin) => {
-//                     const college = colleges.find(
-//                       (c) => c.id === admin.collegeId
-//                     );
-//                     const adminCourses = getAdminCourses(admin.id);
-//                     return (
-//                       <div
-//                         key={admin.id}
-//                         className="border border-gray-200 rounded-lg p-4"
-//                       >
-//                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
-//                           <div className="flex items-center gap-3 min-w-0">
-//                             <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 flex-none">
-//                               <img
-//                                 src={admin.avatar}
-//                                 alt={admin.name}
-//                                 className="w-full h-full object-cover"
-//                               />
-//                             </div>
-//                             <div className="min-w-0">
-//                               <h4 className="font-medium text-gray-900 truncate">
-//                                 {admin.name}
-//                               </h4>
-//                               <p className="text-sm text-gray-600 truncate">
-//                                 {college?.name || "No college"}
-//                               </p>
-//                             </div>
-//                           </div>
-//                           <Badge variant="info" size="sm">
-//                             {adminCourses.length} courses
-//                           </Badge>
-//                         </div>
-
-//                         {adminCourses.length > 0 ? (
-//                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-//                             {adminCourses.map((course) => {
-//                               const instructors = getCourseInstructors(
-//                                 course.id
-//                               );
-//                               const students = getCourseStudents(course.id);
-//                               return (
-//                                 <div
-//                                   key={course.id}
-//                                   className="p-3 bg-gray-50 rounded-lg"
-//                                 >
-//                                   <h5 className="font-medium text-gray-900 mb-1 truncate">
-//                                     {course.title}
-//                                   </h5>
-//                                   <div className="text-xs text-gray-600 space-y-1">
-//                                     <div className="truncate">
-//                                       Instructors:{" "}
-//                                       {instructors
-//                                         .map((i) => i.name)
-//                                         .join(", ") || "None"}
-//                                     </div>
-//                                     <div>Students: {students.length}</div>
-//                                     <div>Status: {course.status}</div>
-//                                   </div>
-//                                 </div>
-//                               );
-//                             })}
-//                           </div>
-//                         ) : (
-//                           <p className="text-sm text-gray-500 italic">
-//                             No courses assigned
-//                           </p>
-//                         )}
-//                       </div>
-//                     );
-//                   })}
-//                 </div>
-//               </Card>
-
-//               <Card className="p-5 sm:p-6">
-//                 <h3 className="text-lg font-semibold text-gray-900 mb-4">
-//                   Course-User Assignments
-//                 </h3>
-//                 <div className="space-y-4">
-//                   {allCourses.map((course) => {
-//                     const instructors = getCourseInstructors(course.id);
-//                     const students = getCourseStudents(course.id);
-//                     const college = colleges.find(
-//                       (c) => c.id === course.collegeId
-//                     );
-//                     const admin = getCollegeAdmin(course.collegeId);
-//                     return (
-//                       <div
-//                         key={course.id}
-//                         className="border border-gray-200 rounded-lg p-4"
-//                       >
-//                         <div className="flex flex-col md:flex-row md:items-start justify-between gap-3 mb-3">
-//                           <div className="flex items-center gap-3 min-w-0">
-//                             <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex-none">
-//                               <img
-//                                 src={course.thumbnail}
-//                                 alt={course.title}
-//                                 className="w-full h-full object-cover"
-//                               />
-//                             </div>
-//                             <div className="min-w-0">
-//                               <h4 className="font-medium text-gray-900 truncate">
-//                                 {course.title}
-//                               </h4>
-//                               <p className="text-sm text-gray-600 truncate">
-//                                 {college?.name || "No college"}
-//                               </p>
-//                               <p className="text-xs text-gray-500 truncate">
-//                                 Managed by: {admin?.name || "No admin"}
-//                               </p>
-//                             </div>
-//                           </div>
-//                           <div className="flex gap-2 flex-wrap">
-//                             <Badge variant="info" size="sm">
-//                               {instructors.length} instructors
-//                             </Badge>
-//                             <Badge variant="success" size="sm">
-//                               {students.length} students
-//                             </Badge>
-//                           </div>
-//                         </div>
-
-//                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-//                           <div>
-//                             <h5 className="text-sm font-medium text-gray-700 mb-2">
-//                               Assigned Instructors:
-//                             </h5>
-//                             {instructors.length > 0 ? (
-//                               <div className="space-y-1">
-//                                 {instructors.map((instructor) => (
-//                                   <div
-//                                     key={instructor.id}
-//                                     className="flex items-center gap-2 text-sm"
-//                                   >
-//                                     <div className="w-6 h-6 rounded-full overflow-hidden bg-gray-100 flex-none">
-//                                       <img
-//                                         src={instructor.avatar}
-//                                         alt={instructor.name}
-//                                         className="w-full h-full object-cover"
-//                                       />
-//                                     </div>
-//                                     <span className="text-gray-900 truncate">
-//                                       {instructor.name}
-//                                     </span>
-//                                     <div className="flex gap-1 flex-wrap">
-//                                       {instructor.permissions
-//                                         ?.canCreateCourses && (
-//                                           <Badge variant="success" size="sm">
-//                                             Course
-//                                           </Badge>
-//                                         )}
-//                                       {instructor.permissions
-//                                         ?.canCreateTests && (
-//                                           <Badge variant="warning" size="sm">
-//                                             Test
-//                                           </Badge>
-//                                         )}
-//                                     </div>
-//                                   </div>
-//                                 ))}
-//                               </div>
-//                             ) : (
-//                               <p className="text-sm text-gray-500 italic">
-//                                 No instructors assigned
-//                               </p>
-//                             )}
-//                           </div>
-
-//                           <div>
-//                             <h5 className="text-sm font-medium text-gray-700 mb-2">
-//                               Enrolled Students:
-//                             </h5>
-//                             {students.length > 0 ? (
-//                               <div className="space-y-1">
-//                                 {students.slice(0, 3).map((student) => (
-//                                   <div
-//                                     key={student.id}
-//                                     className="flex items-center gap-2 text-sm"
-//                                   >
-//                                     <div className="w-6 h-6 rounded-full overflow-hidden bg-gray-100 flex-none">
-//                                       <img
-//                                         src={student.avatar}
-//                                         alt={student.name}
-//                                         className="w-full h-full object-cover"
-//                                       />
-//                                     </div>
-//                                     <span className="text-gray-900 truncate">
-//                                       {student.name}
-//                                     </span>
-//                                   </div>
-//                                 ))}
-//                                 {students.length > 3 && (
-//                                   <p className="text-xs text-gray-500">
-//                                     +{students.length - 3} more students
-//                                   </p>
-//                                 )}
-//                               </div>
-//                             ) : (
-//                               <p className="text-sm text-gray-500 italic">
-//                                 No students enrolled
-//                               </p>
-//                             )}
-//                           </div>
-//                         </div>
-//                       </div>
-//                     );
-//                   })}
-//                 </div>
-//               </Card>
-//             </div>
-//           </TabsContent>
-
-//           <TabsContent value="analytics">
-//             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-//               <Card className="p-5 sm:p-6">
-//                 <h3 className="text-lg font-semibold text-gray-900 mb-4">
-//                   College Performance
-//                 </h3>
-//                 <div className="space-y-4">
-//                   {colleges.map((college) => {
-//                     const breakdown =
-//                       systemAnalytics?.collegeBreakdown?.[college.id];
-//                     if (!breakdown) return null;
-//                     return (
-//                       <div
-//                         key={college.id}
-//                         className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-//                       >
-//                         <div className="min-w-0">
-//                           <h4 className="font-medium text-gray-900 truncate">
-//                             {college.name}
-//                           </h4>
-//                           <p className="text-sm text-gray-600">
-//                             {breakdown.students} students •{" "}
-//                             {breakdown.instructors} instructors
-//                           </p>
-//                         </div>
-//                         <div className="text-right">
-//                           <div className="font-medium text-gray-900">
-//                             ${breakdown.revenue}
-//                           </div>
-//                           <div className="text-sm text-gray-500">
-//                             {breakdown.courses} courses
-//                           </div>
-//                         </div>
-//                       </div>
-//                     );
-//                   })}
-//                 </div>
-//               </Card>
-
-//               <Card className="p-5 sm:p-6">
-//                 <h3 className="text-lg font-semibold text-gray-900 mb-4">
-//                   System Performance
-//                 </h3>
-//                 <div className="space-y-4">
-//                   {systemAnalytics?.performanceMetrics &&
-//                     Object.entries(systemAnalytics.performanceMetrics).map(
-//                       ([key, value]) => (
-//                         <div
-//                           key={key}
-//                           className="flex items-center justify-between gap-3"
-//                         >
-//                           <span className="text-sm text-gray-600 capitalize truncate">
-//                             {key.replace(/([A-Z])/g, " $1").toLowerCase()}
-//                           </span>
-//                           <div className="flex items-center gap-2 min-w-[140px]">
-//                             <div className="w-20 bg-gray-200 rounded-full h-2">
-//                               <div
-//                                 className={`h-2 rounded-full ${value > 80
-//                                     ? "bg-red-500"
-//                                     : value > 60
-//                                       ? "bg-yellow-500"
-//                                       : "bg-green-500"
-//                                   }`}
-//                                 style={{
-//                                   width: `${Math.min(
-//                                     Number(value) || 0,
-//                                     100
-//                                   )}%`,
-//                                 }}
-//                               />
-//                             </div>
-//                             <span className="text-sm font-medium text-gray-900">
-//                               {typeof value === "number"
-//                                 ? `${value}${key.includes("Usage")
-//                                   ? "%"
-//                                   : key.includes("Time")
-//                                     ? "ms"
-//                                     : ""
-//                                 }`
-//                                 : value}
-//                             </span>
-//                           </div>
-//                         </div>
-//                       )
-//                     )}
-//                 </div>
-//               </Card>
-//             </div>
-//           </TabsContent>
-//         </Tabs>
-
-//         <Modal
-//           isOpen={showPermissionsModal}
-//           onClose={() => {
-//             setShowPermissionsModal(false);
-//             setSelectedUser(null);
-//             setEditingPermissions({});
-//           }}
-//           title={`Manage Permissions - ${selectedUser?.name}`}
-//           size="lg"
-//         >
-//           {selectedUser && (
-//             <div className="space-y-6">
-//               <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
-//                 <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-100 flex-none">
-//                   <img
-//                     src={selectedUser.avatar}
-//                     alt={selectedUser.name}
-//                     className="w-full h-full object-cover"
-//                   />
-//                 </div>
-//                 <div className="min-w-0">
-//                   <h3 className="font-medium text-gray-900 truncate">
-//                     {selectedUser.name}
-//                   </h3>
-//                   <p className="text-sm text-gray-600 truncate">
-//                     {selectedUser.email}
-//                   </p>
-//                   <Badge
-//                     variant={
-//                       selectedUser.role === "admin" ? "danger" : "warning"
-//                     }
-//                   >
-//                     {selectedUser.role}
-//                   </Badge>
-//                 </div>
-//               </div>
-
-//               <div>
-//                 <h4 className="font-medium text-gray-900 mb-4">
-//                   Permission Settings
-//                 </h4>
-//                 <div className="space-y-4">
-//                   {selectedUser.role === "admin" && (
-//                     <>
-//                       {[
-//                         {
-//                           key: "canCreateCourses",
-//                           title: "Create Courses",
-//                           desc: "Allow admin to create new courses",
-//                         },
-//                         {
-//                           key: "canCreateTests",
-//                           title: "Create Tests",
-//                           desc: "Allow admin to create and manage tests",
-//                         },
-//                         {
-//                           key: "canManageTests",
-//                           title: "Manage Tests",
-//                           desc: "Allow admin to edit and delete tests",
-//                         },
-//                       ].map((item) => (
-//                         <div
-//                           key={item.key}
-//                           className="flex items-center justify-between p-3 border border-gray-200 rounded-lg"
-//                         >
-//                           <div className="pr-4">
-//                             <h5 className="font-medium text-gray-900">
-//                               {item.title}
-//                             </h5>
-//                             <p className="text-sm text-gray-600">{item.desc}</p>
-//                           </div>
-//                           <button
-//                             onClick={() => togglePermission(item.key)}
-//                             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${editingPermissions[item.key]
-//                                 ? "bg-primary-600"
-//                                 : "bg-gray-200"
-//                               }`}
-//                           >
-//                             <span
-//                               className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${editingPermissions[item.key]
-//                                   ? "translate-x-6"
-//                                   : "translate-x-1"
-//                                 }`}
-//                             />
-//                           </button>
-//                         </div>
-//                       ))}
-//                     </>
-//                   )}
-
-//                   {selectedUser.role === "instructor" && (
-//                     <>
-//                       {[
-//                         {
-//                           key: "canCreateCourses",
-//                           title: "Create Courses",
-//                           desc: "Allow instructor to create new courses",
-//                         },
-//                         {
-//                           key: "canCreateTests",
-//                           title: "Create Tests",
-//                           desc: "Allow instructor to create tests for their courses",
-//                         },
-//                         {
-//                           key: "canManageTests",
-//                           title: "Manage Tests",
-//                           desc: "Allow instructor to edit and delete their tests",
-//                         },
-//                         {
-//                           key: "canManageStudents",
-//                           title: "Manage Students",
-//                           desc: "Allow instructor to manage their assigned students",
-//                         },
-//                         {
-//                           key: "canViewAnalytics",
-//                           title: "View Analytics",
-//                           desc: "Allow instructor to view course and student analytics",
-//                         },
-//                       ].map((item) => (
-//                         <div
-//                           key={item.key}
-//                           className="flex items-center justify-between p-3 border border-gray-200 rounded-lg"
-//                         >
-//                           <div className="pr-4">
-//                             <h5 className="font-medium text-gray-900">
-//                               {item.title}
-//                             </h5>
-//                             <p className="text-sm text-gray-600">{item.desc}</p>
-//                           </div>
-//                           <button
-//                             onClick={() => togglePermission(item.key)}
-//                             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${editingPermissions[item.key]
-//                                 ? "bg-primary-600"
-//                                 : "bg-gray-200"
-//                               }`}
-//                           >
-//                             <span
-//                               className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${editingPermissions[item.key]
-//                                   ? "translate-x-6"
-//                                   : "translate-x-1"
-//                                 }`}
-//                             />
-//                           </button>
-//                         </div>
-//                       ))}
-//                     </>
-//                   )}
-//                 </div>
-//               </div>
-
-//               <div className="flex flex-col sm:flex-row justify-end gap-3">
-//                 <Button
-//                   variant="outline"
-//                   onClick={() =>
-//                     setEditingPermissions({ ...selectedUser.permissions })
-//                   }
-//                 >
-//                   <RotateCcw size={16} className="mr-2" />
-//                   Reset
-//                 </Button>
-//                 <Button
-//                   variant="outline"
-//                   onClick={() => {
-//                     setShowPermissionsModal(false);
-//                     setSelectedUser(null);
-//                     setEditingPermissions({});
-//                   }}
-//                 >
-//                   Cancel
-//                 </Button>
-//                 <Button onClick={savePermissions}>
-//                   <Save size={16} className="mr-2" />
-//                   Save Changes
-//                 </Button>
-//               </div>
-//             </div>
-//           )}
-//         </Modal>
-
-//         <Modal
-//           isOpen={showCollegeModal}
-//           onClose={() => {
-//             setShowCollegeModal(false);
-//             setSelectedCollege(null);
-//           }}
-//           title={selectedCollege?.name}
-//           size="lg"
-//         >
-//           {selectedCollege && (
-//             <div className="space-y-6">
-//               <div className="flex items-center gap-4 flex-wrap">
-//                 <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-none">
-//                   <img
-//                     src={selectedCollege.logo}
-//                     alt={selectedCollege.name}
-//                     className="w-full h-full object-cover"
-//                   />
-//                 </div>
-//                 <div className="min-w-0">
-//                   <h3 className="text-lg font-semibold text-gray-900 truncate">
-//                     {selectedCollege.name}
-//                   </h3>
-//                   <p className="text-gray-600">{selectedCollege.code}</p>
-//                   <Badge
-//                     variant={
-//                       selectedCollege.status === "active"
-//                         ? "success"
-//                         : "secondary"
-//                     }
-//                   >
-//                     {selectedCollege.status}
-//                   </Badge>
-//                 </div>
-//               </div>
-
-//               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-//                 <div>
-//                   <label className="text-sm font-medium text-gray-600">
-//                     Address
-//                   </label>
-//                   <p className="text-gray-900">{selectedCollege.address}</p>
-//                 </div>
-//                 <div>
-//                   <label className="text-sm font-medium text-gray-600">
-//                     Phone
-//                   </label>
-//                   <p className="text-gray-900">{selectedCollege.phone}</p>
-//                 </div>
-//                 <div>
-//                   <label className="text-sm font-medium text-gray-600">
-//                     Email
-//                   </label>
-//                   <p className="text-gray-900 break-all">
-//                     {selectedCollege.email}
-//                   </p>
-//                 </div>
-//                 <div>
-//                   <label className="text-sm font-medium text-gray-600">
-//                     Established
-//                   </label>
-//                   <p className="text-gray-900">
-//                     {selectedCollege.establishedYear}
-//                   </p>
-//                 </div>
-//               </div>
-
-//               <div className="grid grid-cols-3 gap-3 text-center">
-//                 <div className="p-3 bg-blue-50 rounded-lg">
-//                   <div className="text-xl font-bold text-blue-600">
-//                     {selectedCollege.totalStudents}
-//                   </div>
-//                   <div className="text-sm text-blue-800">Students</div>
-//                 </div>
-//                 <div className="p-3 bg-green-50 rounded-lg">
-//                   <div className="text-xl font-bold text-green-600">
-//                     {selectedCollege.totalInstructors}
-//                   </div>
-//                   <div className="text-sm text-green-800">Instructors</div>
-//                 </div>
-//                 <div className="p-3 bg-purple-50 rounded-lg">
-//                   <div className="text-xl font-bold text-purple-600">
-//                     {
-//                       getAdminCourses(getCollegeAdmin(selectedCollege.id)?.id)
-//                         .length
-//                     }
-//                   </div>
-//                   <div className="text-sm text-purple-800">Courses</div>
-//                 </div>
-//               </div>
-
-//               <div className="flex flex-col sm:flex-row gap-3">
-//                 <Button
-//                   className="flex-1"
-//                   onClick={() => {
-//                     setShowCollegeModal(false);
-//                     toast.info("College editing functionality coming soon!");
-//                   }}
-//                 >
-//                   <Edit size={16} className="mr-2" />
-//                   Edit College
-//                 </Button>
-//                 <Button
-//                   variant="outline"
-//                   onClick={() => {
-//                     setShowCollegeModal(false);
-//                     toast.info("College analytics coming soon!");
-//                   }}
-//                 >
-//                   <Activity size={16} className="mr-2" />
-//                   View Analytics
-//                 </Button>
-//               </div>
-//             </div>
-//           )}
-//         </Modal>
-
-//         <Modal
-//           isOpen={showCreateCollegeModal}
-//           onClose={() => setShowCreateCollegeModal(false)}
-//           title="Create New College"
-//           size="lg"
-//         >
-//           <div className="space-y-4">
-//             <p className="text-gray-600">
-//               Add a new educational institution to the platform.
-//             </p>
-//             <div className="text-center py-8">
-//               <Building2 size={48} className="mx-auto text-gray-400 mb-4" />
-//               <h3 className="text-lg font-medium text-gray-900 mb-2">
-//                 College Registration
-//               </h3>
-//               <p className="text-gray-600 mb-4">
-//                 Full college creation interface coming soon!
-//               </p>
-//               <Button
-//                 onClick={() =>
-//                   toast("College creation functionality coming soon!")
-//                 }
-//               >
-//                 Create College
-//               </Button>
-//             </div>
-//           </div>
-//         </Modal>
-//       </div>
-//     </div>
-//   );
-// }
-
-
-import React, { useState, useEffect } from "react";
-import Card from "../components/ui/Card";
-import Button from "../components/ui/Button";
-import Input from "../components/ui/Input";
-import Badge from "../components/ui/Badge";
-import Modal from "../components/ui/Modal";
-import Tabs, { TabsList, TabsTrigger, TabsContent } from "../components/ui/Tabs";
-import useAuthStore from "../store/useAuthStore";
-import { Link, useNavigate } from 'react-router-dom'
-import {
-  Shield,
-  Building2,
-  Users,
-  BookOpen,
-  Settings,
-  Edit,
-  Eye,
-  Trash2,
-  Award,
+import React, { useState, useEffect } from 'react'
+import { 
+  Building2, 
+  Users, 
+  Shield, 
+  GraduationCap,
+  TrendingUp,
   Activity,
+  Server,
+  Database,
+  Cpu,
+  HardDrive,
+  Wifi,
+  AlertTriangle,
+  CheckCircle,
+  Plus,
+  Edit,
+  Trash2,
+  Eye,
   Search,
-  Save,
-  RotateCcw,
-} from "lucide-react";
-
-// ✅ Backend base URL for superadmin routes
-const API_BASE = "http://localhost:5000/api/superadmin";
-
-export default function SuperAdminDashboardPage() {
-  const { token } = useAuthStore();
-  const [colleges, setColleges] = useState([]); // Placeholder for future college API
-  const [allAdmins, setAllAdmins] = useState([]);
-  const [allInstructors, setAllInstructors] = useState([]);
-  const [allStudents, setAllStudents] = useState([]);
-  const [allCourses, setAllCourses] = useState([]);
-  const [systemAnalytics, setSystemAnalytics] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  Globe,
-  FileText,
-  Brain,
-  Target,
+  Filter,
+  Download,
+  Settings,
   BarChart3,
+  Globe,
+  Mail,
+  Phone,
   Calendar,
-  Clock
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [showCollegeModal, setShowCollegeModal] = useState(false); // Placeholder
-  const [showPermissionsModal, setShowPermissionsModal] = useState(false);
-  const [showCreateCollegeModal, setShowCreateCollegeModal] = useState(false); // Placeholder
+  DollarSign,
+  BookOpen,
+  UserCheck,
+  UserX,
+  RefreshCw
+} from 'lucide-react'
+import { toast } from 'react-hot-toast'
+import { mockAPI, mockData } from '../services/mockData'
+import useAuthStore from '../store/useAuthStore'
+import Card from '../components/ui/Card'
+import Button from '../components/ui/Button'
+import Badge from '../components/ui/Badge'
+import Modal from '../components/ui/Modal'
+import Input from '../components/ui/Input'
+import Tabs from '../components/ui/Tabs'
+import Progress from '../components/ui/Progress'
 
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterRole, setFilterRole] = useState("all");
-  const [editingPermissions, setEditingPermissions] = useState({});
+const SuperAdminDashboardPage = () => {
+  const { user } = useAuthStore()
+  const [colleges, setColleges] = useState([])
+  const [admins, setAdmins] = useState([])
+  const [instructors, setInstructors] = useState([])
+  const [students, setStudents] = useState([])
+  const [systemAnalytics, setSystemAnalytics] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [selectedCollege, setSelectedCollege] = useState(null)
+  const [selectedUser, setSelectedUser] = useState(null)
+  const [showCollegeModal, setShowCollegeModal] = useState(false)
+  const [showUserModal, setShowUserModal] = useState(false)
+  const [showSystemModal, setShowSystemModal] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [filterRole, setFilterRole] = useState('all')
+  const [filterCollege, setFilterCollege] = useState('all')
+  const [selectedUsers, setSelectedUsers] = useState([])
+  const [activeTab, setActiveTab] = useState('overview')
 
   useEffect(() => {
-    fetchSystemData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    fetchSuperAdminData()
+  }, [])
 
-  // -------------------------
-  // Helpers: auth + requests
-  // -------------------------
-  const authHeaders = () => ({
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${token ||
-      localStorage.getItem("auth_token") ||
-      sessionStorage.getItem("auth_token") ||
-      ""
-      }`,
-  });
-
-  const fetchJSON = async (url, options = {}) => {
-    const res = await fetch(url, {
-      ...options,
-      headers: { ...authHeaders(), ...(options.headers || {}) },
-    });
-    const body = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      throw new Error(body?.message || body?.error || `HTTP ${res.status}`);
-    }
-    return body;
-  };
-
-
-  const isArray = (v) => Array.isArray(v);
-  const toList = (v) => (isArray(v) ? v : (isArray(v?.data) ? v.data : (isArray(v?.courses) ? v.courses : [])));
-
-  const fetchSystemData = async () => {
+  const fetchSuperAdminData = async () => {
     try {
-      setLoading(true);
-
-      const [overviewData, adminsRaw, instructorsRaw, studentsRaw, coursesRaw] =
-        await Promise.all([
-          fetchJSON(`${API_BASE}/overview`),
-          fetchJSON(`${API_BASE}/admins`),
-          fetchJSON(`${API_BASE}/instructors`),
-          fetchJSON(`${API_BASE}/students`),
-          fetchJSON(`${API_BASE}/courses`),
-        ]);
-
-      const admins = toList(adminsRaw);
-      const instructors = toList(instructorsRaw);
-      const students = toList(studentsRaw);
-      const courses = toList(coursesRaw);
-
-      setAllCourses(
-        courses.map((c) => ({
-          ...c,
-          thumbnail: c.thumbnail || "https://picsum.photos/seed/course/300/200",
-          status: c.status || "draft",
-        }))
-      );
-
-      // …(keep the rest of your state updates)…
-      setSystemAnalytics({
-        overview: overviewData?.overview ?? {},
-        performanceMetrics: overviewData?.performanceMetrics ?? {},
-        collegeBreakdown: overviewData?.courseBreakdown ?? {},
-      });
-    } catch (err) {
-      console.error("Error fetching system data:", err);
-      toast.error(err.message || "Failed to load system data");
-      setAllCourses([]);
-      setSystemAnalytics({ overview: {}, performanceMetrics: {}, collegeBreakdown: {} });
+      setLoading(true)
+      const [collegesData, adminsData, instructorsData, studentsData, analyticsData] = await Promise.all([
+        mockAPI.getAllColleges(),
+        mockAPI.getAllAdmins(),
+        mockAPI.getAllInstructors(),
+        mockAPI.getAllStudents(),
+        mockAPI.getSystemAnalytics()
+      ])
+      
+      setColleges(collegesData)
+      setAdmins(adminsData)
+      setInstructors(instructorsData)
+      setStudents(studentsData)
+      setSystemAnalytics(analyticsData)
+    } catch (error) {
+      console.error('Error fetching super admin data:', error)
+      toast.error('Failed to load dashboard data')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
-  // -------------------------
-  // Permissions
-  // -------------------------
-  const handleUserPermissions = (user) => {
-    setSelectedUser(user);
-    setEditingPermissions({ ...(user.permissions || {}) });
-    setShowPermissionsModal(true);
-  };
-
-  const savePermissions = async () => {
+  const handleCollegeAction = async (collegeId, action) => {
     try {
-      await fetchJSON(`${API_BASE}/users/${selectedUser.id}/permissions`, {
-        method: "PATCH",
-        body: JSON.stringify(editingPermissions),
-      });
-
-      if (
-        selectedUser.role === "admin" ||
-        selectedUser.role === "superadmin" ||
-        String(selectedUser.role).toUpperCase() === "SUPER_ADMIN"
-      ) {
-        setAllAdmins((prev) =>
-          prev.map((a) =>
-            a.id === selectedUser.id
-              ? { ...a, permissions: editingPermissions }
-              : a
-          )
-        );
-      } else if (String(selectedUser.role).toLowerCase() === "instructor") {
-        setAllInstructors((prev) =>
-          prev.map((i) =>
-            i.id === selectedUser.id
-              ? { ...i, permissions: editingPermissions }
-              : i
-          )
-        );
+      switch (action) {
+        case 'view':
+          const college = colleges.find(c => c.id === collegeId)
+          setSelectedCollege(college)
+          setShowCollegeModal(true)
+          break
+        case 'edit':
+          const editCollege = colleges.find(c => c.id === collegeId)
+          setSelectedCollege(editCollege)
+          setShowCollegeModal(true)
+          break
+        case 'delete':
+          if (window.confirm('Are you sure you want to delete this college? This action cannot be undone.')) {
+            await mockAPI.deleteCollege(collegeId)
+            toast.success('College deleted successfully')
+            await fetchSuperAdminData()
+          }
+          break
+        case 'deactivate':
+          await mockAPI.updateCollege(collegeId, { status: 'inactive' })
+          toast.success('College deactivated')
+          await fetchSuperAdminData()
+          break
+        case 'activate':
+          await mockAPI.updateCollege(collegeId, { status: 'active' })
+          toast.success('College activated')
+          await fetchSuperAdminData()
+          break
+        default:
+          break
       }
-
-      toast.success("Permissions updated successfully");
-      setShowPermissionsModal(false);
-      setSelectedUser(null);
-      setEditingPermissions({});
-    } catch (err) {
-      toast.error(err.message || "Failed to update permissions");
+    } catch (error) {
+      toast.error('Action failed. Please try again.')
     }
-  };
+  }
 
-  // -------------------------
-  // Relationship helpers
-  // -------------------------
-  const getAdminCourses = (adminId) =>
-    allCourses.filter(
-      (c) => c.creatorId === adminId || c.managerId === adminId
-    );
+  const handleUserAction = async (userId, action) => {
+    try {
+      switch (action) {
+        case 'view':
+          const user = [...admins, ...instructors, ...students].find(u => u.id === userId)
+          setSelectedUser(user)
+          setShowUserModal(true)
+          break
+        case 'activate':
+          await mockAPI.bulkUpdateUsers([userId], { isActive: true })
+          toast.success('User activated')
+          await fetchSuperAdminData()
+          break
+        case 'deactivate':
+          await mockAPI.bulkUpdateUsers([userId], { isActive: false })
+          toast.success('User deactivated')
+          await fetchSuperAdminData()
+          break
+        case 'verify':
+          await mockAPI.bulkUpdateUsers([userId], { isVerified: true })
+          toast.success('User verified')
+          await fetchSuperAdminData()
+          break
+        case 'delete':
+          if (window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+            await mockAPI.deleteUser(userId)
+            toast.success('User deleted successfully')
+            await fetchSuperAdminData()
+          }
+          break
+        default:
+          break
+      }
+    } catch (error) {
+      toast.error('Action failed. Please try again.')
+    }
+  }
 
-  const getCourseInstructors = (courseId) =>
-    allInstructors.filter(
-      (i) =>
-        Array.isArray(i.assignedCourses) &&
-        i.assignedCourses.includes(courseId)
-    );
+  const handleBulkAction = async (action) => {
+    if (selectedUsers.length === 0) {
+      toast.error('Please select users first')
+      return
+    }
 
-  const getCourseStudents = (courseId) =>
-    allStudents.filter(
-      (s) =>
-        Array.isArray(s.assignedCourses) &&
-        s.assignedCourses.includes(courseId)
-    );
+    try {
+      switch (action) {
+        case 'activate':
+          await mockAPI.bulkUpdateUsers(selectedUsers, { isActive: true })
+          toast.success(`${selectedUsers.length} users activated`)
+          break
+        case 'deactivate':
+          await mockAPI.bulkUpdateUsers(selectedUsers, { isActive: false })
+          toast.success(`${selectedUsers.length} users deactivated`)
+          break
+        case 'verify':
+          await mockAPI.bulkUpdateUsers(selectedUsers, { isVerified: true })
+          toast.success(`${selectedUsers.length} users verified`)
+          break
+        default:
+          break
+      }
+      setSelectedUsers([])
+      await fetchSuperAdminData()
+    } catch (error) {
+      toast.error('Bulk action failed')
+    }
+  }
 
-  const getFilteredUsers = (users) => {
-    let filtered = users;
-    if (filterRole !== "all")
-      filtered = filtered.filter(
-        (u) => String(u.role).toLowerCase() === filterRole
-      );
+  const createCollege = async (collegeData) => {
+    try {
+      await mockAPI.createCollege(collegeData)
+      toast.success('College created successfully')
+      setShowCollegeModal(false)
+      setSelectedCollege(null)
+      await fetchSuperAdminData()
+    } catch (error) {
+      toast.error('Failed to create college')
+    }
+  }
+
+  const updateCollege = async (collegeId, updates) => {
+    try {
+      await mockAPI.updateCollege(collegeId, updates)
+      toast.success('College updated successfully')
+      setShowCollegeModal(false)
+      setSelectedCollege(null)
+      await fetchSuperAdminData()
+    } catch (error) {
+      toast.error('Failed to update college')
+    }
+  }
+
+  const getAllUsers = () => [...admins, ...instructors, ...students]
+
+  const getFilteredUsers = () => {
+    let users = getAllUsers()
+    
     if (searchTerm) {
-      const q = searchTerm.toLowerCase();
-      filtered = filtered.filter(
-        (u) =>
-          (u.name || "").toLowerCase().includes(q) ||
-          (u.email || "").toLowerCase().includes(q)
-      );
+      users = users.filter(user => 
+        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchTerm.toLowerCase())
+      )
     }
-    return filtered;
-  };
-
-  // -------------------------
-  // Placeholder college actions
-  // -------------------------
-  const handleCollegeAction = async (_collegeId, action) => {
-    switch (action) {
-      case "view":
-        toast("College details coming soon.");
-        break;
-      case "edit":
-        toast.info("College editing functionality coming soon!");
-        break;
-      case "delete":
-        toast.error("No college API yet.");
-        break;
-      default:
-        break;
+    
+    if (filterRole !== 'all') {
+      users = users.filter(user => user.role === filterRole)
     }
-  };
+    
+    if (filterCollege !== 'all') {
+      users = users.filter(user => user.collegeId === filterCollege)
+    }
+    
+    return users
+  }
 
-  // -------------------------
-  // UI
-  // -------------------------
+  const formatUptime = (percentage) => {
+    const days = Math.floor(percentage * 365 / 100)
+    return `${days} days (${percentage}%)`
+  }
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading system dashboard...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading Super Admin dashboard...</p>
         </div>
       </div>
-    );
+    )
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="mb-6 lg:mb-8">
-          <div className="flex items-center sm:items-start sm:flex-row gap-4">
-            <div className="w-12 h-12 flex-none bg-purple-100 rounded-full flex items-center justify-center">
-              <Shield size={24} className="text-purple-600" />
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full flex items-center justify-center">
+                <Shield size={24} className="text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Super Admin Dashboard</h1>
+                <p className="text-gray-600">Complete system oversight and management</p>
+              </div>
             </div>
-            <div className="min-w-0">
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 truncate">
-                Super Admin Dashboard
-              </h1>
-              <p className="text-gray-600 mt-1 text-sm sm:text-base">
-                System-wide management and analytics across all institutions
-              </p>
+            <div className="flex space-x-2">
+              <Button 
+                variant="outline"
+                onClick={() => setShowSystemModal(true)}
+              >
+                <Server size={16} className="mr-2" />
+                System Health
+              </Button>
+              <Button 
+                onClick={() => {
+                  setSelectedCollege(null)
+                  setShowCollegeModal(true)
+                }}
+              >
+                <Plus size={16} className="mr-2" />
+                Add College
+              </Button>
             </div>
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6 mb-6 lg:mb-8">
-          <Card className="p-4 sm:p-6">
+        {/* System Overview Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card className="p-6 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab('colleges')}>
             <div className="flex items-center">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-red-100 rounded-lg flex items-center justify-center flex-none">
-                <Shield size={20} className="text-red-600 sm:w-6 sm:h-6" />
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <Building2 size={24} className="text-blue-600" />
               </div>
-              <div className="ml-3 sm:ml-4 min-w-0">
-                <p className="text-xs sm:text-sm font-medium text-gray-600">
-                  Admins
-                </p>
-                <p className="text-xl sm:text-2xl font-bold text-gray-900 truncate">
-                  {systemAnalytics?.overview.totalAdmins || 0}
-                </p>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Total Colleges</p>
+                <p className="text-2xl font-bold text-gray-900">{systemAnalytics?.overview.totalColleges}</p>
+                <p className="text-xs text-gray-500">Active institutions</p>
               </div>
             </div>
           </Card>
 
-          <Card className="p-4 sm:p-6">
+          <Card className="p-6 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab('users')}>
             <div className="flex items-center">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-lg flex items-center justify-center flex-none">
-                <Award size={20} className="text-green-600 sm:w-6 sm:h-6" />
+              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                <Users size={24} className="text-green-600" />
               </div>
-              <div className="ml-3 sm:ml-4 min-w-0">
-                <p className="text-xs sm:text-sm font-medium text-gray-600">
-                  Instructors
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Total Users</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {(systemAnalytics?.overview.totalAdmins || 0) + 
+                   (systemAnalytics?.overview.totalInstructors || 0) + 
+                   (systemAnalytics?.overview.totalStudents || 0)}
                 </p>
-                <p className="text-xl sm:text-2xl font-bold text-gray-900 truncate">
-                  {systemAnalytics?.overview.totalInstructors || 0}
-                </p>
+                <p className="text-xs text-gray-500">{systemAnalytics?.overview.activeUsers} active</p>
               </div>
             </div>
           </Card>
 
-          <Card className="p-4 sm:p-6">
+          <Card className="p-6 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab('courses')}>
             <div className="flex items-center">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-none">
-                <Users size={20} className="text-purple-600 sm:w-6 sm:h-6" />
+              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                <BookOpen size={24} className="text-purple-600" />
               </div>
-              <div className="ml-3 sm:ml-4 min-w-0">
-                <p className="text-xs sm:text-sm font-medium text-gray-600">
-                  Students
-                </p>
-                <p className="text-xl sm:text-2xl font-bold text-gray-900 truncate">
-                  {systemAnalytics?.overview.totalStudents || 0}
-                </p>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Total Courses</p>
+                <p className="text-2xl font-bold text-gray-900">{systemAnalytics?.overview.totalCourses}</p>
+                <p className="text-xs text-gray-500">{systemAnalytics?.overview.totalModules} modules</p>
               </div>
             </div>
           </Card>
 
-          <Card className="p-4 sm:p-6">
+          <Card className="p-6 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setShowSystemModal(true)}>
             <div className="flex items-center">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-yellow-100 rounded-lg flex items-center justify-center flex-none">
-                <BookOpen size={20} className="text-yellow-600 sm:w-6 sm:h-6" />
+              <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                <Activity size={24} className="text-yellow-600" />
               </div>
-              <div className="ml-3 sm:ml-4 min-w-0">
-                <p className="text-xs sm:text-sm font-medium text-gray-600">
-                  Courses
-                </p>
-                <p className="text-xl sm:text-2xl font-bold text-gray-900 truncate">
-                  {systemAnalytics?.overview.totalCourses || 0}
-                </p>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">System Health</p>
+                <p className="text-2xl font-bold text-gray-900">{systemAnalytics?.overview.systemUptime}</p>
+                <p className="text-xs text-gray-500">Uptime</p>
               </div>
             </div>
           </Card>
@@ -2832,862 +356,817 @@ export default function SuperAdminDashboardPage() {
 
         {/* Tabs */}
         <Tabs defaultValue="overview">
-          <div className="mb-4 sm:mb-6 sticky top-0 z-10 bg-gray-50 -mx-4 px-4 sm:mx-0 sm:px-0">
-            <div className="relative overflow-x-auto no-scrollbar">
-              <TabsList
-                className="flex gap-2 min-w-max snap-x snap-mandatory"
-                aria-label="Dashboard sections"
-              >
-                <TabsTrigger
-                  value="overview"
-                  className="whitespace-nowrap snap-start px-3 sm:px-4 py-2 text-xs sm:text-sm"
-                >
-                  System Overview
-                </TabsTrigger>
-                <TabsTrigger
-                  value="permissions"
-                  className="whitespace-nowrap snap-start px-3 sm:px-4 py-2 text-xs sm:text-sm"
-                >
-                  User Permissions
-                </TabsTrigger>
-                <TabsTrigger
-                  value="assignments"
-                  className="whitespace-nowrap snap-start px-3 sm:px-4 py-2 text-xs sm:text-sm"
-                >
-                  Course Assignments
-                </TabsTrigger>
-                <TabsTrigger
-                  value="analytics"
-                  className="whitespace-nowrap snap-start px-3 sm:px-4 py-2 text-xs sm:text-sm"
-                >
-                  Analytics
-                </TabsTrigger>
-              </TabsList>
-            </div>
-          </div>
+          <Tabs.List className="mb-6">
+            <Tabs.Trigger value="overview">Overview</Tabs.Trigger>
+            <Tabs.Trigger value="colleges">Colleges</Tabs.Trigger>
+            <Tabs.Trigger value="users">Users</Tabs.Trigger>
+            <Tabs.Trigger value="analytics">Analytics</Tabs.Trigger>
+          </Tabs.List>
 
-          {/* Overview */}
-          <TabsContent value="overview">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-              <Card className="p-5 sm:p-6">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">
-                  System Health
-                </h3>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">System Uptime</span>
-                    <Badge variant="success">
-                      {systemAnalytics?.overview.systemUptime || "99.9%"}
-                    </Badge>
+          {/* Overview Tab */}
+          <Tabs.Content value="overview">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Recent Activity */}
+              <Card>
+                <Card.Header>
+                  <Card.Title className="flex items-center">
+                    <Activity size={20} className="mr-2 text-blue-500" />
+                    Recent Activity
+                  </Card.Title>
+                </Card.Header>
+                <Card.Content>
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
+                      <CheckCircle size={16} className="text-green-600" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">New college registered</p>
+                        <p className="text-xs text-gray-500">Creative Arts Institute - 2 hours ago</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
+                      <Users size={16} className="text-blue-600" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">5 new students enrolled</p>
+                        <p className="text-xs text-gray-500">Across multiple colleges - 4 hours ago</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-3 p-3 bg-purple-50 rounded-lg">
+                      <BookOpen size={16} className="text-purple-600" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">2 new courses published</p>
+                        <p className="text-xs text-gray-500">Tech University - 6 hours ago</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-3 p-3 bg-yellow-50 rounded-lg">
+                      <AlertTriangle size={16} className="text-yellow-600" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">System maintenance scheduled</p>
+                        <p className="text-xs text-gray-500">Tomorrow 2:00 AM - 4:00 AM</p>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Active Users</span>
-                    <span className="font-medium">
-                      {systemAnalytics?.overview.activeUsers || 0}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">
-                      Course Completion Rate
-                    </span>
-                    <span className="font-medium">
-                      {systemAnalytics?.overview.avgCourseCompletion || 0}%
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">
-                      Monthly Revenue
-                    </span>
-                    <span className="font-medium">
-                      ${systemAnalytics?.overview.totalRevenue || 0}
-                    </span>
-                  </div>
-                </div>
+                </Card.Content>
               </Card>
 
-              <Card className="p-5 sm:p-6">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">
-                  Recent Activity
-                </h3>
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
-                    <Building2 size={16} className="text-green-600 flex-none" />
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
-                        System data loaded
-                      </p>
-                      <p className="text-xs text-gray-500 truncate">
-                        Overview & metrics fetched from API
-                      </p>
+              {/* System Performance */}
+              <Card>
+                <Card.Header>
+                  <Card.Title className="flex items-center">
+                    <Server size={20} className="mr-2 text-green-500" />
+                    System Performance
+                  </Card.Title>
+                </Card.Header>
+                <Card.Content>
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center space-x-2">
+                          <Cpu size={16} className="text-blue-500" />
+                          <span className="text-sm font-medium text-gray-700">CPU Usage</span>
+                        </div>
+                        <span className="text-sm text-gray-900">{systemAnalytics?.performanceMetrics.cpuUsage}%</span>
+                      </div>
+                      <Progress value={systemAnalytics?.performanceMetrics.cpuUsage} size="sm" />
+                    </div>
+                    
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center space-x-2">
+                          <Database size={16} className="text-green-500" />
+                          <span className="text-sm font-medium text-gray-700">Memory Usage</span>
+                        </div>
+                        <span className="text-sm text-gray-900">{systemAnalytics?.performanceMetrics.memoryUsage}%</span>
+                      </div>
+                      <Progress value={systemAnalytics?.performanceMetrics.memoryUsage} size="sm" variant="accent" />
+                    </div>
+                    
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center space-x-2">
+                          <HardDrive size={16} className="text-purple-500" />
+                          <span className="text-sm font-medium text-gray-700">Disk Usage</span>
+                        </div>
+                        <span className="text-sm text-gray-900">{systemAnalytics?.performanceMetrics.diskUsage}%</span>
+                      </div>
+                      <Progress value={systemAnalytics?.performanceMetrics.diskUsage} size="sm" variant="secondary" />
+                    </div>
+                    
+                    <div className="pt-2 border-t border-gray-200">
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div className="text-center">
+                          <div className="font-medium text-gray-900">{systemAnalytics?.performanceMetrics.responseTime}ms</div>
+                          <div className="text-gray-500">Avg Response</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="font-medium text-gray-900">{systemAnalytics?.performanceMetrics.errorRate}%</div>
+                          <div className="text-gray-500">Error Rate</div>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
-                    <Users size={16} className="text-blue-600 flex-none" />
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
-                        Users synced
-                      </p>
-                      <p className="text-xs text-gray-500 truncate">
-                        Admins, Instructors, Students
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-3 p-3 bg-purple-50 rounded-lg">
-                    <BookOpen size={16} className="text-purple-600 flex-none" />
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
-                        Courses loaded
-                      </p>
-                      <p className="text-xs text-gray-500 truncate">
-                        Assignments & counts available
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                </Card.Content>
               </Card>
             </div>
-          </TabsContent>
+          </Tabs.Content>
 
-          {/* Permissions */}
-          <TabsContent value="permissions">
-            <div className="space-y-6">
-              <Card className="p-4">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center">
-                  <div className="sm:col-span-2">
-                    <div className="relative">
-                      <Input
-                        placeholder="Search users..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pr-10"
-                      />
-                      <Search className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
+          {/* Colleges Tab */}
+          <Tabs.Content value="colleges">
+            <Card>
+              <Card.Header className="flex items-center justify-between">
+                <Card.Title>College Management</Card.Title>
+                <Button onClick={() => {
+                  setSelectedCollege(null)
+                  setShowCollegeModal(true)
+                }}>
+                  <Plus size={16} className="mr-2" />
+                  Add College
+                </Button>
+              </Card.Header>
+              <Card.Content>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {colleges.map((college) => (
+                    <div key={college.id} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100">
+                            <img 
+                              src={college.logo} 
+                              alt={college.name}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-gray-900">{college.name}</h3>
+                            <p className="text-sm text-gray-600">{college.code}</p>
+                            <Badge 
+                              variant={college.status === 'active' ? 'success' : 'danger'} 
+                              size="sm"
+                            >
+                              {college.status}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2 mb-4">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-600">Students</span>
+                          <span className="font-medium">{college.totalStudents}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-600">Instructors</span>
+                          <span className="font-medium">{college.totalInstructors}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-600">Courses</span>
+                          <span className="font-medium">{college.totalCourses}</span>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2 text-xs text-gray-500 mb-4">
+                        <Calendar size={12} />
+                        <span>Est. {college.establishedYear}</span>
+                        <span>•</span>
+                        <Globe size={12} />
+                        <span>{college.website?.replace('https://', '')}</span>
+                      </div>
+                      
+                      <div className="flex space-x-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleCollegeAction(college.id, 'view')}
+                        >
+                          <Eye size={14} />
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleCollegeAction(college.id, 'edit')}
+                        >
+                          <Edit size={14} />
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleCollegeAction(college.id, college.status === 'active' ? 'deactivate' : 'activate')}
+                        >
+                          {college.status === 'active' ? <UserX size={14} /> : <UserCheck size={14} />}
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleCollegeAction(college.id, 'delete')}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 size={14} />
+                        </Button>
+                      </div>
                     </div>
+                  ))}
+                </div>
+              </Card.Content>
+            </Card>
+          </Tabs.Content>
+
+          {/* Users Tab */}
+          <Tabs.Content value="users">
+            <Card>
+              <Card.Header>
+                <div className="flex items-center justify-between">
+                  <Card.Title>User Management</Card.Title>
+                  <div className="flex space-x-2">
+                    {selectedUsers.length > 0 && (
+                      <>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleBulkAction('activate')}
+                        >
+                          <UserCheck size={14} className="mr-1" />
+                          Activate ({selectedUsers.length})
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleBulkAction('deactivate')}
+                        >
+                          <UserX size={14} className="mr-1" />
+                          Deactivate ({selectedUsers.length})
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleBulkAction('verify')}
+                        >
+                          <CheckCircle size={14} className="mr-1" />
+                          Verify ({selectedUsers.length})
+                        </Button>
+                      </>
+                    )}
+                    <Button 
+                      variant="outline"
+                      onClick={() => toast('Export functionality coming soon!')}
+                    >
+                      <Download size={16} className="mr-1" />
+                      Export
+                    </Button>
+                  </div>
+                </div>
+                
+                {/* Filters */}
+                <div className="flex items-center space-x-4 mt-4">
+                  <div className="flex-1">
+                    <Input
+                      placeholder="Search users..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
                   </div>
                   <select
                     value={filterRole}
                     onChange={(e) => setFilterRole(e.target.value)}
-                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 w-full"
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
                   >
                     <option value="all">All Roles</option>
                     <option value="admin">Admins</option>
                     <option value="instructor">Instructors</option>
+                    <option value="student">Students</option>
+                  </select>
+                  <select
+                    value={filterCollege}
+                    onChange={(e) => setFilterCollege(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                  >
+                    <option value="all">All Colleges</option>
+                    {colleges.map(college => (
+                      <option key={college.id} value={college.id}>{college.name}</option>
+                    ))}
                   </select>
                 </div>
-              </Card>
-
-              {/* Admins */}
-              <Card className="p-5 sm:p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  Admin Permissions
-                </h3>
-                <div className="space-y-4">
-                  {getFilteredUsers(allAdmins).map((admin) => {
-                    const adminCourses = getAdminCourses(admin.id);
-                    return (
-                      <div
-                        key={admin.id}
-                        className="border border-gray-200 rounded-lg p-4"
-                      >
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                          <div className="flex items-center gap-4 min-w-0">
-                            <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-100 flex-none">
-                              <img
-                                src={admin.avatar}
-                                alt={admin.name}
-                                className="w-full h-full object-cover"
+              </Card.Header>
+              <Card.Content>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left">
+                          <input
+                            type="checkbox"
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedUsers(getFilteredUsers().map(u => u.id))
+                              } else {
+                                setSelectedUsers([])
+                              }
+                            }}
+                            className="rounded border-gray-300"
+                          />
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">College</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Login</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {getFilteredUsers().map(user => {
+                        const college = colleges.find(c => c.id === user.collegeId)
+                        return (
+                          <tr key={user.id} className="hover:bg-gray-50">
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <input
+                                type="checkbox"
+                                checked={selectedUsers.includes(user.id)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedUsers([...selectedUsers, user.id])
+                                  } else {
+                                    setSelectedUsers(selectedUsers.filter(id => id !== user.id))
+                                  }
+                                }}
+                                className="rounded border-gray-300"
                               />
-                            </div>
-                            <div className="min-w-0">
-                              <h4 className="font-medium text-gray-900 truncate">
-                                {admin.name}
-                              </h4>
-                              <p className="text-sm text-gray-600 truncate">
-                                {admin.email}
-                              </p>
-                              <p className="text-xs text-gray-500">
-                                {adminCourses.length} courses managed
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-                            <div className="text-sm">
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="text-gray-600">
-                                  Create Courses:
-                                </span>
-                                <Badge
-                                  variant={
-                                    admin.permissions?.canCreateCourses
-                                      ? "success"
-                                      : "secondary"
-                                  }
-                                  size="sm"
-                                >
-                                  {admin.permissions?.canCreateCourses
-                                    ? "Enabled"
-                                    : "Disabled"}
-                                </Badge>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <span className="text-gray-600">
-                                  Manage Tests:
-                                </span>
-                                <Badge
-                                  variant={
-                                    admin.permissions?.canManageTests
-                                      ? "success"
-                                      : "secondary"
-                                  }
-                                  size="sm"
-                                >
-                                  {admin.permissions?.canManageTests
-                                    ? "Enabled"
-                                    : "Disabled"}
-                                </Badge>
-                              </div>
-                            </div>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleUserPermissions(admin)}
-                            >
-                              <Settings size={14} className="mr-1" />
-                              Permissions
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </Card>
-
-              {/* Instructors */}
-              <Card className="p-5 sm:p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  Instructor Permissions
-                </h3>
-                <div className="space-y-4">
-                  {getFilteredUsers(allInstructors).map((instructor) => {
-                    const assignedCourses = instructor.assignedCourses || [];
-                    return (
-                      <div
-                        key={instructor.id}
-                        className="border border-gray-200 rounded-lg p-4"
-                      >
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                          <div className="flex items-center gap-4 min-w-0">
-                            <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-100 flex-none">
-                              <img
-                                src={instructor.avatar}
-                                alt={instructor.name}
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                            <div className="min-w-0">
-                              <h4 className="font-medium text-gray-900 truncate">
-                                {instructor.name}
-                              </h4>
-                              <p className="text-sm text-gray-600 truncate">
-                                {instructor.email}
-                              </p>
-                              <p className="text-xs text-gray-500">
-                                {assignedCourses.length} courses assigned
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-                            <div className="text-sm">
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="text-gray-600">
-                                  Create Courses:
-                                </span>
-                                <Badge
-                                  variant={
-                                    instructor.permissions?.canCreateCourses
-                                      ? "success"
-                                      : "secondary"
-                                  }
-                                  size="sm"
-                                >
-                                  {instructor.permissions?.canCreateCourses
-                                    ? "Enabled"
-                                    : "Disabled"}
-                                </Badge>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <span className="text-gray-600">
-                                  Create Tests:
-                                </span>
-                                <Badge
-                                  variant={
-                                    instructor.permissions?.canCreateTests
-                                      ? "success"
-                                      : "secondary"
-                                  }
-                                  size="sm"
-                                >
-                                  {instructor.permissions?.canCreateTests
-                                    ? "Enabled"
-                                    : "Disabled"}
-                                </Badge>
-                              </div>
-                            </div>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleUserPermissions(instructor)}
-                            >
-                              <Settings size={14} className="mr-1" />
-                              Permissions
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </Card>
-            </div>
-          </TabsContent>
-
-          {/* Assignments */}
-          <TabsContent value="assignments">
-            <div className="space-y-6">
-              <Card className="p-5 sm:p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  Admin-Course Assignments
-                </h3>
-                <div className="space-y-4">
-                  {allAdmins.map((admin) => {
-                    const adminCourses = getAdminCourses(admin.id);
-                    return (
-                      <div
-                        key={admin.id}
-                        className="border border-gray-200 rounded-lg p-4"
-                      >
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
-                          <div className="flex items-center gap-3 min-w-0">
-                            <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 flex-none">
-                              <img
-                                src={admin.avatar}
-                                alt={admin.name}
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                            <div className="min-w-0">
-                              <h4 className="font-medium text-gray-900 truncate">
-                                {admin.name}
-                              </h4>
-                              <p className="text-sm text-gray-600 truncate">
-                                {admin.email}
-                              </p>
-                            </div>
-                          </div>
-                          <Badge variant="info" size="sm">
-                            {adminCourses.length} courses
-                          </Badge>
-                        </div>
-
-                        {adminCourses.length > 0 ? (
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            {adminCourses.map((course) => {
-                              const instructors = getCourseInstructors(
-                                course.id
-                              );
-                              const students = getCourseStudents(course.id);
-                              return (
-                                <div
-                                  key={course.id}
-                                  className="p-3 bg-gray-50 rounded-lg"
-                                >
-                                  <h5 className="font-medium text-gray-900 mb-1 truncate">
-                                    {course.title}
-                                  </h5>
-                                  <div className="text-xs text-gray-600 space-y-1">
-                                    <div className="truncate">
-                                      Instructors:{" "}
-                                      {instructors
-                                        .map((i) => i.name)
-                                        .join(", ") || "None"}
-                                    </div>
-                                    <div>Students: {students.length}</div>
-                                    <div>Status: {course.status}</div>
-                                  </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center">
+                                <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100">
+                                  <img 
+                                    src={user.avatar} 
+                                    alt={user.name}
+                                    className="w-full h-full object-cover"
+                                  />
                                 </div>
-                              );
-                            })}
-                          </div>
-                        ) : (
-                          <p className="text-sm text-gray-500 italic">
-                            No courses assigned
-                          </p>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </Card>
-
-              <Card className="p-5 sm:p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  Course-User Assignments
-                </h3>
-                <div className="space-y-4">
-                  {allCourses.map((course) => {
-                    const instructors = getCourseInstructors(course.id);
-                    const students = getCourseStudents(course.id);
-                    return (
-                      <div
-                        key={course.id}
-                        className="border border-gray-200 rounded-lg p-4"
-                      >
-                        <div className="flex flex-col md:flex-row md:items-start justify-between gap-3 mb-3">
-                          <div className="flex items-center gap-3 min-w-0">
-                            <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex-none">
-                              <img
-                                src={course.thumbnail}
-                                alt={course.title}
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                            <div className="min-w-0">
-                              <h4 className="font-medium text-gray-900 truncate">
-                                {course.title}
-                              </h4>
-                              <p className="text-xs text-gray-500 truncate">
-                                Managed by: {course.managerName || "—"}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex gap-2 flex-wrap">
-                            <Badge variant="info" size="sm">
-                              {instructors.length} instructors
-                            </Badge>
-                            <Badge variant="success" size="sm">
-                              {students.length} students
-                            </Badge>
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <h5 className="text-sm font-medium text-gray-700 mb-2">
-                              Assigned Instructors:
-                            </h5>
-                            {instructors.length > 0 ? (
-                              <div className="space-y-1">
-                                {instructors.map((instructor) => (
-                                  <div
-                                    key={instructor.id}
-                                    className="flex items-center gap-2 text-sm"
-                                  >
-                                    <div className="w-6 h-6 rounded-full overflow-hidden bg-gray-100 flex-none">
-                                      <img
-                                        src={instructor.avatar}
-                                        alt={instructor.name}
-                                        className="w-full h-full object-cover"
-                                      />
-                                    </div>
-                                    <span className="text-gray-900 truncate">
-                                      {instructor.name}
-                                    </span>
-                                    <div className="flex gap-1 flex-wrap">
-                                      {instructor.permissions
-                                        ?.canCreateCourses && (
-                                          <Badge variant="success" size="sm">
-                                            Course
-                                          </Badge>
-                                        )}
-                                      {instructor.permissions
-                                        ?.canCreateTests && (
-                                          <Badge variant="warning" size="sm">
-                                            Test
-                                          </Badge>
-                                        )}
-                                    </div>
-                                  </div>
-                                ))}
+                                <div className="ml-4">
+                                  <div className="text-sm font-medium text-gray-900">{user.name}</div>
+                                  <div className="text-sm text-gray-500">{user.email}</div>
+                                </div>
                               </div>
-                            ) : (
-                              <p className="text-sm text-gray-500 italic">
-                                No instructors assigned
-                              </p>
-                            )}
-                          </div>
-
-                          <div>
-                            <h5 className="text-sm font-medium text-gray-700 mb-2">
-                              Enrolled Students:
-                            </h5>
-                            {students.length > 0 ? (
-                              <div className="space-y-1">
-                                {students.slice(0, 3).map((student) => (
-                                  <div
-                                    key={student.id}
-                                    className="flex items-center gap-2 text-sm"
-                                  >
-                                    <div className="w-6 h-6 rounded-full overflow-hidden bg-gray-100 flex-none">
-                                      <img
-                                        src={student.avatar}
-                                        alt={student.name}
-                                        className="w-full h-full object-cover"
-                                      />
-                                    </div>
-                                    <span className="text-gray-900 truncate">
-                                      {student.name}
-                                    </span>
-                                  </div>
-                                ))}
-                                {students.length > 3 && (
-                                  <p className="text-xs text-gray-500">
-                                    +{students.length - 3} more students
-                                  </p>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <Badge 
+                                variant={
+                                  user.role === 'admin' ? 'danger' : 
+                                  user.role === 'instructor' ? 'warning' : 'info'
+                                }
+                              >
+                                {user.role}
+                              </Badge>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {college?.name || 'N/A'}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center space-x-2">
+                                <Badge variant={user.isActive ? 'success' : 'secondary'} size="sm">
+                                  {user.isActive ? 'Active' : 'Inactive'}
+                                </Badge>
+                                {user.isVerified && (
+                                  <CheckCircle size={14} className="text-green-500" />
                                 )}
                               </div>
-                            ) : (
-                              <p className="text-sm text-gray-500 italic">
-                                No students enrolled
-                              </p>
-                            )}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'Never'}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                              <div className="flex space-x-1">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleUserAction(user.id, 'view')}
+                                >
+                                  <Eye size={14} />
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleUserAction(user.id, user.isActive ? 'deactivate' : 'activate')}
+                                >
+                                  {user.isActive ? <UserX size={14} /> : <UserCheck size={14} />}
+                                </Button>
+                                {!user.isVerified && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleUserAction(user.id, 'verify')}
+                                  >
+                                    <CheckCircle size={14} />
+                                  </Button>
+                                )}
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleUserAction(user.id, 'delete')}
+                                  className="text-red-600 hover:text-red-700"
+                                >
+                                  <Trash2 size={14} />
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </Card.Content>
+            </Card>
+          </Tabs.Content>
+
+          {/* Analytics Tab */}
+          <Tabs.Content value="analytics">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <Card>
+                <Card.Header>
+                  <Card.Title>College Performance</Card.Title>
+                </Card.Header>
+                <Card.Content>
+                  <div className="space-y-4">
+                    {colleges.map(college => {
+                      const breakdown = systemAnalytics?.collegeBreakdown[college.id]
+                      return (
+                        <div key={college.id} className="p-4 border border-gray-200 rounded-lg">
+                          <div className="flex items-center justify-between mb-3">
+                            <h4 className="font-medium text-gray-900">{college.name}</h4>
+                            <Badge variant="info" size="sm">${breakdown?.revenue || 0}</Badge>
                           </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </Card>
-            </div>
-          </TabsContent>
-
-          {/* Analytics */}
-          <TabsContent value="analytics">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-              <Card className="p-5 sm:p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  Course Performance
-                </h3>
-                <div className="space-y-4">
-                  {allCourses.map((c) => {
-                    const breakdown = systemAnalytics?.collegeBreakdown?.[c.id];
-                    if (!breakdown) return null;
-                    return (
-                      <div
-                        key={c.id}
-                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                      >
-                        <div className="min-w-0">
-                          <h4 className="font-medium text-gray-900 truncate">
-                            {breakdown.title || c.title}
-                          </h4>
-                          <p className="text-sm text-gray-600">
-                            {breakdown.students} students •{" "}
-                            {breakdown.instructors} instructors
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-sm text-gray-500">
-                            Status: {breakdown.status || c.status}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </Card>
-
-              <Card className="p-5 sm:p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  System Performance
-                </h3>
-                <div className="space-y-4">
-                  {systemAnalytics?.performanceMetrics &&
-                    Object.entries(
-                      systemAnalytics.performanceMetrics
-                    ).map(([key, value]) => (
-                      <div
-                        key={key}
-                        className="flex items-center justify-between gap-3"
-                      >
-                        <span className="text-sm text-gray-600 capitalize truncate">
-                          {key.replace(/([A-Z])/g, " $1").toLowerCase()}
-                        </span>
-                        <div className="flex items-center gap-2 min-w-[140px]">
-                          <div className="w-20 bg-gray-200 rounded-full h-2">
-                            <div
-                              className={`h-2 rounded-full ${(Number(value) || 0) > 80
-                                  ? "bg-red-500"
-                                  : (Number(value) || 0) > 60
-                                    ? "bg-yellow-500"
-                                    : "bg-green-500"
-                                }`}
-                              style={{
-                                width: `${Math.min(Number(value) || 0, 100)}%`,
-                              }}
-                            />
-                          </div>
-                          <span className="text-sm font-medium text-gray-900">
-                            {typeof value === "number"
-                              ? `${value}${key.toLowerCase().includes("usage")
-                                ? "%"
-                                : key.toLowerCase().includes("time")
-                                  ? "ms"
-                                  : ""
-                              }`
-                              : value}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              </Card>
-            </div>
-          </TabsContent>
-        </Tabs>
-
-        {/* Permissions Modal */}
-        <Modal
-          isOpen={showPermissionsModal}
-          onClose={() => {
-            setShowPermissionsModal(false);
-            setSelectedUser(null);
-            setEditingPermissions({});
-          }}
-          title={`Manage Permissions - ${selectedUser?.name ?? ""}`}
-          size="lg"
-        >
-          {selectedUser && (
-            <div className="space-y-6">
-              <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
-                <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-100 flex-none">
-                  <img
-                    src={selectedUser.avatar}
-                    alt={selectedUser.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="min-w-0">
-                  <h3 className="font-medium text-gray-900 truncate">
-                    {selectedUser.name}
-                  </h3>
-                  <p className="text-sm text-gray-600 truncate">
-                    {selectedUser.email}
-                  </p>
-                  <Badge
-                    variant={
-                      String(selectedUser.role).toLowerCase() === "admin" ||
-                        String(selectedUser.role).toUpperCase() === "SUPER_ADMIN"
-                        ? "danger"
-                        : "warning"
-                    }
-                  >
-                    {String(selectedUser.role).toLowerCase()}
-                  </Badge>
-                </div>
-              </div>
-
-              <div>
-                <h4 className="font-medium text-gray-900 mb-4">
-                  Permission Settings
-                </h4>
-                <div className="space-y-4">
-                  {(String(selectedUser.role).toLowerCase() === "admin" ||
-                    String(selectedUser.role).toUpperCase() ===
-                    "SUPER_ADMIN") && (
-                      <>
-                        {[
-                          {
-                            key: "canCreateCourses",
-                            title: "Create Courses",
-                            desc: "Allow user to create new courses",
-                          },
-                          {
-                            key: "canCreateTests",
-                            title: "Create Tests",
-                            desc: "Allow user to create and manage tests",
-                          },
-                          {
-                            key: "canManageTests",
-                            title: "Manage Tests",
-                            desc: "Allow user to edit and delete tests",
-                          },
-                        ].map((item) => (
-                          <div
-                            key={item.key}
-                            className="flex items-center justify-between p-3 border border-gray-200 rounded-lg"
-                          >
-                            <div className="pr-4">
-                              <h5 className="font-medium text-gray-900">
-                                {item.title}
-                              </h5>
-                              <p className="text-sm text-gray-600">{item.desc}</p>
+                          <div className="grid grid-cols-3 gap-4 text-sm">
+                            <div className="text-center">
+                              <div className="font-medium text-gray-900">{breakdown?.students || 0}</div>
+                              <div className="text-gray-500">Students</div>
                             </div>
-                            <button
-                              onClick={() =>
-                                setEditingPermissions((p) => ({
-                                  ...p,
-                                  [item.key]: !p[item.key],
-                                }))
-                              }
-                              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${editingPermissions[item.key]
-                                  ? "bg-primary-600"
-                                  : "bg-gray-200"
-                                }`}
-                            >
-                              <span
-                                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${editingPermissions[item.key]
-                                    ? "translate-x-6"
-                                    : "translate-x-1"
-                                  }`}
-                              />
-                            </button>
+                            <div className="text-center">
+                              <div className="font-medium text-gray-900">{breakdown?.instructors || 0}</div>
+                              <div className="text-gray-500">Instructors</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="font-medium text-gray-900">{breakdown?.courses || 0}</div>
+                              <div className="text-gray-500">Courses</div>
+                            </div>
                           </div>
-                        ))}
-                      </>
-                    )}
-
-                  {String(selectedUser.role).toLowerCase() === "instructor" && (
-                    <>
-                      {[
-                        {
-                          key: "canCreateCourses",
-                          title: "Create Courses",
-                          desc: "Allow instructor to create new courses",
-                        },
-                        {
-                          key: "canCreateTests",
-                          title: "Create Tests",
-                          desc: "Allow instructor to create tests",
-                        },
-                        {
-                          key: "canManageTests",
-                          title: "Manage Tests",
-                          desc: "Allow instructor to edit and delete their tests",
-                        },
-                        {
-                          key: "canManageStudents",
-                          title: "Manage Students",
-                          desc: "Allow instructor to manage assigned students",
-                        },
-                        {
-                          key: "canViewAnalytics",
-                          title: "View Analytics",
-                          desc: "Allow instructor to view analytics",
-                        },
-                      ].map((item) => (
-                        <div
-                          key={item.key}
-                          className="flex items-center justify-between p-3 border border-gray-200 rounded-lg"
-                        >
-                          <div className="pr-4">
-                            <h5 className="font-medium text-gray-900">
-                              {item.title}
-                            </h5>
-                            <p className="text-sm text-gray-600">{item.desc}</p>
-                          </div>
-                          <button
-                            onClick={() =>
-                              setEditingPermissions((p) => ({
-                                ...p,
-                                [item.key]: !p[item.key],
-                              }))
-                            }
-                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${editingPermissions[item.key]
-                                ? "bg-primary-600"
-                                : "bg-gray-200"
-                              }`}
-                          >
-                            <span
-                              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${editingPermissions[item.key]
-                                  ? "translate-x-6"
-                                  : "translate-x-1"
-                                }`}
-                            />
-                          </button>
                         </div>
-                      ))}
-                    </>
-                  )}
-                </div>
-              </div>
+                      )
+                    })}
+                  </div>
+                </Card.Content>
+              </Card>
 
-              <div className="flex flex-col sm:flex-row justify-end gap-3">
-                <Button
-                  variant="outline"
-                  onClick={() =>
-                    setEditingPermissions({ ...(selectedUser.permissions || {}) })
-                  }
-                >
-                  <RotateCcw size={16} className="mr-2" />
-                  Reset
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setShowPermissionsModal(false);
-                    setSelectedUser(null);
-                    setEditingPermissions({});
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button onClick={savePermissions}>
-                  <Save size={16} className="mr-2" />
-                  Save Changes
-                </Button>
-              </div>
+              <Card>
+                <Card.Header>
+                  <Card.Title>Revenue Analytics</Card.Title>
+                </Card.Header>
+                <Card.Content>
+                  <div className="space-y-4">
+                    <div className="text-center p-6 bg-green-50 rounded-lg">
+                      <div className="text-3xl font-bold text-green-600 mb-2">
+                        ${systemAnalytics?.overview.totalRevenue?.toLocaleString()}
+                      </div>
+                      <div className="text-sm text-green-800">Total Revenue</div>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      {colleges.map(college => {
+                        const breakdown = systemAnalytics?.collegeBreakdown[college.id]
+                        const percentage = breakdown?.revenue ? 
+                          (breakdown.revenue / systemAnalytics.overview.totalRevenue) * 100 : 0
+                        
+                        return (
+                          <div key={college.id}>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-sm font-medium text-gray-700">{college.name}</span>
+                              <span className="text-sm text-gray-900">${breakdown?.revenue || 0}</span>
+                            </div>
+                            <Progress value={percentage} size="sm" variant="accent" />
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </Card.Content>
+              </Card>
             </div>
-          )}
-        </Modal>
+          </Tabs.Content>
+        </Tabs>
+      </div>
 
-        {/* College modals: placeholders until college API exists */}
-        <Modal
-          isOpen={showCollegeModal}
-          onClose={() => {
-            setShowCollegeModal(false);
-            setSelectedCollege(null);
+      {/* College Modal */}
+      <Modal
+        isOpen={showCollegeModal}
+        onClose={() => {
+          setShowCollegeModal(false)
+          setSelectedCollege(null)
+        }}
+        title={selectedCollege ? 'Edit College' : 'Add New College'}
+        size="lg"
+      >
+        <CollegeForm 
+          college={selectedCollege}
+          onSubmit={selectedCollege ? 
+            (data) => updateCollege(selectedCollege.id, data) : 
+            createCollege
+          }
+          onCancel={() => {
+            setShowCollegeModal(false)
+            setSelectedCollege(null)
           }}
-          title={selectedCollege?.name}
-          size="lg"
-        >
-          <div className="space-y-6">
-            <p className="text-gray-600">
-              College details will appear here once the college API is
-              available.
-            </p>
-          </div>
-        </Modal>
+        />
+      </Modal>
 
-        <Modal
-          isOpen={showCreateCollegeModal}
-          onClose={() => setShowCreateCollegeModal(false)}
-          title="Create New College"
-          size="lg"
-        >
-          <div className="space-y-4">
-            <p className="text-gray-600">
-              Add a new educational institution to the platform.
-            </p>
-            <div className="text-center py-8">
-              <Building2 size={48} className="mx-auto text-gray-400 mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                College Registration
-              </h3>
-              <p className="text-gray-600 mb-4">
-                Full college creation interface coming soon!
-              </p>
-              <Button
-                onClick={() => toast("College creation functionality coming soon!")}
-              >
-                Create College
-              </Button>
-            </div>
+      {/* User Details Modal */}
+      <Modal
+        isOpen={showUserModal}
+        onClose={() => {
+          setShowUserModal(false)
+          setSelectedUser(null)
+        }}
+        title={selectedUser?.name}
+        size="lg"
+      >
+        {selectedUser && (
+          <UserDetailsView 
+            user={selectedUser}
+            college={colleges.find(c => c.id === selectedUser.collegeId)}
+            onClose={() => {
+              setShowUserModal(false)
+              setSelectedUser(null)
+            }}
+          />
+        )}
+      </Modal>
+
+      {/* System Health Modal */}
+      <Modal
+        isOpen={showSystemModal}
+        onClose={() => setShowSystemModal(false)}
+        title="System Health & Performance"
+        size="xl"
+      >
+        <SystemHealthView 
+          analytics={systemAnalytics}
+          onRefresh={fetchSuperAdminData}
+        />
+      </Modal>
+    </div>
+  )
+}
+
+// College Form Component
+const CollegeForm = ({ college, onSubmit, onCancel }) => {
+  const [formData, setFormData] = useState({
+    name: college?.name || '',
+    code: college?.code || '',
+    address: college?.address || '',
+    phone: college?.phone || '',
+    email: college?.email || '',
+    website: college?.website || '',
+    establishedYear: college?.establishedYear || new Date().getFullYear()
+  })
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+    try {
+      await onSubmit(formData)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Input
+          label="College Name"
+          value={formData.name}
+          onChange={(e) => setFormData({...formData, name: e.target.value})}
+          required
+        />
+        <Input
+          label="College Code"
+          value={formData.code}
+          onChange={(e) => setFormData({...formData, code: e.target.value})}
+          required
+        />
+        <Input
+          label="Email"
+          type="email"
+          value={formData.email}
+          onChange={(e) => setFormData({...formData, email: e.target.value})}
+          required
+        />
+        <Input
+          label="Phone"
+          value={formData.phone}
+          onChange={(e) => setFormData({...formData, phone: e.target.value})}
+          required
+        />
+        <Input
+          label="Website"
+          value={formData.website}
+          onChange={(e) => setFormData({...formData, website: e.target.value})}
+        />
+        <Input
+          label="Established Year"
+          type="number"
+          value={formData.establishedYear}
+          onChange={(e) => setFormData({...formData, establishedYear: parseInt(e.target.value)})}
+          required
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
+        <textarea
+          value={formData.address}
+          onChange={(e) => setFormData({...formData, address: e.target.value})}
+          rows={3}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+          required
+        />
+      </div>
+      <div className="flex justify-end space-x-3 pt-4">
+        <Button variant="outline" onClick={onCancel}>Cancel</Button>
+        <Button type="submit" loading={isSubmitting}>
+          {college ? 'Update' : 'Create'} College
+        </Button>
+      </div>
+    </form>
+  )
+}
+
+// User Details Component
+const UserDetailsView = ({ user, college, onClose }) => {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center space-x-4">
+        <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-100">
+          <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900">{user.name}</h3>
+          <p className="text-gray-600">{user.email}</p>
+          <div className="flex items-center space-x-2 mt-2">
+            <Badge variant={
+              user.role === 'admin' ? 'danger' : 
+              user.role === 'instructor' ? 'warning' : 'info'
+            }>
+              {user.role}
+            </Badge>
+            <Badge variant={user.isActive ? 'success' : 'secondary'}>
+              {user.isActive ? 'Active' : 'Inactive'}
+            </Badge>
+            {user.isVerified && (
+              <Badge variant="success" size="sm">Verified</Badge>
+            )}
           </div>
-        </Modal>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="text-sm font-medium text-gray-600">College</label>
+          <p className="text-gray-900">{college?.name || 'N/A'}</p>
+        </div>
+        <div>
+          <label className="text-sm font-medium text-gray-600">Joined Date</label>
+          <p className="text-gray-900">{new Date(user.joinedDate).toLocaleDateString()}</p>
+        </div>
+        <div>
+          <label className="text-sm font-medium text-gray-600">Last Login</label>
+          <p className="text-gray-900">
+            {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'Never'}
+          </p>
+        </div>
+        <div>
+          <label className="text-sm font-medium text-gray-600">Assigned Courses</label>
+          <p className="text-gray-900">{user.assignedCourses?.length || 0}</p>
+        </div>
+      </div>
+
+      {user.role === 'instructor' && (
+        <div>
+          <label className="text-sm font-medium text-gray-600 mb-2 block">Permissions</label>
+          <div className="grid grid-cols-2 gap-2">
+            {Object.entries(user.permissions || {}).map(([key, value]) => (
+              <div key={key} className="flex items-center space-x-2">
+                <CheckCircle size={14} className={value ? 'text-green-500' : 'text-gray-300'} />
+                <span className="text-sm text-gray-700">{key.replace(/([A-Z])/g, ' $1').toLowerCase()}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="flex justify-end space-x-3">
+        <Button variant="outline" onClick={onClose}>Close</Button>
+        <Button onClick={() => toast('User editing coming soon!')}>
+          <Edit size={16} className="mr-2" />
+          Edit User
+        </Button>
       </div>
     </div>
-  );
+  )
 }
+
+// System Health Component
+const SystemHealthView = ({ analytics, onRefresh }) => {
+  const [refreshing, setRefreshing] = useState(false)
+
+  const handleRefresh = async () => {
+    setRefreshing(true)
+    await onRefresh()
+    setRefreshing(false)
+    toast.success('System data refreshed')
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold text-gray-900">System Status</h3>
+        <Button 
+          variant="outline" 
+          onClick={handleRefresh}
+          loading={refreshing}
+        >
+          <RefreshCw size={16} className="mr-2" />
+          Refresh
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="text-center p-4 bg-green-50 rounded-lg">
+          <CheckCircle size={32} className="mx-auto text-green-600 mb-2" />
+          <div className="text-lg font-bold text-green-600">System Online</div>
+          <div className="text-sm text-green-800">All services operational</div>
+        </div>
+        
+        <div className="text-center p-4 bg-blue-50 rounded-lg">
+          <Activity size={32} className="mx-auto text-blue-600 mb-2" />
+          <div className="text-lg font-bold text-blue-600">{analytics?.overview.systemUptime}</div>
+          <div className="text-sm text-blue-800">Uptime</div>
+        </div>
+        
+        <div className="text-center p-4 bg-purple-50 rounded-lg">
+          <Users size={32} className="mx-auto text-purple-600 mb-2" />
+          <div className="text-lg font-bold text-purple-600">{analytics?.overview.activeUsers}</div>
+          <div className="text-sm text-purple-800">Active Users</div>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <h4 className="font-medium text-gray-900">Performance Metrics</h4>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center space-x-2">
+                <Cpu size={16} className="text-blue-500" />
+                <span className="text-sm font-medium text-gray-700">CPU Usage</span>
+              </div>
+              <span className="text-sm text-gray-900">{analytics?.performanceMetrics.cpuUsage}%</span>
+            </div>
+            <Progress value={analytics?.performanceMetrics.cpuUsage} size="sm" />
+          </div>
+          
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center space-x-2">
+                <Database size={16} className="text-green-500" />
+                <span className="text-sm font-medium text-gray-700">Memory Usage</span>
+              </div>
+              <span className="text-sm text-gray-900">{analytics?.performanceMetrics.memoryUsage}%</span>
+            </div>
+            <Progress value={analytics?.performanceMetrics.memoryUsage} size="sm" variant="accent" />
+          </div>
+          
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center space-x-2">
+                <HardDrive size={16} className="text-purple-500" />
+                <span className="text-sm font-medium text-gray-700">Disk Usage</span>
+              </div>
+              <span className="text-sm text-gray-900">{analytics?.performanceMetrics.diskUsage}%</span>
+            </div>
+            <Progress value={analytics?.performanceMetrics.diskUsage} size="sm" variant="secondary" />
+          </div>
+          
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center space-x-2">
+                <Wifi size={16} className="text-yellow-500" />
+                <span className="text-sm font-medium text-gray-700">Network Latency</span>
+              </div>
+              <span className="text-sm text-gray-900">{analytics?.performanceMetrics.networkLatency}ms</span>
+            </div>
+            <Progress value={Math.min((analytics?.performanceMetrics.networkLatency / 100) * 100, 100)} size="sm" variant="warning" />
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default SuperAdminDashboardPage
