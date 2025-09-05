@@ -5,8 +5,6 @@ import {
   Eye, 
   EyeOff, 
   BookOpen, 
-  User, 
-  BookOpen as BookOpenIcon, 
   Shield,
   Lock,
   Mail,
@@ -18,6 +16,7 @@ import { toast } from 'react-hot-toast'
 import useAuthStore from '../store/useAuthStore'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
+
 
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false)
@@ -33,45 +32,21 @@ const LoginPage = () => {
   const {
     register,
     handleSubmit,
-    setValue,
+    // setValue,
     formState: { errors },
   } = useForm()
 
-  // Mock user database with enhanced data
-  const mockUsers = [
-    {
-      email: 'superadmin@edusphere.com',
-      password: 'SuperAdmin123',
-      name: 'Super Administrator',
-      role: 'superadmin',
-      id: '0',
-      avatar: 'https://images.pexels.com/photos/2182970/pexels-photo-2182970.jpeg?auto=compress&cs=tinysrgb&w=150'
-    },
-    {
-      email: 'student@demo.com',
-      password: 'Student123',
-      name: 'John Student',
-      role: 'student',
-      id: '3',
-      avatar: 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150'
-    },
-    {
-      email: 'instructor@demo.com',
-      password: 'Instructor123',
-      name: 'Sarah Instructor',
-      role: 'instructor',
-      id: '2',
-      avatar: 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=150'
-    },
-    {
-      email: 'admin@demo.com',
-      password: 'Admin123',
-      name: 'Dr. Sarah Johnson',
-      role: 'admin',
-      id: '1',
-      avatar: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=150'
-    }
-  ]
+  /** ============================
+   *  MOCK DATA (COMMENTED OUT)
+   *  ============================
+   *  Keeping this block commented so you can restore for local demo if needed.
+   */
+  // const mockUsers = [
+  //   { email: 'superadmin@edusphere.com', password: 'SuperAdmin123', name: 'Super Administrator', role: 'superadmin', id: '0' },
+  //   { email: 'student@demo.com',      password: 'Student123',     name: 'John Student',       role: 'student',    id: '3' },
+  //   { email: 'instructor@demo.com',   password: 'Instructor123',  name: 'Sarah Instructor',   role: 'instructor', id: '2' },
+  //   { email: 'admin@demo.com',        password: 'Admin123',       name: 'Dr. Sarah Johnson',  role: 'admin',      id: '1' },
+  // ]
 
   const startLockTimer = () => {
     setIsLocked(true)
@@ -96,112 +71,119 @@ const LoginPage = () => {
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
   }
 
-  const fillDemoCredentials = (userType) => {
-    const user = mockUsers.find(u => u.role === userType)
-    if (user) {
-      setValue('email', user.email)
-      setValue('password', user.password)
-      toast.success(`${user.role.charAt(0).toUpperCase() + user.role.slice(1)} credentials filled!`)
-    }
+  // const fillDemoCredentials = (userType) => {
+  //   const user = mockUsers.find(u => u.role === userType)
+  //   if (user) {
+  //     setValue('email', user.email)
+  //     setValue('password', user.password)
+  //     toast.success(`${user.role.charAt(0).toUpperCase() + user.role.slice(1)} credentials filled!`)
+  //   }
+  // }
+
+const onSubmit = async (data) => {
+  if (isLocked) {
+    toast.error(`Account locked. Try again in ${formatLockTime(lockTimer)}`)
+    return
   }
 
-  const onSubmit = async (data) => {
-    if (isLocked) {
-      toast.error(`Account locked. Try again in ${formatLockTime(lockTimer)}`)
-      return
+  setIsLoading(true)
+  try {
+   
+    const res = await fetch('http://localhost:5000/api/users/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: data.email,
+        password: data.password,
+      }),
+    })
+
+    const result = await res.json()
+    if (!result?.success) {
+      throw new Error(result?.message || 'Login failed')
     }
 
-    setIsLoading(true)
-    
-    // Simulate API delay with realistic loading
-    await new Promise(resolve => setTimeout(resolve, 1500))
+    const { user, token } = result.data
 
-    try {
-      const user = mockUsers.find(
-        u => u.email.toLowerCase() === data.email.toLowerCase() && u.password === data.password
-      )
-      
-      if (user) {
-        const token = `mock-token-${user.role}-${Date.now()}`
-        login(user, token)
-        setLoginAttempts(0)
-        
-        // Success message with role-specific greeting
-        const roleGreeting = {
-          superadmin: 'Welcome back, Super Administrator!',
-          admin: 'Welcome back, Administrator!',
-          instructor: 'Welcome back, Instructor!',
-          student: 'Welcome back to your learning journey!'
-        }
-        
-        toast.success(roleGreeting[user.role] || `Welcome back, ${user.name}!`)
-        
-        // Role-based navigation
-        switch (user.role) {
-          case 'superadmin':
-            navigate('/superadmin')
-            break
-          case 'admin':
-            navigate('/admin')
-            break
-          case 'instructor':
-            navigate('/instructor')
-            break
-          default:
-            navigate('/dashboard')
-        }
-      } else {
-        const newAttempts = loginAttempts + 1
-        setLoginAttempts(newAttempts)
-        
-        if (newAttempts >= 5) {
-          toast.error('Too many failed attempts. Account locked for 15 minutes.')
-          startLockTimer()
-        } else {
-          toast.error(`Invalid credentials. ${5 - newAttempts} attempts remaining.`)
-        }
-      }
-    } catch (error) {
-      toast.error('Login failed. Please check your connection and try again.')
-    } finally {
-      setIsLoading(false)
+    // Normalize role and name for UI
+    const apiRole = String(user.role || '').toUpperCase()
+    const normalizedRole =
+      apiRole === 'SUPER_ADMIN' ? 'superadmin' :
+      apiRole === 'ADMIN' ? 'admin' :
+      apiRole === 'INSTRUCTOR' ? 'instructor' :
+      'student'
+
+    const uiUser = {
+      ...user,
+      name: user.fullName || user.name || 'User',
+      role: normalizedRole,
     }
+
+    // Remember me persistence
+    if (rememberMe) {
+      localStorage.setItem('auth_token', token)
+      localStorage.setItem('auth_user', JSON.stringify(uiUser))
+    } else {
+      sessionStorage.setItem('auth_token', token)
+      sessionStorage.setItem('auth_user', JSON.stringify(uiUser))
+    }
+
+    // Save to store
+    login(uiUser, token)
+    setLoginAttempts(0)
+
+    const roleGreeting = {
+      superadmin: 'Welcome back, Super Administrator!',
+      admin: 'Welcome back, Administrator!',
+      instructor: 'Welcome back, Instructor!',
+      student: 'Welcome back to your learning journey!',
+    }
+    toast.success(roleGreeting[normalizedRole] || `Welcome back, ${uiUser.name}!`)
+
+    // Role-based navigation
+    switch (normalizedRole) {
+      case 'superadmin':
+        navigate('/superadmin')
+        break
+      case 'admin':
+        navigate('/admin')
+        break
+      case 'instructor':
+        navigate('/instructor')
+        break
+      default:
+        navigate('/dashboard')
+    }
+  } catch (err) {
+    const message = err?.message || 'Invalid credentials'
+    const newAttempts = loginAttempts + 1
+    setLoginAttempts(newAttempts)
+
+    if (newAttempts >= 5) {
+      toast.error('Too many failed attempts. Account locked for 15 minutes.')
+      startLockTimer()
+    } else {
+      toast.error(`${message}. ${5 - newAttempts} attempts remaining.`)
+    }
+  } finally {
+    setIsLoading(false)
   }
+}
 
-  const demoAccounts = [
-    {
-      role: 'superadmin',
-      title: 'Super Admin',
-      description: 'Full system access',
-      icon: <Shield size={20} />,
-      color: 'from-purple-500 to-purple-600',
-      textColor: 'text-purple-600'
-    },
-    {
-      role: 'admin',
-      title: 'Admin',
-      description: 'College management',
-      icon: <Shield size={20} />,
-      color: 'from-red-500 to-red-600',
-      textColor: 'text-red-600'
-    },
-    {
-      role: 'instructor',
-      title: 'Instructor',
-      description: 'Course & student management',
-      icon: <BookOpenIcon size={20} />,
-      color: 'from-green-500 to-green-600',
-      textColor: 'text-green-600'
-    },
-    {
-      role: 'student',
-      title: 'Student',
-      description: 'Learning dashboard',
-      icon: <User size={20} />,
-      color: 'from-blue-500 to-blue-600',
-      textColor: 'text-blue-600'
-    }
-  ]
+  /** ============================
+   *  DEMO BUTTONS (COMMENTED OUT)
+   *  ============================
+   *  If you want the "Try Demo Accounts" UI back, uncomment this block
+   *  and the mock data above, plus the fillDemoCredentials function.
+   */
+  // const demoAccounts = [
+  //   { role: 'superadmin', title: 'Super Admin', description: 'Full system access', color: 'from-purple-500 to-purple-600', textColor: 'text-purple-600' },
+  //   { role: 'admin',      title: 'Admin',       description: 'College management', color: 'from-red-500 to-red-600',     textColor: 'text-red-600' },
+  //   { role: 'instructor', title: 'Instructor',  description: 'Course & student management', color: 'from-green-500 to-green-600', textColor: 'text-green-600' },
+  //   { role: 'student',    title: 'Student',     description: 'Learning dashboard', color: 'from-blue-500 to-blue-600',   textColor: 'text-blue-600' },
+  // ]
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
@@ -215,7 +197,7 @@ const LoginPage = () => {
         
         <div className="text-center">
           <h2 className="text-3xl font-bold text-gray-900 mb-2">
-            Welcome to EduSphere
+            Welcome to Pugarch
           </h2>
           <p className="text-gray-600 mb-2">
             Sign in to access your learning dashboard
@@ -358,13 +340,14 @@ const LoginPage = () => {
                     Locked ({formatLockTime(lockTimer)})
                   </>
                 ) : (
-                  'Sign in to EduSphere'
+                  'Sign in to Pugarch'
                 )}
               </Button>
             </div>
           </form>
 
-          {/* Demo Accounts Section */}
+          {/* Demo Accounts Section (commented out) */}
+          {/*
           <div className="mt-8">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
@@ -385,9 +368,7 @@ const LoginPage = () => {
                   className="w-full flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-gray-300 hover:shadow-sm transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group"
                 >
                   <div className="flex items-center space-x-3">
-                    <div className={`w-10 h-10 bg-gradient-to-r ${account.color} rounded-lg flex items-center justify-center text-white shadow-sm`}>
-                      {account.icon}
-                    </div>
+                    <div className={`w-10 h-10 bg-gradient-to-r ${account.color} rounded-lg flex items-center justify-center text-white shadow-sm`} />
                     <div className="text-left">
                       <div className="font-medium text-gray-900 group-hover:text-gray-700">
                         {account.title}
@@ -412,12 +393,13 @@ const LoginPage = () => {
                   <ol className="list-decimal list-inside space-y-1 text-blue-700">
                     <li>Click any demo account button above</li>
                     <li>Credentials will be automatically filled</li>
-                    <li>Click "Sign in to EduSphere" to access the dashboard</li>
+                    <li>Click "Sign in to Pugarch" to access the dashboard</li>
                   </ol>
                 </div>
               </div>
             </div>
           </div>
+          */}
 
           {/* Social Login Options */}
           <div className="mt-8">
@@ -492,7 +474,7 @@ const LoginPage = () => {
           <Link to="/terms" className="hover:text-gray-700 transition-colors">Terms</Link>
         </div>
         <p className="mt-2 text-xs text-gray-400">
-          © 2024 EduSphere. All rights reserved.
+          © 2025 Pugarch. All rights reserved.
         </p>
       </div>
     </div>

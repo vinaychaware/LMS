@@ -19,22 +19,22 @@ import Privacy from './pages/PrivacyPage'
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   const { isAuthenticated, userRole } = useAuthStore()
-  
+
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />
   }
-  
+
   if (allowedRoles.length > 0 && !allowedRoles.includes(userRole)) {
     return <Navigate to="/dashboard" replace />
   }
-  
+
   return children
 }
 
 // Public Route Component (redirects authenticated users)
 const PublicRoute = ({ children }) => {
   const { isAuthenticated, userRole } = useAuthStore()
-  
+
   if (isAuthenticated) {
     if (userRole === 'superadmin') {
       return <Navigate to="/superadmin" replace />
@@ -46,7 +46,7 @@ const PublicRoute = ({ children }) => {
       return <Navigate to="/dashboard" replace />
     }
   }
-  
+
   return children
 }
 
@@ -64,83 +64,83 @@ const App = () => {
         {/* Legal Pages */}
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />
-        
+
         {/* Auth Routes */}
-        <Route 
-          path="/login" 
+        <Route
+          path="/login"
           element={
             <PublicRoute>
               <LoginPage />
             </PublicRoute>
-          } 
+          }
         />
-        
-        <Route 
-          path="/register" 
+
+        <Route
+          path="/register"
           element={
             <PublicRoute>
               <RegisterPage />
             </PublicRoute>
-          } 
+          }
         />
-      
-        
+
+
         {/* Protected Routes */}
-        <Route 
-          path="/dashboard" 
+        <Route
+          path="/dashboard"
           element={
             <ProtectedRoute allowedRoles={['student']}>
               <StudentDashboardPage />
             </ProtectedRoute>
-          } 
+          }
         />
-        
-        <Route 
-          path="/instructor" 
+
+        <Route
+          path="/instructor"
           element={
-            <ProtectedRoute allowedRoles={['instructor','admin']}>
+            <ProtectedRoute allowedRoles={['instructor', 'admin']}>
               <InstructorDashboardPage />
             </ProtectedRoute>
-          } 
+          }
         />
-        
-        <Route 
-          path="/courses/:courseId" 
+
+        <Route
+          path="/courses/:courseId"
           element={
-            <ProtectedRoute allowedRoles={['student','instructor','admin']}>
+            <ProtectedRoute allowedRoles={['student', 'instructor', 'admin','superadmin']}>
               <CourseViewerPage />
             </ProtectedRoute>
-          } 
+          }
         />
-        
-        <Route 
-          path="/courses/create" 
+
+        <Route
+          path="/courses/create"
           element={
-            <ProtectedRoute allowedRoles={['instructor','admin']}>
+            <ProtectedRoute allowedRoles={['instructor', 'admin', 'superadmin']}>
               <CreateCoursePage />
             </ProtectedRoute>
-          } 
+          }
         />
-        
+
         {/* Admin Routes */}
-        <Route 
-          path="/superadmin" 
+        <Route
+          path="/superadmin"
           element={
             <ProtectedRoute allowedRoles={['superadmin']}>
               <SuperAdminDashboardPage />
             </ProtectedRoute>
-          } 
+          }
         />
-        
-        <Route 
-          path="/admin" 
+
+        <Route
+          path="/admin"
           element={
             <ProtectedRoute allowedRoles={['admin']}>
               <AdminDashboardPage />
             </ProtectedRoute>
-          } 
+          }
         />
-        
+
         {/* Catch all route */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

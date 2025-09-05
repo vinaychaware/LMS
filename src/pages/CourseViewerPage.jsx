@@ -1,183 +1,262 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { 
-  ArrowLeft, 
-  Play, 
-  CheckCircle, 
-  Lock, 
-  BookOpen, 
-  Clock, 
-  FileText,
-  Award,
+import {
+  ArrowLeft,
+  CheckCircle,
+  BookOpen,
+  Clock,
   ChevronRight,
   ChevronDown,
-  PlayCircle,
-  PauseCircle,
-  Volume2,
-  VolumeX,
-  Maximize,
-  Settings
 } from 'lucide-react'
+import axios from 'axios'
 import { toast } from 'react-hot-toast'
-import { mockAPI, mockData } from '../services/mockData'
 import useAuthStore from '../store/useAuthStore'
 import Button from '../components/ui/Button'
-import Card from '../components/ui/Card'
 import Progress from '../components/ui/Progress'
 import Badge from '../components/ui/Badge'
+
+import { coursesAPI, chaptersAPI, FALLBACK_THUMB } from '../services/api'
+
 
 const CourseViewerPage = () => {
   const { courseId } = useParams()
   const navigate = useNavigate()
-  const { user } = useAuthStore()
-  
+  const { token } = useAuthStore()
+
   const [course, setCourse] = useState(null)
-  const [modules, setModules] = useState([])
-  const [currentModule, setCurrentModule] = useState(null)
+  const [chapters, setChapters] = useState([])
   const [currentChapter, setCurrentChapter] = useState(null)
-  const [progress, setProgress] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [expandedModules, setExpandedModules] = useState({})
   const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [videoPlaying, setVideoPlaying] = useState(false)
-  const [videoMuted, setVideoMuted] = useState(false)
+  const [expanded, setExpanded] = useState(true)
+  const [completedChapterIds, setCompletedChapterIds] = useState([])
+
+ 
+  const [quizLoading, setQuizLoading] = useState(false)
+  const [quiz, setQuiz] = useState(null) 
+  const [quizAnswers, setQuizAnswers] = useState({})
+  const [quizSubmitted, setQuizSubmitted] = useState(false)
+  const [quizScore, setQuizScore] = useState(null)
+
+ 
 
   useEffect(() => {
-    fetchCourseData()
+    fetchData()
+
   }, [courseId])
 
-  const fetchCourseData = async () => {
+async function fetchData() {
+  setLoading(true)
+  try {
+    // 1) Course
+    let courseRes
     try {
-      setLoading(true)
-      
-      // Get course details
-      const courseData = mockData.courses.find(c => c.id === courseId)
-      if (!courseData) {
-        toast.error('Course not found')
-        navigate('/courses')
-        return
+      courseRes = await coursesAPI.get(courseId)
+    } catch (e) {
+      if (e?.response?.status === 404) {
+        const all = await coursesAPI.list()
+        const found = (all.data || []).find((c) => c.id === courseId)
+        if (!found) throw e
+        courseRes = { data: found }
+      } else {
+        throw e
       }
-      
-      // Check if user has access to this course
-      const student = mockData.users.find(u => u.id === user.id)
-      if (!student?.assignedCourses.includes(courseId)) {
-        toast.error('You do not have access to this course')
-        navigate('/dashboard')
-        return
-      }
-      
-      setCourse(courseData)
-      
-      // Get course modules with chapters
-      const moduleData = await mockAPI.getCourseModules(courseId)
-      const modulesWithChapters = moduleData.map(module => ({
-        ...module,
-        chapters: generateChapters(module.id, module.totalChapters)
+    }
+
+    const c = courseRes.data
+    setCourse({
+      id: c.id,
+      title: c.title,
+      level: 'beginner',
+      instructorName: (c.instructorNames && c.instructorNames[0]) || 'Instructor',
+      thumbnail: c.thumbnail || FALLBACK_THUMB,
+      status: c.status,
+    })
+
+    // 2) Chapters
+    const chRes = await chaptersAPI.listByCourse(courseId)
+    const list = Array.isArray(chRes.data) ? chRes.data : []
+
+    const mappedChapters = list
+      .sort((a, b) => (a.order || 0) - (b.order || 0))
+      .map((ch) => ({
+        id: ch.id,
+        title: ch.title,
+        // keep “text-only” viewer; show minutes if you store it in settings
+        duration: ch?.settings?.estimatedMinutes ? `${ch.settings.estimatedMinutes} min` : '—',
+        type: Array.isArray(ch.assessments) && ch.assessments.length > 0 ? 'quiz' : 'text',
+        content: ch.content || ch.description || '',
+        order: ch.order || 0,
+        hasQuiz: Array.isArray(ch.assessments) && ch.assessments.length > 0,
       }))
-      
-      setModules(modulesWithChapters)
-      
-      // Get user progress
-      const userProgress = await mockAPI.getStudentProgress(user.id, courseId)
-      setProgress(userProgress)
-      
-      // Set initial module and chapter
-      if (modulesWithChapters.length > 0) {
-        const firstModule = modulesWithChapters[0]
-        setCurrentModule(firstModule)
-        setCurrentChapter(firstModule.chapters[0])
-        setExpandedModules({ [firstModule.id]: true })
-      }
-      
-    } catch (error) {
-      console.error('Error fetching course data:', error)
-      toast.error('Failed to load course')
-    } finally {
-      setLoading(false)
+
+    setChapters(mappedChapters)
+    if (mappedChapters.length) {
+      setCurrentChapter(mappedChapters[0])
     }
+  } catch (err) {
+    console.error('Course load failed:', err)
+    toast.error('Failed to load course')
+    navigate('/courses')
+  } finally {
+    setLoading(false)
   }
+}
 
-  const generateChapters = (moduleId, totalChapters) => {
-    const chapters = []
-    for (let i = 1; i <= totalChapters; i++) {
-      chapters.push({
-        id: `${moduleId}-ch-${i}`,
-        moduleId,
-        title: `Chapter ${i}: Introduction to Topic ${i}`,
-        duration: `${Math.floor(Math.random() * 20) + 10} min`,
-        type: 'video',
-        content: `This is the content for chapter ${i}. In this chapter, you will learn about important concepts and practical applications.`,
-        videoUrl: `https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4`,
-        order: i
-      })
+
+
+  useEffect(() => {
+    if (!currentChapter) {
+      setQuiz(null)
+      return
     }
-    return chapters
-  }
+    if (!currentChapter.hasQuiz) {
+      setQuiz(null)
+      return
+    }
+    loadQuizForChapter(currentChapter.id)
+  
+  }, [currentChapter?.id])
 
-  const toggleModuleExpansion = (moduleId) => {
-    setExpandedModules(prev => ({
-      ...prev,
-      [moduleId]: !prev[moduleId]
-    }))
-  }
+  async function loadQuizForChapter(chapterId) {
+    setQuizLoading(true)
+    setQuiz(null)
+    setQuizAnswers({})
+    setQuizSubmitted(false)
+    setQuizScore(null)
 
-  const selectChapter = (module, chapter) => {
-    setCurrentModule(module)
-    setCurrentChapter(chapter)
-  }
-
-  const markChapterComplete = async () => {
-    if (!currentChapter || !currentModule) return
-    
     try {
-      await mockAPI.updateChapterProgress(
-        user.id, 
-        courseId, 
-        currentModule.id, 
-        currentChapter.id
-      )
-      
-      // Refresh progress
-      const updatedProgress = await mockAPI.getStudentProgress(user.id, courseId)
-      setProgress(updatedProgress)
-      
-      toast.success('Chapter completed!')
-      
-      // Auto-advance to next chapter
-      const currentModuleIndex = modules.findIndex(m => m.id === currentModule.id)
-      const currentChapterIndex = currentModule.chapters.findIndex(c => c.id === currentChapter.id)
-      
-      if (currentChapterIndex < currentModule.chapters.length - 1) {
-        // Next chapter in same module
-        const nextChapter = currentModule.chapters[currentChapterIndex + 1]
-        setCurrentChapter(nextChapter)
-      } else if (currentModuleIndex < modules.length - 1) {
-        // First chapter of next module
-        const nextModule = modules[currentModuleIndex + 1]
-        setCurrentModule(nextModule)
-        setCurrentChapter(nextModule.chapters[0])
-        setExpandedModules(prev => ({ ...prev, [nextModule.id]: true }))
+ 
+      const listRes = await axios.get(`${API_BASE}/api/assessments`, {
+        headers,
+        params: { chapterId },
+      })
+      const assessments = Array.isArray(listRes.data) ? listRes.data : []
+      if (!assessments.length) {
+        setQuiz(null)
+        return
       }
-      
-    } catch (error) {
-      toast.error('Failed to update progress')
+      const first = assessments[0]
+
+ 
+      let full = first
+      if (!first.questions) {
+        const fullRes = await axios.get(`${API_BASE}/api/assessments/${first.id}`, { headers })
+        full = fullRes.data
+      }
+
+      const questions = (full.questions || []).sort((a, b) => (a.order || 0) - (b.order || 0))
+      setQuiz({
+        id: full.id,
+        title: full.title || 'Quiz',
+        questions: questions.map((q) => ({
+          id: q.id,
+          prompt: q.prompt,
+          type: String(q.type || '').toLowerCase(), // 'mcq' | 'subjective' | 'match' etc.
+          options: Array.isArray(q.options) ? q.options : [],
+          correctOptionIndex: typeof q.correctOptionIndex === 'number' ? q.correctOptionIndex : null,
+          correctOptionIndexes: Array.isArray(q.correctOptionIndexes) ? q.correctOptionIndexes : null,
+          points: q.points ?? 1,
+          order: q.order ?? 1,
+        })),
+      })
+    } catch (e) {
+      console.error('Load quiz failed:', e)
+      toast.error('Failed to load quiz')
+      setQuiz(null)
+    } finally {
+      setQuizLoading(false)
     }
   }
 
-  const isChapterCompleted = (chapterId) => {
-    return progress?.completedChapters?.includes(chapterId) || false
-  }
-
-  const getModuleProgress = (module) => {
-    const completedChapters = module.chapters.filter(chapter => 
-      isChapterCompleted(chapter.id)
-    ).length
-    return Math.round((completedChapters / module.chapters.length) * 100)
-  }
+  const toggleSection = () => setExpanded((x) => !x)
 
   const getCourseProgress = () => {
-    if (!progress || !course) return 0
-    return Math.round((progress.completedChapters.length / course.totalChapters) * 100)
+    if (!chapters.length) return 0
+    const completed = chapters.filter((ch) => completedChapterIds.includes(ch.id)).length
+    return Math.round((completed / chapters.length) * 100)
+  }
+
+  const isChapterCompleted = (id) => completedChapterIds.includes(id)
+
+  const markChapterComplete = () => {
+    if (!currentChapter) return
+    if (!isChapterCompleted(currentChapter.id)) {
+      setCompletedChapterIds((prev) => [...prev, currentChapter.id])
+      toast.success('Chapter completed!')
+
+      const idx = chapters.findIndex((c) => c.id === currentChapter.id)
+      if (idx >= 0 && idx < chapters.length - 1) {
+        setCurrentChapter(chapters[idx + 1])
+      }
+    }
+  }
+
+  const handleAnswerChange = (qid, value) => {
+    setQuizAnswers((prev) => ({ ...prev, [qid]: value }))
+  }
+
+  function scoreLocally(quiz, answers) {
+    let score = 0
+    let max = 0
+    for (const q of quiz.questions) {
+      const pts = q.points ?? 1
+      max += pts
+
+      const ans = answers[q.id]
+
+      if (typeof q.correctOptionIndex === 'number') {
+        if (Number(ans) === q.correctOptionIndex) score += pts
+        continue
+      }
+   
+      if (Array.isArray(q.correctOptionIndexes)) {
+        const normalized = Array.isArray(ans) ? ans.map(Number).sort() : []
+        const correct = [...q.correctOptionIndexes].sort()
+        if (normalized.length === correct.length && normalized.every((v, i) => v === correct[i])) {
+          score += pts
+        }
+        continue
+      }
+
+    }
+    return { score, max }
+  }
+
+  const submitQuiz = async () => {
+    if (!quiz) return
+    try {
+      setQuizSubmitted(true)
+
+      let serverScored = false
+      try {
+        const resp = await axios.post(
+          `${API_BASE}/api/assessments/${quiz.id}/attempts`,
+          { answers: quizAnswers },
+          { headers }
+        )
+        if (resp?.data?.score != null && resp?.data?.maxScore != null) {
+          setQuizScore({ score: resp.data.score, max: resp.data.maxScore })
+          serverScored = true
+        }
+      } catch (e) {
+  
+      }
+
+      if (!serverScored) {
+        
+        const { score, max } = scoreLocally(quiz, quizAnswers)
+        setQuizScore({ score, max })
+      }
+
+      toast.success('Quiz submitted!')
+     
+      markChapterComplete()
+    } catch (e) {
+      console.error(e)
+      toast.error('Failed to submit quiz')
+      setQuizSubmitted(false)
+    }
   }
 
   if (loading) {
@@ -197,9 +276,7 @@ const CourseViewerPage = () => {
         <div className="text-center">
           <BookOpen size={48} className="mx-auto text-gray-400 mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">Course not found</h3>
-          <Button onClick={() => navigate('/courses')}>
-            Browse Courses
-          </Button>
+          <Button onClick={() => navigate('/courses')}>Browse Courses</Button>
         </div>
       </div>
     )
@@ -211,30 +288,20 @@ const CourseViewerPage = () => {
       <div className={`${sidebarOpen ? 'w-80' : 'w-0'} transition-all duration-300 bg-white border-r border-gray-200 overflow-hidden flex flex-col`}>
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center justify-between mb-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/dashboard')}
-            >
+            <Button variant="ghost" size="sm" onClick={() => navigate('/courses')}>
               <ArrowLeft size={16} className="mr-2" />
-              Back to Dashboard
+              Back to Courses
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setSidebarOpen(false)}
-            >
-              ×
-            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setSidebarOpen(false)}>×</Button>
           </div>
-          
+
           <div className="mb-4">
             <h1 className="text-lg font-semibold text-gray-900 mb-2">{course.title}</h1>
             <div className="flex items-center space-x-2 text-sm text-gray-600 mb-3">
-              <span>by {course.instructor.name}</span>
+              <span>by {course.instructorName}</span>
               <Badge variant="info" size="sm">{course.level}</Badge>
             </div>
-            
+
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Progress</span>
@@ -242,224 +309,238 @@ const CourseViewerPage = () => {
               </div>
               <Progress value={getCourseProgress()} size="sm" />
               <div className="text-xs text-gray-500">
-                {progress?.completedChapters?.length || 0} of {course.totalChapters} chapters completed
+                {completedChapterIds.length} of {chapters.length} chapters completed
               </div>
             </div>
           </div>
         </div>
 
-        {/* Module List */}
+     
         <div className="flex-1 overflow-y-auto">
           <div className="p-4 space-y-2">
-            {modules.map((module) => (
-              <div key={module.id} className="border border-gray-200 rounded-lg">
-                <button
-                  onClick={() => toggleModuleExpansion(module.id)}
-                  className="w-full p-3 text-left hover:bg-gray-50 transition-colors flex items-center justify-between"
-                >
-                  <div className="flex-1">
-                    <h3 className="font-medium text-gray-900">{module.title}</h3>
-                    <div className="flex items-center space-x-4 mt-1 text-sm text-gray-500">
-                      <span>{module.totalChapters} chapters</span>
-                      <span>{getModuleProgress(module)}% complete</span>
-                    </div>
+            <div className="border border-gray-200 rounded-lg">
+              <button
+                onClick={() => setExpanded((x) => !x)}
+                className="w-full p-3 text-left hover:bg-gray-50 transition-colors flex items-center justify-between"
+              >
+                <div className="flex-1">
+                  <h3 className="font-medium text-gray-900">Course Content</h3>
+                  <div className="flex items-center space-x-4 mt-1 text-sm text-gray-500">
+                    <span>{chapters.length} chapters</span>
+                    <span>{getCourseProgress()}% complete</span>
                   </div>
-                  {expandedModules[module.id] ? 
-                    <ChevronDown size={16} /> : 
-                    <ChevronRight size={16} />
-                  }
-                </button>
-                
-                {expandedModules[module.id] && (
-                  <div className="border-t border-gray-200">
-                    {module.chapters.map((chapter) => (
-                      <button
-                        key={chapter.id}
-                        onClick={() => selectChapter(module, chapter)}
-                        className={`w-full p-3 text-left hover:bg-gray-50 transition-colors flex items-center space-x-3 ${
-                          currentChapter?.id === chapter.id ? 'bg-primary-50 border-r-2 border-primary-500' : ''
-                        }`}
-                      >
-                        <div className="flex-shrink-0">
-                          {isChapterCompleted(chapter.id) ? (
-                            <CheckCircle size={16} className="text-green-500" />
-                          ) : currentChapter?.id === chapter.id ? (
-                            <PlayCircle size={16} className="text-primary-500" />
-                          ) : (
-                            <div className="w-4 h-4 border-2 border-gray-300 rounded-full" />
-                          )}
+                </div>
+                {expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+              </button>
+
+              {expanded && (
+                <div className="border-t border-gray-200">
+                  {chapters.map((chapter) => (
+                    <button
+                      key={chapter.id}
+                      onClick={() => setCurrentChapter(chapter)}
+                      className={`w-full p-3 text-left hover:bg-gray-50 transition-colors flex items-center space-x-3 ${
+                        currentChapter?.id === chapter.id ? 'bg-primary-50 border-r-2 border-primary-500' : ''
+                      }`}
+                    >
+                      <div className="flex-shrink-0">
+                        {isChapterCompleted(chapter.id) ? (
+                          <CheckCircle size={16} className="text-green-500" />
+                        ) : (
+                          <div className="w-4 h-4 border-2 border-gray-300 rounded-full" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-medium text-gray-900 truncate">
+                          {chapter.title} {chapter.hasQuiz ? '(Quiz)' : ''}
+                        </h4>
+                        <div className="flex items-center space-x-2 text-xs text-gray-500">
+                          <Clock size={12} />
+                          <span>{chapter.duration}</span>
+                          <span>•</span>
+                          <span>{chapter.type}</span>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="text-sm font-medium text-gray-900 truncate">
-                            {chapter.title}
-                          </h4>
-                          <div className="flex items-center space-x-2 text-xs text-gray-500">
-                            <Clock size={12} />
-                            <span>{chapter.duration}</span>
-                          </div>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Main Content */}
+    
       <div className="flex-1 flex flex-col">
-        {/* Top Bar */}
+
         <div className="bg-white border-b border-gray-200 p-4 flex items-center justify-between">
           {!sidebarOpen && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setSidebarOpen(true)}
-            >
+            <Button variant="ghost" size="sm" onClick={() => setSidebarOpen(true)}>
               <BookOpen size={16} className="mr-2" />
               Course Content
             </Button>
           )}
-          
+
           {currentChapter && (
             <div className="flex-1 text-center">
               <h2 className="text-lg font-semibold text-gray-900">{currentChapter.title}</h2>
-              <p className="text-sm text-gray-600">{currentModule?.title}</p>
+              <p className="text-sm text-gray-600">{course.title}</p>
             </div>
           )}
-          
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setVideoMuted(!videoMuted)}
-            >
-              {videoMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-            >
-              <Settings size={16} />
-            </Button>
-          </div>
+
+          <div className="w-16" />
         </div>
 
-        {/* Video/Content Area */}
-        <div className="flex-1 bg-black flex items-center justify-center">
-          {currentChapter ? (
-            <div className="w-full max-w-4xl aspect-video bg-gray-800 rounded-lg overflow-hidden relative">
-              {currentChapter.type === 'video' ? (
-                <div className="w-full h-full flex items-center justify-center">
-                  <div className="text-center text-white">
-                    <PlayCircle size={64} className="mx-auto mb-4 opacity-50" />
-                    <h3 className="text-xl font-semibold mb-2">{currentChapter.title}</h3>
-                    <p className="text-gray-300 mb-4">Video content would be displayed here</p>
-                    <Button
-                      onClick={() => setVideoPlaying(!videoPlaying)}
-                      className="mb-4"
-                    >
-                      {videoPlaying ? (
-                        <>
-                          <PauseCircle size={16} className="mr-2" />
-                          Pause
-                        </>
-                      ) : (
-                        <>
-                          <PlayCircle size={16} className="mr-2" />
-                          Play Video
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="w-full h-full p-8 text-white overflow-y-auto">
-                  <h3 className="text-2xl font-bold mb-4">{currentChapter.title}</h3>
-                  <div className="prose prose-invert max-w-none">
-                    <p>{currentChapter.content}</p>
-                  </div>
-                </div>
-              )}
-              
-              {/* Video Controls Overlay */}
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
-                <div className="flex items-center justify-between text-white">
-                  <div className="flex items-center space-x-4">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setVideoPlaying(!videoPlaying)}
-                      className="text-white hover:bg-white/20"
-                    >
-                      {videoPlaying ? <PauseCircle size={20} /> : <PlayCircle size={20} />}
-                    </Button>
-                    <span className="text-sm">0:00 / {currentChapter.duration}</span>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setVideoMuted(!videoMuted)}
-                      className="text-white hover:bg-white/20"
-                    >
-                      {videoMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-white hover:bg-white/20"
-                    >
-                      <Maximize size={16} />
-                    </Button>
-                  </div>
-                </div>
+        {/* Content */}
+        <div className="flex-1 bg-white">
+          {!currentChapter ? (
+            <div className="h-full flex items-center justify-center text-gray-600">
+              <div className="text-center">
+                <BookOpen size={64} className="mx-auto mb-4 opacity-50" />
+                <h3 className="text-xl font-semibold mb-2">Select a chapter to begin</h3>
+                <p className="text-gray-500">Choose a chapter from the sidebar to start learning</p>
               </div>
             </div>
+          ) : currentChapter.hasQuiz ? (
+            <div className="max-w-3xl mx-auto p-6">
+              <h3 className="text-2xl font-bold mb-4">{currentChapter.title} — Quiz</h3>
+
+              {quizLoading && <p className="text-gray-600">Loading quiz…</p>}
+
+              {!quizLoading && !quiz && (
+                <p className="text-gray-600">No quiz available for this chapter.</p>
+              )}
+
+              {!quizLoading && quiz && (
+                <>
+                  <p className="text-gray-700 mb-4">{quiz.title}</p>
+
+                  <div className="space-y-6">
+                    {quiz.questions.map((q, idx) => (
+                      <QuestionBlock
+                        key={q.id}
+                        index={idx}
+                        q={q}
+                        value={quizAnswers[q.id]}
+                        onChange={(val) => handleAnswerChange(q.id, val)}
+                        disabled={quizSubmitted}
+                      />
+                    ))}
+                  </div>
+
+                  <div className="mt-8 flex items-center justify-between">
+                    {!quizSubmitted ? (
+                      <Button onClick={submitQuiz}>Submit Quiz</Button>
+                    ) : (
+                      <div className="text-green-700 font-medium">
+                        Submitted{quizScore ? ` • Score: ${quizScore.score}/${quizScore.max}` : ''}
+                      </div>
+                    )}
+
+                    {!isChapterCompleted(currentChapter.id) && (
+                      <Button variant="outline" onClick={markChapterComplete}>
+                        Mark Chapter Complete
+                      </Button>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
           ) : (
-            <div className="text-center text-white">
-              <BookOpen size={64} className="mx-auto mb-4 opacity-50" />
-              <h3 className="text-xl font-semibold mb-2">Select a chapter to begin</h3>
-              <p className="text-gray-400">Choose a chapter from the sidebar to start learning</p>
+            <div className="max-w-3xl mx-auto p-6">
+              <h3 className="text-2xl font-bold mb-4">{currentChapter.title}</h3>
+              <div className="prose max-w-none">
+                <p className="whitespace-pre-line">{currentChapter.content || 'Chapter content goes here.'}</p>
+              </div>
+
+              {!isChapterCompleted(currentChapter.id) && (
+                <div className="mt-8">
+                  <Button onClick={markChapterComplete}>
+                    <CheckCircle size={16} className="mr-2" />
+                    Mark as Complete
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </div>
+      </div>
+    </div>
+  )
+}
 
-        {/* Bottom Controls */}
-        <div className="bg-white border-t border-gray-200 p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              {currentChapter && (
-                <div className="flex items-center space-x-2 text-sm text-gray-600">
-                  <Clock size={16} />
-                  <span>{currentChapter.duration}</span>
-                  <span>•</span>
-                  <span>{currentChapter.type}</span>
-                </div>
-              )}
-            </div>
-            
-            <div className="flex items-center space-x-3">
-              {currentChapter && !isChapterCompleted(currentChapter.id) && (
-                <Button onClick={markChapterComplete}>
-                  <CheckCircle size={16} className="mr-2" />
-                  Mark as Complete
-                </Button>
-              )}
-              
-              {currentChapter && isChapterCompleted(currentChapter.id) && (
-                <div className="flex items-center space-x-2 text-green-600">
-                  <CheckCircle size={16} />
-                  <span className="text-sm font-medium">Completed</span>
-                </div>
-              )}
-            </div>
-          </div>
+function QuestionBlock({ index, q, value, onChange, disabled }) {
+  const isMulti =
+    Array.isArray(q.correctOptionIndexes) && q.correctOptionIndexes.length > 0
+  const isSingle =
+    typeof q.correctOptionIndex === 'number' && q.options?.length
+
+  if (isSingle) {
+    return (
+      <div className="border rounded-lg p-4">
+        <div className="font-medium mb-3">
+          Q{index + 1}. {q.prompt}
+        </div>
+        <div className="space-y-2">
+          {q.options.map((opt, i) => (
+            <label key={i} className="flex items-center space-x-2">
+              <input
+                type="radio"
+                name={`q_${q.id}`}
+                disabled={disabled}
+                checked={Number(value) === i}
+                onChange={() => onChange(i)}
+              />
+              <span>{opt}</span>
+            </label>
+          ))}
         </div>
       </div>
+    )
+  }
+
+  if (isMulti) {
+    const arr = Array.isArray(value) ? value.map(Number) : []
+    const toggle = (i) => {
+      if (arr.includes(i)) onChange(arr.filter((x) => x !== i))
+      else onChange([...arr, i])
+    }
+    return (
+      <div className="border rounded-lg p-4">
+        <div className="font-medium mb-3">
+          Q{index + 1}. {q.prompt} <span className="text-xs text-gray-500">(Select all that apply)</span>
+        </div>
+        <div className="space-y-2">
+          {q.options.map((opt, i) => (
+            <label key={i} className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                disabled={disabled}
+                checked={arr.includes(i)}
+                onChange={() => toggle(i)}
+              />
+              <span>{opt}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  // subjective or other
+  return (
+    <div className="border rounded-lg p-4">
+      <div className="font-medium mb-3">
+        Q{index + 1}. {q.prompt}
+      </div>
+      <textarea
+        rows={4}
+        className="w-full border rounded-lg p-2"
+        value={String(value || '')}
+        onChange={(e) => onChange(e.target.value)}
+        disabled={disabled}
+        placeholder="Type your answer…"
+      />
     </div>
   )
 }

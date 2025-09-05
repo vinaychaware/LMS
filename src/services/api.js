@@ -1,110 +1,113 @@
+// src/services/api.js
 import axios from 'axios'
-import { mockAPI, mockData } from './mockData'
 import useAuthStore from '../store/useAuthStore'
 
-// Create axios instance
-const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
-  headers: {
+// ======= Local testing base URL (switch to env in prod) =======
+export const API_BASE = 'http://localhost:5000'
+
+// ======= Safe fallback thumbnail (no external host) ==========
+export const FALLBACK_THUMB =
+  'data:image/svg+xml;utf8,' +
+  encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450">
+       <rect width="100%" height="100%" fill="#e5e7eb"/>
+       <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"
+             font-family="Arial" font-size="28" fill="#6b7280">Course</text>
+     </svg>`
+  )
+
+// ======= Optional helper if you need manual headers ==========
+export const makeHeaders = () => {
+  const token = useAuthStore.getState().token
+  const h = {
     'Content-Type': 'application/json',
-  },
+    'Cache-Control': 'no-cache',
+    Pragma: 'no-cache',
+    Expires: '0',
+  }
+  if (token) h.Authorization = `Bearer ${token}`
+  return h
+}
+
+// ======= Shared axios instance ===============================
+const api = axios.create({
+  baseURL: `${API_BASE}/api`,
+  headers: { 'Content-Type': 'application/json' },
 })
 
-// Request interceptor to add auth token
-api.interceptors.request.use(
-  (config) => {
-    const token = useAuthStore.getState().token
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
-    }
-    return config
-  },
-  (error) => {
-    return Promise.reject(error)
-  }
-)
+// Inject token + no-cache on every request
+api.interceptors.request.use((config) => {
+  const token = useAuthStore.getState().token
+  if (token) config.headers.Authorization = `Bearer ${token}`
 
-// Response interceptor to handle auth errors
+  // dev: defeat caches so you always see fresh data
+  config.headers['Cache-Control'] = 'no-cache'
+  config.headers['Pragma'] = 'no-cache'
+  config.headers['Expires'] = '0'
+  return config
+})
+
+// Handle 401s globally
 api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      useAuthStore.getState().logout()
+  (res) => res,
+  (err) => {
+    if (err?.response?.status === 401) {
+      useAuthStore.getState().logout?.()
+      // hard redirect so app state resets
       window.location.href = '/login'
     }
-    return Promise.reject(error)
+    return Promise.reject(err)
   }
 )
 
-// Auth API calls
+// ======= Small util: File -> base64 (for image fields) =======
+export async function fileToBase64(file) {
+  if (!file) return ''
+  return await new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(String(reader.result))
+    reader.onerror = reject
+    reader.readAsDataURL(file) // produces "data:image/...;base64,XXXX"
+  })
+}
+
+// ======= API groups ==========================================
 export const authAPI = {
-  login: (credentials) => api.post('/auth/login', credentials),
-  // register: (userData) => api.post('/auth/register', userData),
+  login: (data) => api.post('/auth/login', data),
   logout: () => api.post('/auth/logout'),
   refresh: () => api.post('/auth/refresh'),
   profile: () => api.get('/auth/profile'),
 }
 
-// Course API calls
-export const courseAPI = {
-  getAll: async () => {
-    // Use mock data for development
-    await mockAPI.delay(800)
-    return { data: mockData.courses }
-  },
-  getById: (id) => api.get(`/courses/${id}`),
-  create: (courseData) => api.post('/courses', courseData),
-  update: (id, courseData) => api.put(`/courses/${id}`, courseData),
-  delete: (id) => api.delete(`/courses/${id}`),
-  enroll: (courseId) => api.post(`/courses/${courseId}/enroll`),
-  getEnrolled: async () => {
-    // Use mock data for development
-    const userId = useAuthStore.getState().user?.id
-    if (!userId) return { data: [] }
-    
-    const enrollments = await mockAPI.getStudentEnrollments(userId)
-    return { data: enrollments }
-  },
-  getTeaching: () => api.get('/courses/teaching'),
+export const coursesAPI = {
+  list: () => api.get('/courses'),
+  get: (id) => api.get(`/courses/${id}`),
+
+  // Minimal creator; pass your full payload as needed
+  create: (payload) => api.post('/courses', payload),
+
+  // Full “create course + chapters + quiz” backend route (if you added /courses/full)
+  createFull: (payload) => api.post('/courses/full', payload),
+
+  update: (id, payload) => api.patch(`/courses/${id}`, payload),
+  setInstructors: (id, instructorIds) =>
+    api.post(`/courses/${id}/instructors`, { instructorIds }),
 }
 
-// Lesson API calls
-export const lessonAPI = {
-  getByCourse: (courseId) => api.get(`/courses/${courseId}/lessons`),
-  create: (courseId, lessonData) => api.post(`/courses/${courseId}/lessons`, lessonData),
-  update: (id, lessonData) => api.put(`/lessons/${id}`, lessonData),
-  delete: (id) => api.delete(`/lessons/${id}`),
-  markComplete: (id) => api.post(`/lessons/${id}/complete`),
+export const chaptersAPI = {
+  listByCourse: (courseId) => api.get('/chapters', { params: { courseId } }),
+  create: (courseId, payload) => api.post(`/courses/${courseId}/chapters`, payload),
+  update: (id, payload) => api.patch(`/chapters/${id}`, payload),
+  remove: (id) => api.delete(`/chapters/${id}`),
 }
 
-// Assignment API calls
-export const assignmentAPI = {
-  getByCourse: (courseId) => api.get(`/courses/${courseId}/assignments`),
-  create: (courseId, assignmentData) => api.post(`/courses/${courseId}/assignments`, assignmentData),
-  update: (id, assignmentData) => api.put(`/assignments/${id}`, assignmentData),
-  delete: (id) => api.delete(`/assignments/${id}`),
-  submit: (id, submissionData) => api.post(`/assignments/${id}/submit`, submissionData),
-  getSubmissions: (id) => api.get(`/assignments/${id}/submissions`),
-  grade: (id, submissionId, gradeData) => api.post(`/assignments/${id}/submissions/${submissionId}/grade`, gradeData),
-}
-
-// Quiz API calls
-export const quizAPI = {
-  getByCourse: (courseId) => api.get(`/courses/${courseId}/quizzes`),
-  create: (courseId, quizData) => api.post(`/courses/${courseId}/quizzes`, quizData),
-  update: (id, quizData) => api.put(`/quizzes/${id}`, quizData),
-  delete: (id) => api.delete(`/quizzes/${id}`),
-  take: (id, answers) => api.post(`/quizzes/${id}/take`, answers),
-  getResults: (id) => api.get(`/quizzes/${id}/results`),
-}
-
-// User API calls
-export const userAPI = {
-  getAll: () => api.get('/users'),
-  getById: (id) => api.get(`/users/${id}`),
-  update: (id, userData) => api.put(`/users/${id}`, userData),
-  delete: (id) => api.delete(`/users/${id}`),
-  updateRole: (id, role) => api.patch(`/users/${id}/role`, { role }),
+export const assessmentsAPI = {
+  listByChapter: (chapterId) => api.get('/assessments', { params: { chapterId } }),
+  get: (id) => api.get(`/assessments/${id}`),
+  createForChapter: (chapterId, payload) =>
+    api.post(`/chapters/${chapterId}/assessments`, payload),
+  update: (id, payload) => api.patch(`/assessments/${id}`, payload),
+  remove: (id) => api.delete(`/assessments/${id}`),
 }
 
 export default api
