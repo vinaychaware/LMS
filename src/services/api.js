@@ -2,10 +2,10 @@
 import axios from 'axios'
 import useAuthStore from '../store/useAuthStore'
 
-// ======= Local testing base URL (switch to env in prod) =======
-export const API_BASE = 'http://localhost:5000'
 
-// ======= Safe fallback thumbnail (no external host) ==========
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+
+
 export const FALLBACK_THUMB =
   'data:image/svg+xml;utf8,' +
   encodeURIComponent(
@@ -16,7 +16,7 @@ export const FALLBACK_THUMB =
      </svg>`
   )
 
-// ======= Optional helper if you need manual headers ==========
+
 export const makeHeaders = () => {
   const token = useAuthStore.getState().token
   const h = {
@@ -29,49 +29,49 @@ export const makeHeaders = () => {
   return h
 }
 
-// ======= Shared axios instance ===============================
+
 const api = axios.create({
   baseURL: `${API_BASE}/api`,
   headers: { 'Content-Type': 'application/json' },
 })
 
-// Inject token + no-cache on every request
+
 api.interceptors.request.use((config) => {
   const token = useAuthStore.getState().token
   if (token) config.headers.Authorization = `Bearer ${token}`
 
-  // dev: defeat caches so you always see fresh data
+
   config.headers['Cache-Control'] = 'no-cache'
   config.headers['Pragma'] = 'no-cache'
   config.headers['Expires'] = '0'
   return config
 })
 
-// Handle 401s globally
+
 api.interceptors.response.use(
   (res) => res,
   (err) => {
     if (err?.response?.status === 401) {
       useAuthStore.getState().logout?.()
-      // hard redirect so app state resets
+
       window.location.href = '/login'
     }
     return Promise.reject(err)
   }
 )
 
-// ======= Small util: File -> base64 (for image fields) =======
+
 export async function fileToBase64(file) {
   if (!file) return ''
   return await new Promise((resolve, reject) => {
     const reader = new FileReader()
     reader.onload = () => resolve(String(reader.result))
     reader.onerror = reject
-    reader.readAsDataURL(file) // produces "data:image/...;base64,XXXX"
+    reader.readAsDataURL(file) 
   })
 }
 
-// ======= API groups ==========================================
+
 export const authAPI = {
   login: (data) => api.post('/auth/login', data),
   logout: () => api.post('/auth/logout'),
@@ -83,10 +83,10 @@ export const coursesAPI = {
   list: () => api.get('/courses'),
   get: (id) => api.get(`/courses/${id}`),
 
-  // Minimal creator; pass your full payload as needed
+
   create: (payload) => api.post('/courses', payload),
 
-  // Full “create course + chapters + quiz” backend route (if you added /courses/full)
+ 
   createFull: (payload) => api.post('/courses/full', payload),
 
   update: (id, payload) => api.patch(`/courses/${id}`, payload),

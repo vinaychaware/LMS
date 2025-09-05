@@ -523,7 +523,7 @@ const StudentDashboardPage = () => {
                                 size="sm"
                                 variant="outline"
                                 className="w-full sm:w-auto"
-                                className="w-full sm:w-auto"
+                              
                                 onClick={() => {
                                   setSelectedCourse(course);
                                   setShowCourseModal(true);
@@ -535,7 +535,7 @@ const StudentDashboardPage = () => {
                               <Button
                                 size="sm"
                                 className="w-full sm:w-auto"
-                                className="w-full sm:w-auto"
+                             
                                 onClick={() => {
                                   if (nextAction.type === "ai-interview") {
                                     startAIInterview(course.id);
@@ -676,7 +676,7 @@ const StudentDashboardPage = () => {
                             }
                             size="sm"
                             className="self-start"
-                            className="self-start"
+                           
                           >
                             {test.type}
                           </Badge>
@@ -691,10 +691,7 @@ const StudentDashboardPage = () => {
                             onClick={() => startTest(test)}
                             className="w-full sm:w-auto"
                           >
-                            size="sm" 
-                            onClick={() => startTest(test)}
-                            className="w-full sm:w-auto"
-                          >
+                          
                             Start Test
                           </Button>
                         </div>
@@ -797,7 +794,7 @@ const StudentDashboardPage = () => {
                             variant={test.result.passed ? "success" : "danger"}
                             size="sm"
                             className="self-start sm:self-center"
-                            className="self-start sm:self-center"
+                        
                           >
                             {test.result.score}%
                           </Badge>
