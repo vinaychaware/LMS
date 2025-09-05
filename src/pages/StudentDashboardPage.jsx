@@ -344,15 +344,15 @@ const StudentDashboardPage = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome Header */}
         <div className="mb-8">
-          <div className="flex items-center space-x-4 mb-4">
-            <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center">
+          <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-4 mb-4">
+            <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0">
               <GraduationCap size={24} className="text-primary-600" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
                 Welcome back, {user?.name}!
               </h1>
-              <p className="text-gray-600">
+              <p className="text-sm sm:text-base text-gray-600">
                 Continue your learning journey and unlock new opportunities.
               </p>
             </div>
@@ -360,17 +360,17 @@ const StudentDashboardPage = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 lg:gap-6 mb-8">
           <Card className="p-6">
             <div className="flex items-center">
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+              <div className="w-10 sm:w-12 h-10 sm:h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                 <BookOpen size={24} className="text-blue-600" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">
+              <div className="ml-2 sm:ml-4">
+                <p className="text-xs sm:text-sm font-medium text-gray-600">
                   Assigned Courses
                 </p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-lg sm:text-2xl font-bold text-gray-900">
                   {stats.totalCourses}
                 </p>
               </div>
@@ -379,14 +379,14 @@ const StudentDashboardPage = () => {
 
           <Card className="p-6">
             <div className="flex items-center">
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+              <div className="w-10 sm:w-12 h-10 sm:h-12 bg-green-100 rounded-lg flex items-center justify-center">
                 <CheckCircle size={24} className="text-green-600" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">
+              <div className="ml-2 sm:ml-4">
+                <p className="text-xs sm:text-sm font-medium text-gray-600">
                   Chapters Done
                 </p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-lg sm:text-2xl font-bold text-gray-900">
                   {stats.completedChapters}
                 </p>
               </div>
@@ -395,14 +395,14 @@ const StudentDashboardPage = () => {
 
           <Card className="p-6">
             <div className="flex items-center">
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+              <div className="w-10 sm:w-12 h-10 sm:h-12 bg-purple-100 rounded-lg flex items-center justify-center">
                 <BookMarked size={24} className="text-purple-600" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">
+              <div className="ml-2 sm:ml-4">
+                <p className="text-xs sm:text-sm font-medium text-gray-600">
                   Modules Done
                 </p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-lg sm:text-2xl font-bold text-gray-900">
                   {stats.completedModules}
                 </p>
               </div>
@@ -411,14 +411,14 @@ const StudentDashboardPage = () => {
 
           <Card className="p-6">
             <div className="flex items-center">
-              <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+              <div className="w-10 sm:w-12 h-10 sm:h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
                 <Award size={24} className="text-yellow-600" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">
+              <div className="ml-2 sm:ml-4">
+                <p className="text-xs sm:text-sm font-medium text-gray-600">
                   Test Average
                 </p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-lg sm:text-2xl font-bold text-gray-900">
                   {stats.averageTestScore}%
                 </p>
               </div>
@@ -427,12 +427,12 @@ const StudentDashboardPage = () => {
 
           <Card className="p-6">
             <div className="flex items-center">
-              <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
+              <div className="w-10 sm:w-12 h-10 sm:h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
                 <Clock size={24} className="text-indigo-600" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Time Spent</p>
-                <p className="text-2xl font-bold text-gray-900">
+              <div className="ml-2 sm:ml-4">
+                <p className="text-xs sm:text-sm font-medium text-gray-600">Time Spent</p>
+                <p className="text-lg sm:text-2xl font-bold text-gray-900">
                   {formatTimeSpent(stats.totalTimeSpent)}
                 </p>
               </div>
@@ -441,14 +441,14 @@ const StudentDashboardPage = () => {
 
           <Card className="p-6">
             <div className="flex items-center">
-              <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+              <div className="w-10 sm:w-12 h-10 sm:h-12 bg-red-100 rounded-lg flex items-center justify-center">
                 <Trophy size={24} className="text-red-600" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">
+              <div className="ml-2 sm:ml-4">
+                <p className="text-xs sm:text-sm font-medium text-gray-600">
                   Certificates
                 </p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-lg sm:text-2xl font-bold text-gray-900">
                   {stats.certificatesEarned}
                 </p>
               </div>
@@ -456,7 +456,7 @@ const StudentDashboardPage = () => {
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
           {/* My Courses */}
           <div className="lg:col-span-2">
             <Card>
@@ -487,12 +487,12 @@ const StudentDashboardPage = () => {
                       return (
                         <div
                           key={course.id}
-                          className="border border-gray-200 rounded-lg p-6 hover:shadow-sm transition-shadow"
+                          className="border border-gray-200 rounded-lg p-4 sm:p-6 hover:shadow-sm transition-shadow"
                         >
-                          <div className="flex items-start justify-between mb-4">
+                          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between space-y-4 sm:space-y-0 mb-4">
                             <div className="flex-1">
-                              <div className="flex items-center space-x-3 mb-2">
-                                <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100">
+                              <div className="flex items-center space-x-3 mb-3">
+                                <div className="w-10 sm:w-12 h-10 sm:h-12 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
                                   <img
                                     src={course.thumbnail}
                                     alt={course.title}
@@ -500,13 +500,13 @@ const StudentDashboardPage = () => {
                                   />
                                 </div>
                                 <div>
-                                  <h3 className="text-lg font-semibold text-gray-900">
+                                  <h3 className="text-base sm:text-lg font-semibold text-gray-900">
                                     {course.title}
                                   </h3>
                                   <p className="text-sm text-gray-600">
                                     by {course.instructor.name}
                                   </p>
-                                  <div className="flex items-center space-x-2 mt-1">
+                                  <div className="flex flex-wrap items-center gap-1 sm:gap-2 mt-1">
                                     <Badge variant="info" size="sm">
                                       {course.level}
                                     </Badge>
@@ -518,10 +518,12 @@ const StudentDashboardPage = () => {
                               </div>
                             </div>
 
-                            <div className="flex space-x-2">
+                            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
                               <Button
                                 size="sm"
                                 variant="outline"
+                                className="w-full sm:w-auto"
+                                className="w-full sm:w-auto"
                                 onClick={() => {
                                   setSelectedCourse(course);
                                   setShowCourseModal(true);
@@ -532,6 +534,8 @@ const StudentDashboardPage = () => {
                               </Button>
                               <Button
                                 size="sm"
+                                className="w-full sm:w-auto"
+                                className="w-full sm:w-auto"
                                 onClick={() => {
                                   if (nextAction.type === "ai-interview") {
                                     startAIInterview(course.id);
@@ -572,7 +576,7 @@ const StudentDashboardPage = () => {
                           </div>
 
                           <div className="space-y-3">
-                            <div className="flex items-center justify-between text-sm">
+                            <div className="flex items-center justify-between text-xs sm:text-sm">
                               <span className="text-gray-600">
                                 Overall Progress
                               </span>
@@ -582,7 +586,7 @@ const StudentDashboardPage = () => {
                             </div>
                             <Progress value={courseProgress} size="sm" />
 
-                            <div className="grid grid-cols-3 gap-4 text-sm">
+                            <div className="grid grid-cols-3 gap-2 sm:gap-4 text-xs sm:text-sm">
                               <div className="text-center">
                                 <div className="font-medium text-gray-900">
                                   {progress?.completedChapters?.length || 0}/
@@ -619,7 +623,7 @@ const StudentDashboardPage = () => {
           </div>
 
           {/* Right Sidebar */}
-          <div className="space-y-6">
+          <div className="space-y-4 lg:space-y-6">
             {/* Available Tests */}
             <Card>
               <Card.Header>
@@ -650,11 +654,11 @@ const StudentDashboardPage = () => {
                     {availableTests.map((test) => (
                       <div
                         key={test.id}
-                        className="p-3 bg-blue-50 rounded-lg border border-blue-200"
+                        className="p-3 sm:p-4 bg-blue-50 rounded-lg border border-blue-200"
                       >
-                        <div className="flex items-start justify-between mb-2">
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between space-y-2 sm:space-y-0 mb-2">
                           <div>
-                            <h4 className="text-sm font-medium text-gray-900">
+                            <h4 className="text-sm sm:text-base font-medium text-gray-900">
                               {test.title}
                             </h4>
                             <p className="text-xs text-gray-600">
@@ -671,16 +675,26 @@ const StudentDashboardPage = () => {
                               test.type === "course" ? "danger" : "warning"
                             }
                             size="sm"
+                            className="self-start"
+                            className="self-start"
                           >
                             {test.type}
                           </Badge>
                         </div>
-                        <div className="flex items-center justify-between">
-                          <div className="text-xs text-gray-500">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+                          <div className="text-xs text-gray-500 flex-1">
                             {test.questions} questions • {test.duration} min •{" "}
                             {test.passingScore}% to pass
                           </div>
-                          <Button size="sm" onClick={() => startTest(test)}>
+                          <Button 
+                            size="sm" 
+                            onClick={() => startTest(test)}
+                            className="w-full sm:w-auto"
+                          >
+                            size="sm" 
+                            onClick={() => startTest(test)}
+                            className="w-full sm:w-auto"
+                          >
                             Start Test
                           </Button>
                         </div>
@@ -710,8 +724,8 @@ const StudentDashboardPage = () => {
 
                       return (
                         <div key={courseId} className="p-3 rounded-lg border">
-                          <div className="flex items-center justify-between mb-2">
-                            <h4 className="text-sm font-medium text-gray-900">
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0 mb-2">
+                            <h4 className="text-sm font-medium text-gray-900 flex-1">
                               {course.title}
                             </h4>
                             {status.completed ? (
@@ -730,7 +744,7 @@ const StudentDashboardPage = () => {
                           </div>
 
                           {status.completed ? (
-                            <div className="text-xs text-gray-600">
+                            <div className="text-xs text-gray-600 mt-2">
                               Score: {status.result?.overallScore}% • Completed{" "}
                               {new Date(
                                 status.result?.completedAt
@@ -739,7 +753,7 @@ const StudentDashboardPage = () => {
                           ) : status.eligible ? (
                             <Button
                               size="sm"
-                              className="w-full mt-2"
+                              className="w-full sm:w-auto mt-2"
                               onClick={() => startAIInterview(courseId)}
                             >
                               <Brain size={14} className="mr-1" />
@@ -774,14 +788,16 @@ const StudentDashboardPage = () => {
                 ) : (
                   <div className="space-y-3">
                     {completedTests.slice(0, 5).map((test) => (
-                      <div key={test.id} className="p-3 bg-gray-50 rounded-lg">
-                        <div className="flex items-center justify-between mb-1">
-                          <h4 className="text-sm font-medium text-gray-900">
+                      <div key={test.id} className="p-3 sm:p-4 bg-gray-50 rounded-lg">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-1 sm:space-y-0 mb-1">
+                          <h4 className="text-sm font-medium text-gray-900 flex-1">
                             {test.title}
                           </h4>
                           <Badge
                             variant={test.result.passed ? "success" : "danger"}
                             size="sm"
+                            className="self-start sm:self-center"
+                            className="self-start sm:self-center"
                           >
                             {test.result.score}%
                           </Badge>
@@ -789,7 +805,7 @@ const StudentDashboardPage = () => {
                         <p className="text-xs text-gray-600">
                           {test.courseTitle}
                         </p>
-                        <div className="flex items-center justify-between mt-2">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-1 sm:space-y-0 mt-2">
                           <span className="text-xs text-gray-500">
                             {new Date(
                               test.result.attemptedAt
@@ -821,11 +837,11 @@ const StudentDashboardPage = () => {
               <Card.Content>
                 <div className="space-y-4">
                   <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-gray-700">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-1 sm:space-y-0 mb-2">
+                      <span className="text-xs sm:text-sm font-medium text-gray-700">
                         Complete all assigned courses
                       </span>
-                      <span className="text-sm text-gray-500">
+                      <span className="text-xs sm:text-sm text-gray-500">
                         {
                           Object.values(aiInterviewStatus).filter(
                             (s) => s.completed
@@ -850,11 +866,11 @@ const StudentDashboardPage = () => {
                   </div>
 
                   <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-gray-700">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-1 sm:space-y-0 mb-2">
+                      <span className="text-xs sm:text-sm font-medium text-gray-700">
                         Maintain 80%+ test average
                       </span>
-                      <span className="text-sm text-gray-500">
+                      <span className="text-xs sm:text-sm text-gray-500">
                         {stats.averageTestScore}%
                       </span>
                     </div>
@@ -868,11 +884,11 @@ const StudentDashboardPage = () => {
                   </div>
 
                   <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-gray-700">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-1 sm:space-y-0 mb-2">
+                      <span className="text-xs sm:text-sm font-medium text-gray-700">
                         Study 10 hours this week
                       </span>
-                      <span className="text-sm text-gray-500">
+                      <span className="text-xs sm:text-sm text-gray-500">
                         {formatTimeSpent(stats.totalTimeSpent % 600)}/10h
                       </span>
                     </div>

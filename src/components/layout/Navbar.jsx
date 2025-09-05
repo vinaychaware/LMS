@@ -59,7 +59,7 @@ const Navbar = () => {
               <img
                 src={logo}
                 alt="Pugarch Logo"
-                className="h-16 sm:h-20 md:h-28 lg:h-36 w-auto object-contain mx-auto"
+                className="h-8 sm:h-10 md:h-12 w-auto object-contain"
               />
 
             </div>
@@ -71,7 +71,7 @@ const Navbar = () => {
 
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="hidden lg:flex items-center space-x-6 xl:space-x-8">
             {isAuthenticated ? (
               <>
                 {userRole === 'superadmin' ? (
@@ -144,14 +144,14 @@ const Navbar = () => {
           </div>
 
           {/* User Menu / Auth Buttons */}
-          <div className="hidden md:flex items-center space-x-4">
+          <div className="hidden lg:flex items-center space-x-3 xl:space-x-4">
             {isAuthenticated ? (
-              <div className="flex items-center space-x-3">
-                <div className="flex items-center space-x-2 text-sm text-gray-700">
+              <div className="flex items-center space-x-2 xl:space-x-3">
+                <div className="hidden xl:flex items-center space-x-2 text-sm text-gray-700">
                   {getRoleIcon()}
                   <span>{getRoleLabel()}</span>
                 </div>
-                <div className="text-sm text-gray-900 font-medium">
+                <div className="text-sm text-gray-900 font-medium max-w-32 truncate">
                   {user?.name}
                 </div>
                 <Button
@@ -180,7 +180,7 @@ const Navbar = () => {
           </div>
 
           {/* Mobile menu button */}
-          <div className="md:hidden">
+          <div className="lg:hidden">
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="text-gray-700 hover:text-gray-900"
@@ -193,7 +193,7 @@ const Navbar = () => {
 
       {/* Mobile Navigation */}
       {isMobileMenuOpen && (
-        <div className="md:hidden">
+        <div className="lg:hidden">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t border-gray-200">
             {isAuthenticated ? (
               <>
@@ -254,7 +254,15 @@ const Navbar = () => {
                 </Link>
                 <div className="border-t border-gray-200 pt-4 mt-4">
                   <div className="px-3 py-2 text-sm text-gray-600">
-                    Signed in as {user?.name} ({getRoleLabel()})
+                    <div className="flex items-center space-x-2">
+                      {getRoleIcon()}
+                      <span>Signed in as {user?.name}</span>
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">({getRoleLabel()})</div>
+                      {getRoleIcon()}
+                      <span>Signed in as {user?.name}</span>
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">({getRoleLabel()})</div>
                   </div>
                   <button
                     onClick={handleLogout}

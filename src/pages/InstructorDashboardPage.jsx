@@ -236,29 +236,33 @@ const InstructorDashboardPage = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome Header */}
         <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+            <div className="flex items-center space-x-3 sm:space-x-4">
+              <div className="w-10 sm:w-12 h-10 sm:h-12 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0">
                 <BookOpen size={24} className="text-primary-600" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
                   Instructor Dashboard
                 </h1>
-                <p className="text-gray-600">
+                <p className="text-sm sm:text-base text-gray-600">
                   Manage your courses and track student progress.
                 </p>
               </div>
             </div>
-            <div className="flex space-x-2">
+            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
               <Button 
                 variant="outline"
+                className="w-full sm:w-auto"
                 onClick={() => setShowAnalyticsModal(true)}
               >
                 <BarChart3 size={16} className="mr-2" />
                 Analytics
               </Button>
-             <Link to="/courses/create"> <Button onClick={createNewCourse}>
+             <Link to="/courses/create"> <Button 
+                onClick={createNewCourse}
+                className="w-full sm:w-auto"
+              >
                 <Plus size={16} className="mr-2" />
                 Create Course
               </Button></Link>
@@ -267,28 +271,28 @@ const InstructorDashboardPage = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-8">
           <Card className="p-6">
             <div className="flex items-center">
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+              <div className="w-10 sm:w-12 h-10 sm:h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                 <BookOpen size={24} className="text-blue-600" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">My Courses</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.totalCourses}</p>
-                <p className="text-xs text-gray-500">{stats.totalModules} modules, {stats.totalChapters} chapters</p>
+              <div className="ml-2 sm:ml-4">
+                <p className="text-xs sm:text-sm font-medium text-gray-600">My Courses</p>
+                <p className="text-lg sm:text-2xl font-bold text-gray-900">{stats.totalCourses}</p>
+                <p className="text-xs text-gray-500 hidden sm:block">{stats.totalModules} modules, {stats.totalChapters} chapters</p>
               </div>
             </div>
           </Card>
 
           <Card className="p-6">
             <div className="flex items-center">
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+              <div className="w-10 sm:w-12 h-10 sm:h-12 bg-green-100 rounded-lg flex items-center justify-center">
                 <Users size={24} className="text-green-600" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">My Students</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.totalStudents}</p>
+              <div className="ml-2 sm:ml-4">
+                <p className="text-xs sm:text-sm font-medium text-gray-600">My Students</p>
+                <p className="text-lg sm:text-2xl font-bold text-gray-900">{stats.totalStudents}</p>
                 <p className="text-xs text-gray-500">{stats.activeStudents} active</p>
               </div>
             </div>
@@ -296,47 +300,52 @@ const InstructorDashboardPage = () => {
 
           <Card className="p-6">
             <div className="flex items-center">
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+              <div className="w-10 sm:w-12 h-10 sm:h-12 bg-purple-100 rounded-lg flex items-center justify-center">
                 <TrendingUp size={24} className="text-purple-600" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Avg Progress</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.averageProgress}%</p>
-                <p className="text-xs text-gray-500">Across all students</p>
+              <div className="ml-2 sm:ml-4">
+                <p className="text-xs sm:text-sm font-medium text-gray-600">Avg Progress</p>
+                <p className="text-lg sm:text-2xl font-bold text-gray-900">{stats.averageProgress}%</p>
+                <p className="text-xs text-gray-500 hidden sm:block">Across all students</p>
               </div>
             </div>
           </Card>
 
           <Card className="p-6">
             <div className="flex items-center">
-              <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+              <div className="w-10 sm:w-12 h-10 sm:h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
                 <Award size={24} className="text-yellow-600" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Test Average</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.averageTestScore}%</p>
-                <p className="text-xs text-gray-500">{stats.testsGraded} tests graded</p>
+              <div className="ml-2 sm:ml-4">
+                <p className="text-xs sm:text-sm font-medium text-gray-600">Test Average</p>
+                <p className="text-lg sm:text-2xl font-bold text-gray-900">{stats.averageTestScore}%</p>
+                <p className="text-xs text-gray-500">{stats.testsGraded} graded</p>
               </div>
             </div>
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
           {/* My Courses */}
           <div className="lg:col-span-2">
             <Card>
-              <Card.Header className="flex items-center justify-between">
+              <Card.Header className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
                 <Card.Title>My Courses</Card.Title>
-                <div className="flex space-x-2">
+                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
                   <Button 
                     size="sm" 
                     variant="outline"
+                    className="w-full sm:w-auto"
                     onClick={() => setShowAnalyticsModal(true)}
                   >
                     <BarChart3 size={16} className="mr-1" />
                     Analytics
                   </Button>
-                     <Link to="/courses/create">  <Button size="sm" onClick={createNewCourse}>
+                     <Link to="/courses/create">  <Button 
+                    size="sm" 
+                    onClick={createNewCourse}
+                    className="w-full sm:w-auto"
+                  >
                     <Plus size={16} className="mr-2" />
                     Create Course
                   </Button></Link>
@@ -350,7 +359,10 @@ const InstructorDashboardPage = () => {
                     <p className="text-gray-600 mb-4">
                       Contact admin to get courses assigned or create your own.
                     </p>
-                       <Link to="/courses/create">  <Button onClick={createNewCourse}>
+                       <Link to="/courses/create">  <Button 
+                      onClick={createNewCourse}
+                      className="w-full sm:w-auto"
+                    >
                       Create Your First Course
                     </Button></Link>
                   </div>
@@ -367,11 +379,11 @@ const InstructorDashboardPage = () => {
                         ) / enrolledStudents.length : 0
                       
                       return (
-                        <div key={course.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
-                          <div className="flex items-start justify-between">
+                        <div key={course.id} className="border border-gray-200 rounded-lg p-4 sm:p-6 hover:shadow-sm transition-shadow">
+                          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between space-y-4 lg:space-y-0">
                             <div className="flex-1">
-                              <div className="flex items-center space-x-3 mb-3">
-                                <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100">
+                              <div className="flex items-center space-x-3 mb-4">
+                                <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
                                   <img 
                                     src={course.thumbnail} 
                                     alt={course.title}
@@ -379,13 +391,13 @@ const InstructorDashboardPage = () => {
                                   />
                                 </div>
                                 <div className="flex-1">
-                                  <div className="flex items-center space-x-2 mb-1">
-                                    <h3 className="font-medium text-gray-900">{course.title}</h3>
+                                  <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-2 mb-1">
+                                    <h3 className="text-base sm:text-lg font-medium text-gray-900">{course.title}</h3>
                                     <Badge variant={course.status === 'published' ? 'success' : 'warning'} size="sm">
                                       {course.status}
                                     </Badge>
                                   </div>
-                                  <div className="flex items-center space-x-4 text-sm text-gray-500">
+                                  <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-500">
                                     <span className="flex items-center space-x-1">
                                       <Users size={14} />
                                       <span>{enrolledStudents.length} students</span>
@@ -402,17 +414,18 @@ const InstructorDashboardPage = () => {
                                 </div>
                               </div>
                               
-                              <div className="ml-15 space-y-2">
-                                <div className="flex items-center justify-between text-sm">
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between text-xs sm:text-sm">
                                   <span className="text-gray-600">Average Student Progress</span>
                                   <span className="font-medium text-gray-900">{Math.round(avgProgress)}%</span>
                                 </div>
                                 <Progress value={avgProgress} size="sm" />
                                 
-                                <div className="flex items-center justify-between text-sm text-gray-500">
+                                <div className="flex flex-wrap items-center justify-between gap-2 text-xs sm:text-sm text-gray-500">
                                   <div className="flex items-center space-x-1">
                                     <Activity size={14} />
-                                    <span>Updated {new Date(course.updatedAt).toLocaleDateString()}</span>
+                                    <span className="hidden sm:inline">Updated {new Date(course.updatedAt).toLocaleDateString()}</span>
+                                    <span className="sm:hidden">Updated</span>
                                   </div>
                                   <div className="flex items-center space-x-1">
                                     <FileText size={14} />
@@ -422,10 +435,11 @@ const InstructorDashboardPage = () => {
                               </div>
                             </div>
                             
-                            <div className="flex space-x-2">
+                            <div className="flex flex-wrap gap-2 lg:flex-col lg:space-y-2">
                               <Button 
                                 variant="outline" 
                                 size="sm"
+                                className="flex-1 lg:flex-none"
                                 onClick={() => handleCourseAction(course.id, 'edit')}
                               >
                                 <Edit size={16} />
@@ -433,6 +447,7 @@ const InstructorDashboardPage = () => {
                               <Button 
                                 variant="outline" 
                                 size="sm"
+                                className="flex-1 lg:flex-none"
                                 onClick={() => handleCourseAction(course.id, 'view')}
                               >
                                 <Eye size={16} />
@@ -440,6 +455,7 @@ const InstructorDashboardPage = () => {
                               <Button 
                                 variant="outline" 
                                 size="sm"
+                                className="flex-1 lg:flex-none"
                                 onClick={() => handleCourseAction(course.id, 'students')}
                               >
                                 <Users size={16} />
@@ -447,6 +463,7 @@ const InstructorDashboardPage = () => {
                               <Button 
                                 variant="outline" 
                                 size="sm"
+                                className="flex-1 lg:flex-none"
                                 onClick={() => handleCourseAction(course.id, 'analytics')}
                               >
                                 <BarChart3 size={16} />
@@ -463,10 +480,10 @@ const InstructorDashboardPage = () => {
           </div>
 
           {/* Right Sidebar */}
-          <div className="space-y-6">
+          <div className="space-y-4 lg:space-y-6">
             {/* Student Progress Overview */}
             <Card>
-              <Card.Header className="flex items-center justify-between">
+              <Card.Header className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
                 <Card.Title className="flex items-center">
                   <Users size={20} className="mr-2 text-green-500" />
                   Student Progress
@@ -474,6 +491,7 @@ const InstructorDashboardPage = () => {
                 <Button 
                   size="sm" 
                   variant="outline"
+                  className="w-full sm:w-auto"
                   onClick={() => setShowStudentModal(true)}
                 >
                   View All
@@ -496,7 +514,7 @@ const InstructorDashboardPage = () => {
                           className="flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer"
                           onClick={() => viewStudentDetails(student)}
                         >
-                          <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 relative">
+                          <div className="w-8 sm:w-10 h-8 sm:h-10 rounded-full overflow-hidden bg-gray-100 relative flex-shrink-0">
                             <img 
                               src={student.avatar} 
                               alt={student.name}
@@ -508,16 +526,16 @@ const InstructorDashboardPage = () => {
                             }`}></div>
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-900 truncate">
+                            <p className="text-xs sm:text-sm font-medium text-gray-900 truncate">
                               {student.name}
                             </p>
                             <p className="text-xs text-gray-500 truncate">
                               {student.assignedCourses.length} courses assigned
                             </p>
                           </div>
-                          <div className="text-right">
-                            <div className="text-sm font-medium text-gray-900">{Math.round(avgProgress)}%</div>
-                            <div className="w-16 bg-gray-200 rounded-full h-1.5 mt-1">
+                          <div className="text-right flex-shrink-0">
+                            <div className="text-xs sm:text-sm font-medium text-gray-900">{Math.round(avgProgress)}%</div>
+                            <div className="w-12 sm:w-16 bg-gray-200 rounded-full h-1.5 mt-1">
                               <div 
                                 className="bg-primary-600 h-1.5 rounded-full" 
                                 style={{ width: `${avgProgress}%` }}
@@ -581,7 +599,7 @@ const InstructorDashboardPage = () => {
                 <Card.Title>Quick Actions</Card.Title>
               </Card.Header>
               <Card.Content className="space-y-3">
-                   <Link to="/courses/create">  <Button 
+                <Link to="/courses/create">  <Button 
                   className="w-full justify-start"
                   onClick={createNewCourse}
                 >

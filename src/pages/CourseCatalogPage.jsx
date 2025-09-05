@@ -210,18 +210,18 @@ const CourseCatalogPage = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-primary-600 to-purple-600 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
           <div className="text-center">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
               Discover Your Next Learning Adventure
             </h1>
-            <p className="text-xl text-primary-100 max-w-2xl mx-auto mb-8">
+            <p className="text-lg sm:text-xl text-primary-100 max-w-2xl mx-auto mb-6 sm:mb-8 px-4">
               Explore thousands of courses from expert instructors across multiple institutions. 
               Transform your skills and advance your career.
             </p>
             
             {/* Enhanced Search Bar */}
-            <div className="max-w-2xl mx-auto">
+            <div className="max-w-2xl mx-auto px-4">
               <div className="relative">
                 <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
                 <input
@@ -229,7 +229,7 @@ const CourseCatalogPage = () => {
                   placeholder="Search for courses, instructors, or topics..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-12 pr-4 py-4 text-gray-900 bg-white rounded-xl shadow-lg focus:ring-4 focus:ring-white/20 focus:outline-none text-lg"
+                  className="w-full pl-12 pr-4 py-3 sm:py-4 text-gray-900 bg-white rounded-xl shadow-lg focus:ring-4 focus:ring-white/20 focus:outline-none text-base sm:text-lg"
                 />
               </div>
             </div>
@@ -240,17 +240,19 @@ const CourseCatalogPage = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Filters and Controls */}
         <div className="mb-8">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
-            <div className="flex items-center space-x-4">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4 sm:mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
               <Button
                 variant={showFilters ? 'primary' : 'outline'}
+                className="w-full sm:w-auto"
+                className="w-full sm:w-auto"
                 onClick={() => setShowFilters(!showFilters)}
               >
                 <SlidersHorizontal size={16} className="mr-2" />
                 Filters
               </Button>
               
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center justify-between sm:justify-start space-x-2">
                 <span className="text-sm text-gray-600">View:</span>
                 <div className="flex border border-gray-300 rounded-lg overflow-hidden">
                   <button
@@ -269,13 +271,13 @@ const CourseCatalogPage = () => {
               </div>
             </div>
 
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
+            <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
+              <div className="flex items-center justify-between sm:justify-start space-x-2">
                 <span className="text-sm text-gray-600">Sort by:</span>
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="px-2 sm:px-3 py-1 sm:py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 >
                   {sortOptions.map((option) => (
                     <option key={option.id} value={option.id}>
@@ -285,7 +287,7 @@ const CourseCatalogPage = () => {
                 </select>
               </div>
               
-              <div className="text-sm text-gray-600">
+              <div className="text-xs sm:text-sm text-gray-600 text-center sm:text-left">
                 Showing {filteredCourses.length} of {courses.length} courses
               </div>
             </div>
@@ -293,9 +295,9 @@ const CourseCatalogPage = () => {
 
           {/* Expandable Filters */}
           {showFilters && (
-            <Card className="p-6 mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Filter Courses</h3>
+            <Card className="p-4 sm:p-6 mb-4 sm:mb-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0 mb-4">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900">Filter Courses</h3>
                 <div className="flex space-x-2">
                   <Button variant="outline" size="sm" onClick={clearFilters}>
                     Clear All
@@ -306,14 +308,14 @@ const CourseCatalogPage = () => {
                 </div>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                 {/* Category Filter */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
                   <select
                     value={selectedCategory}
                     onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                    className="w-full px-2 sm:px-3 py-1 sm:py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
                   >
                     {categories.map((category) => (
                       <option key={category.id} value={category.id}>
@@ -329,7 +331,7 @@ const CourseCatalogPage = () => {
                   <select
                     value={selectedLevel}
                     onChange={(e) => setSelectedLevel(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                    className="w-full px-2 sm:px-3 py-1 sm:py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
                   >
                     {levels.map((level) => (
                       <option key={level.id} value={level.id}>
@@ -345,7 +347,7 @@ const CourseCatalogPage = () => {
                   <select
                     value={selectedCollege}
                     onChange={(e) => setSelectedCollege(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                    className="w-full px-2 sm:px-3 py-1 sm:py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
                   >
                     <option value="all">All Institutions</option>
                     {mockData.colleges.map((college) => (
@@ -394,8 +396,8 @@ const CourseCatalogPage = () => {
         ) : (
           <div className={
             viewMode === 'grid' 
-              ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'
-              : 'space-y-6'
+              ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6'
+              : 'space-y-4 sm:space-y-6'
           }>
             {filteredCourses.map((course) => (
               viewMode === 'grid' ? (
