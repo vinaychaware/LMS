@@ -86,10 +86,10 @@ export default function SuperAdminDashboardPage() {
 
       const [overviewData, admins, instructors, students, courses] =
         await Promise.all([
-          fetchJSON(`${API_BASE}/api/overview`), 
-          fetchJSON(`${API_BASE}/api/admins`), 
-          fetchJSON(`${API_BASE}/api/instructors`), 
-          fetchJSON(`${API_BASE}/api/students`), 
+          fetchJSON(`${API_BASE}/api/superadmin/overview`), 
+          fetchJSON(`${API_BASE}/api/superadmin/admins`), 
+          fetchJSON(`${API_BASE}/api/superadmin/instructors`), 
+          fetchJSON(`${API_BASE}/api/superadmin/students`), 
           fetchJSON(`${API_BASE}/api/courses`),
         ]);
 
