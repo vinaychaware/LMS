@@ -16,7 +16,7 @@ import { toast } from 'react-hot-toast'
 import useAuthStore from '../store/useAuthStore'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
-
+import { API_BASE } from '../services/api'
 
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false)
