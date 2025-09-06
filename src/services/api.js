@@ -73,11 +73,12 @@ export async function fileToBase64(file) {
 
 
 export const authAPI = {
-  login: (data) => api.post('/auth/login', data),
-  logout: () => api.post('/auth/logout'),
-  refresh: () => api.post('/auth/refresh'),
-  profile: () => api.get('/auth/profile'),
-}
+  register: (data) => api.post("/api/users/register", data),
+  login:    (data) => api.post("/api/users/login", data),     
+  me:       () => api.get("/api/users/me"),
+  updateMe: (data) => api.put("/api/users/me", data),
+  deleteMe: (data) => api.delete("/api/users/me", { data }),
+};
 
 export const coursesAPI = {
   list: () => api.get('/courses'),
