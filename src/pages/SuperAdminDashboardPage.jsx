@@ -90,7 +90,7 @@ export default function SuperAdminDashboardPage() {
           fetchJSON(`${API_BASE}/api/admins`), 
           fetchJSON(`${API_BASE}/api/instructors`), 
           fetchJSON(`${API_BASE}/api/students`), 
-          fetchJSON(`${API_BASE}api//courses`),
+          fetchJSON(`${API_BASE}/api/courses`),
         ]);
 
       // Colleges not yet supported by backend
