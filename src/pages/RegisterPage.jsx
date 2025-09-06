@@ -299,7 +299,7 @@ const RegisterPage = () => {
                 type="submit"
                 className="w-full"
                 size="lg"
-                size="lg"
+                
                 loading={isLoading}
                 disabled={isLoading}
               >
