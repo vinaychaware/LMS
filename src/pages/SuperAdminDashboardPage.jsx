@@ -23,8 +23,8 @@ import {
   RotateCcw,
 } from "lucide-react";
 
-// ✅ Backend base URL for superadmin routes
-const API_BASE = "http://localhost:5000/api/superadmin";
+
+
 
 export default function SuperAdminDashboardPage() {
   const { token } = useAuthStore();
