@@ -16,7 +16,7 @@ import { toast } from 'react-hot-toast'
 import useAuthStore from '../store/useAuthStore'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
-import { API_BASE } from '../services/api'
+import { authAPI } from "../api"; 
 
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false)
@@ -71,14 +71,112 @@ const LoginPage = () => {
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
   }
 
-  // const fillDemoCredentials = (userType) => {
-  //   const user = mockUsers.find(u => u.role === userType)
-  //   if (user) {
-  //     setValue('email', user.email)
-  //     setValue('password', user.password)
-  //     toast.success(`${user.role.charAt(0).toUpperCase() + user.role.slice(1)} credentials filled!`)
-  //   }
-  // }
+
+
+// const onSubmit = async (data) => {
+//   if (isLocked) {
+//     toast.error(`Account locked. Try again in ${formatLockTime(lockTimer)}`)
+//     return
+//   }
+
+//   setIsLoading(true)
+//   try {
+   
+//     // const res = await fetch('http://localhost:5000/api/users/login', {
+//     //   method: 'POST',
+//     //   headers: {
+//     //     'Content-Type': 'application/json',
+//     //   },
+//     //   body: JSON.stringify({
+//     //     email: data.email,
+//     //     password: data.password,
+//     //   }),
+//     // })
+
+// const res = await fetch(`${process.env.API_BASE}/api/users/login`, {
+//   method: "POST",
+//   headers: {
+//     "Content-Type": "application/json",
+//   },
+//   body: JSON.stringify({
+//     email: data.email,
+//     password: data.password,
+//   }),
+// });
+
+//     const result = await res.json()
+//     if (!result?.success) {
+//       throw new Error(result?.message || 'Login failed')
+//     }
+
+//     const { user, token } = result.data
+
+//     // Normalize role and name for UI
+//     const apiRole = String(user.role || '').toUpperCase()
+//     const normalizedRole =
+//       apiRole === 'SUPER_ADMIN' ? 'superadmin' :
+//       apiRole === 'ADMIN' ? 'admin' :
+//       apiRole === 'INSTRUCTOR' ? 'instructor' :
+//       'student'
+
+//     const uiUser = {
+//       ...user,
+//       name: user.fullName || user.name || 'User',
+//       role: normalizedRole,
+//     }
+
+//     // Remember me persistence
+//     if (rememberMe) {
+//       localStorage.setItem('auth_token', token)
+//       localStorage.setItem('auth_user', JSON.stringify(uiUser))
+//     } else {
+//       sessionStorage.setItem('auth_token', token)
+//       sessionStorage.setItem('auth_user', JSON.stringify(uiUser))
+//     }
+
+//     // Save to store
+//     login(uiUser, token)
+//     setLoginAttempts(0)
+
+//     const roleGreeting = {
+//       superadmin: 'Welcome back, Super Administrator!',
+//       admin: 'Welcome back, Administrator!',
+//       instructor: 'Welcome back, Instructor!',
+//       student: 'Welcome back to your learning journey!',
+//     }
+//     toast.success(roleGreeting[normalizedRole] || `Welcome back, ${uiUser.name}!`)
+
+//     // Role-based navigation
+//     switch (normalizedRole) {
+//       case 'superadmin':
+//         navigate('/superadmin')
+//         break
+//       case 'admin':
+//         navigate('/admin')
+//         break
+//       case 'instructor':
+//         navigate('/instructor')
+//         break
+//       default:
+//         navigate('/dashboard')
+//     }
+//   } catch (err) {
+//     const message = err?.message || 'Invalid credentials'
+//     const newAttempts = loginAttempts + 1
+//     setLoginAttempts(newAttempts)
+
+//     if (newAttempts >= 5) {
+//       toast.error('Too many failed attempts. Account locked for 15 minutes.')
+//       startLockTimer()
+//     } else {
+//       toast.error(`${message}. ${5 - newAttempts} attempts remaining.`)
+//     }
+//   } finally {
+//     setIsLoading(false)
+//   }
+// }
+
+  
 
 const onSubmit = async (data) => {
   if (isLocked) {
@@ -88,92 +186,97 @@ const onSubmit = async (data) => {
 
   setIsLoading(true)
   try {
-   
-    // const res = await fetch('http://localhost:5000/api/users/login', {
-    //   method: 'POST',
-    //   headers: {
-    //     'Content-Type': 'application/json',
-    //   },
-    //   body: JSON.stringify({
-    //     email: data.email,
-    //     password: data.password,
-    //   }),
-    // })
+    // ---- LOGIN CALL (Axios via authAPI) ----
+    const res = await authAPI.login({
+      email: data.email,
+      password: data.password,
+    })
 
-const res = await fetch(`${process.env.API_BASE}/api/users/login`, {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify({
-    email: data.email,
-    password: data.password,
-  }),
-});
+    // Axios puts payload in res.data
+    const payload = res?.data
 
-    const result = await res.json()
-    if (!result?.success) {
-      throw new Error(result?.message || 'Login failed')
+    // Support both { success, data: { user, token } } and { user, token } shapes
+    const envelope = payload?.data ?? payload ?? {}
+    const user =
+      envelope.user ??
+      envelope.userInfo ??
+      envelope.profile ??
+      null
+    const token =
+      envelope.token ??
+      envelope.accessToken ??
+      envelope.jwt ??
+      null
+
+    // Optional strict success check if your API returns success boolean
+    if (payload?.success === false) {
+      throw new Error(payload?.message || "Login failed")
     }
 
-    const { user, token } = result.data
+    if (!user || !token) {
+      throw new Error("No user after sign in")
+    }
 
-    // Normalize role and name for UI
-    const apiRole = String(user.role || '').toUpperCase()
+    // ---- NORMALIZE ROLE & NAME ----
+    const apiRole = String(user.role || "").toUpperCase()
     const normalizedRole =
-      apiRole === 'SUPER_ADMIN' ? 'superadmin' :
-      apiRole === 'ADMIN' ? 'admin' :
-      apiRole === 'INSTRUCTOR' ? 'instructor' :
-      'student'
+      apiRole === "SUPER_ADMIN" ? "superadmin" :
+      apiRole === "ADMIN" ? "admin" :
+      apiRole === "INSTRUCTOR" ? "instructor" :
+      "student"
 
     const uiUser = {
       ...user,
-      name: user.fullName || user.name || 'User',
+      name: user.fullName || user.name || "User",
       role: normalizedRole,
     }
 
-    // Remember me persistence
+    // ---- PERSIST AUTH ----
     if (rememberMe) {
-      localStorage.setItem('auth_token', token)
-      localStorage.setItem('auth_user', JSON.stringify(uiUser))
+      localStorage.setItem("auth_token", token)
+      localStorage.setItem("auth_user", JSON.stringify(uiUser))
     } else {
-      sessionStorage.setItem('auth_token', token)
-      sessionStorage.setItem('auth_user', JSON.stringify(uiUser))
+      sessionStorage.setItem("auth_token", token)
+      sessionStorage.setItem("auth_user", JSON.stringify(uiUser))
     }
 
-    // Save to store
+    // ---- SAVE TO STORE ----
     login(uiUser, token)
     setLoginAttempts(0)
 
     const roleGreeting = {
-      superadmin: 'Welcome back, Super Administrator!',
-      admin: 'Welcome back, Administrator!',
-      instructor: 'Welcome back, Instructor!',
-      student: 'Welcome back to your learning journey!',
+      superadmin: "Welcome back, Super Administrator!",
+      admin: "Welcome back, Administrator!",
+      instructor: "Welcome back, Instructor!",
+      student: "Welcome back to your learning journey!",
     }
     toast.success(roleGreeting[normalizedRole] || `Welcome back, ${uiUser.name}!`)
 
-    // Role-based navigation
+    // ---- ROLE-BASED NAV ----
     switch (normalizedRole) {
-      case 'superadmin':
-        navigate('/superadmin')
+      case "superadmin":
+        navigate("/superadmin")
         break
-      case 'admin':
-        navigate('/admin')
+      case "admin":
+        navigate("/admin")
         break
-      case 'instructor':
-        navigate('/instructor')
+      case "instructor":
+        navigate("/instructor")
         break
       default:
-        navigate('/dashboard')
+        navigate("/dashboard")
     }
   } catch (err) {
-    const message = err?.message || 'Invalid credentials'
+    const message =
+      err?.response?.data?.message ||
+      err?.message ||
+      "Invalid credentials"
+
     const newAttempts = loginAttempts + 1
     setLoginAttempts(newAttempts)
 
     if (newAttempts >= 5) {
-      toast.error('Too many failed attempts. Account locked for 15 minutes.')
+      toast.error("Too many failed attempts. Account locked for 15 minutes.")
       startLockTimer()
     } else {
       toast.error(`${message}. ${5 - newAttempts} attempts remaining.`)
@@ -183,18 +286,6 @@ const res = await fetch(`${process.env.API_BASE}/api/users/login`, {
   }
 }
 
-  /** ============================
-   *  DEMO BUTTONS (COMMENTED OUT)
-   *  ============================
-   *  If you want the "Try Demo Accounts" UI back, uncomment this block
-   *  and the mock data above, plus the fillDemoCredentials function.
-   */
-  // const demoAccounts = [
-  //   { role: 'superadmin', title: 'Super Admin', description: 'Full system access', color: 'from-purple-500 to-purple-600', textColor: 'text-purple-600' },
-  //   { role: 'admin',      title: 'Admin',       description: 'College management', color: 'from-red-500 to-red-600',     textColor: 'text-red-600' },
-  //   { role: 'instructor', title: 'Instructor',  description: 'Course & student management', color: 'from-green-500 to-green-600', textColor: 'text-green-600' },
-  //   { role: 'student',    title: 'Student',     description: 'Learning dashboard', color: 'from-blue-500 to-blue-600',   textColor: 'text-blue-600' },
-  // ]
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
