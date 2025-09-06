@@ -100,7 +100,7 @@ const onSubmit = async (data) => {
     //   }),
     // })
 
-const res = await fetch(`${API_BASE}/api/users/login`, {
+const res = await fetch(`${process.env.API_BASE}/api/users/login`, {
   method: "POST",
   headers: {
     "Content-Type": "application/json",
