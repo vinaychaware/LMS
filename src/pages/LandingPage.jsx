@@ -148,7 +148,7 @@ Our platform equips students with the skills they need to succeed. Through indus
                 <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
                   <BookOpen size={20} className="text-white" />
                 </div>
-                <span className="text-xl font-bold">EduSphere</span>
+                <span className="text-xl font-bold">PugArch</span>
               </div>
               <p className="text-gray-400">
                 Transforming education through innovative technology and collaborative learning.
