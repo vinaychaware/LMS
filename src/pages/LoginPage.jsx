@@ -37,17 +37,7 @@ const LoginPage = () => {
     formState: { errors },
   } = useForm()
 
-  /** ============================
-   *  MOCK DATA (COMMENTED OUT)
-   *  ============================
-   *  Keeping this block commented so you can restore for local demo if needed.
-   */
-  // const mockUsers = [
-  //   { email: 'superadmin@edusphere.com', password: 'SuperAdmin123', name: 'Super Administrator', role: 'superadmin', id: '0' },
-  //   { email: 'student@demo.com',      password: 'Student123',     name: 'John Student',       role: 'student',    id: '3' },
-  //   { email: 'instructor@demo.com',   password: 'Instructor123',  name: 'Sarah Instructor',   role: 'instructor', id: '2' },
-  //   { email: 'admin@demo.com',        password: 'Admin123',       name: 'Dr. Sarah Johnson',  role: 'admin',      id: '1' },
-  // ]
+
 
   const startLockTimer = () => {
     setIsLocked(true)
@@ -73,111 +63,6 @@ const LoginPage = () => {
   }
 
 
-
-// const onSubmit = async (data) => {
-//   if (isLocked) {
-//     toast.error(`Account locked. Try again in ${formatLockTime(lockTimer)}`)
-//     return
-//   }
-
-//   setIsLoading(true)
-//   try {
-   
-//     // const res = await fetch('http://localhost:5000/api/users/login', {
-//     //   method: 'POST',
-//     //   headers: {
-//     //     'Content-Type': 'application/json',
-//     //   },
-//     //   body: JSON.stringify({
-//     //     email: data.email,
-//     //     password: data.password,
-//     //   }),
-//     // })
-
-// const res = await fetch(`${process.env.API_BASE}/api/users/login`, {
-//   method: "POST",
-//   headers: {
-//     "Content-Type": "application/json",
-//   },
-//   body: JSON.stringify({
-//     email: data.email,
-//     password: data.password,
-//   }),
-// });
-
-//     const result = await res.json()
-//     if (!result?.success) {
-//       throw new Error(result?.message || 'Login failed')
-//     }
-
-//     const { user, token } = result.data
-
-//     // Normalize role and name for UI
-//     const apiRole = String(user.role || '').toUpperCase()
-//     const normalizedRole =
-//       apiRole === 'SUPER_ADMIN' ? 'superadmin' :
-//       apiRole === 'ADMIN' ? 'admin' :
-//       apiRole === 'INSTRUCTOR' ? 'instructor' :
-//       'student'
-
-//     const uiUser = {
-//       ...user,
-//       name: user.fullName || user.name || 'User',
-//       role: normalizedRole,
-//     }
-
-//     // Remember me persistence
-//     if (rememberMe) {
-//       localStorage.setItem('auth_token', token)
-//       localStorage.setItem('auth_user', JSON.stringify(uiUser))
-//     } else {
-//       sessionStorage.setItem('auth_token', token)
-//       sessionStorage.setItem('auth_user', JSON.stringify(uiUser))
-//     }
-
-//     // Save to store
-//     login(uiUser, token)
-//     setLoginAttempts(0)
-
-//     const roleGreeting = {
-//       superadmin: 'Welcome back, Super Administrator!',
-//       admin: 'Welcome back, Administrator!',
-//       instructor: 'Welcome back, Instructor!',
-//       student: 'Welcome back to your learning journey!',
-//     }
-//     toast.success(roleGreeting[normalizedRole] || `Welcome back, ${uiUser.name}!`)
-
-//     // Role-based navigation
-//     switch (normalizedRole) {
-//       case 'superadmin':
-//         navigate('/superadmin')
-//         break
-//       case 'admin':
-//         navigate('/admin')
-//         break
-//       case 'instructor':
-//         navigate('/instructor')
-//         break
-//       default:
-//         navigate('/dashboard')
-//     }
-//   } catch (err) {
-//     const message = err?.message || 'Invalid credentials'
-//     const newAttempts = loginAttempts + 1
-//     setLoginAttempts(newAttempts)
-
-//     if (newAttempts >= 5) {
-//       toast.error('Too many failed attempts. Account locked for 15 minutes.')
-//       startLockTimer()
-//     } else {
-//       toast.error(`${message}. ${5 - newAttempts} attempts remaining.`)
-//     }
-//   } finally {
-//     setIsLoading(false)
-//   }
-// }
-
-  
 
 const onSubmit = async (data) => {
   if (isLocked) {
