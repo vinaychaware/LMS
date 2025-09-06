@@ -86,11 +86,11 @@ export default function SuperAdminDashboardPage() {
 
       const [overviewData, admins, instructors, students, courses] =
         await Promise.all([
-          fetchJSON(`${API_BASE}/overview`), // { overview, courseBreakdown, performanceMetrics }
-          fetchJSON(`${API_BASE}/admins`), // [{id,name,email,role,isActive,permissions}]
-          fetchJSON(`${API_BASE}/instructors`), // [{..., assignedCourses: []}]
-          fetchJSON(`${API_BASE}/students`), // [{..., assignedCourses: []}]
-          fetchJSON(`${API_BASE}/courses`), // courses with creatorId, managerId...
+          fetchJSON(`${API_BASE}/api/overview`), 
+          fetchJSON(`${API_BASE}/api/admins`), 
+          fetchJSON(`${API_BASE}/api/instructors`), 
+          fetchJSON(`${API_BASE}/api/students`), 
+          fetchJSON(`${API_BASE}api//courses`),
         ]);
 
       // Colleges not yet supported by backend
