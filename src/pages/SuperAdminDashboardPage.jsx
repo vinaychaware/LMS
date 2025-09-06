@@ -22,6 +22,10 @@ import {
   Save,
   RotateCcw,
 } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Plus, Shield } from "lucide-react"; 
+import { Button } from "@/components/ui/button"; 
+
 
 // ✅ Backend base URL for superadmin routes
 
@@ -273,21 +277,32 @@ export default function SuperAdminDashboardPage() {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
         {/* Header */}
-        <div className="mb-6 lg:mb-8">
-          <div className="flex items-center sm:items-start sm:flex-row gap-4">
-            <div className="w-12 h-12 flex-none bg-purple-100 rounded-full flex items-center justify-center">
-              <Shield size={24} className="text-purple-600" />
-            </div>
-            <div className="min-w-0">
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 truncate">
-                Super Admin Dashboard
-              </h1>
-              <p className="text-gray-600 mt-1 text-sm sm:text-base">
-                System-wide management and analytics across all institutions
-              </p>
-            </div>
-          </div>
-        </div>
+<div className="mb-6 lg:mb-8">
+  <div className="flex items-center justify-between">
+    {/* Left side: icon + title */}
+    <div className="flex items-center sm:items-start sm:flex-row gap-4">
+      <div className="w-12 h-12 flex-none bg-purple-100 rounded-full flex items-center justify-center">
+        <Shield size={24} className="text-purple-600" />
+      </div>
+      <div className="min-w-0">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 truncate">
+          Super Admin Dashboard
+        </h1>
+        <p className="text-gray-600 mt-1 text-sm sm:text-base">
+          System-wide management and analytics across all institutions
+        </p>
+      </div>
+    </div>
+
+    {/* Right side: button */}
+    <Link to="/courses/create">
+      <Button size="sm">
+        <Plus size={16} className="mr-2" />
+        Create Course
+      </Button>
+    </Link>
+  </div>
+</div>
 
         {/* Stats */}
         <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6 mb-6 lg:mb-8">
