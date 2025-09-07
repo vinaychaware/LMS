@@ -16,7 +16,7 @@ import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
 import useAuthStore from "../store/useAuthStore";
 import ImagePicker from "./Imagepicker";
-const API_BASE = "http://localhost:5000";
+import api, { coursesAPI } from "../services/api";
 
 const emptyQuizQuestion = () => ({
   id: crypto.randomUUID(),
@@ -34,13 +34,13 @@ const emptyQuizQuestion = () => ({
 export default function CreateCoursePage() {
   const navigate = useNavigate();
 
-  const token = useAuthStore(s => s.token);
-  const user  = useAuthStore(s => s.user);
+  const token = useAuthStore((s) => s.token);
+  const user = useAuthStore((s) => s.user);
 
   const [isLoading, setIsLoading] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [courseImage, setCourseImage] = useState(null);
-const [base64DataUrl, setBase64DataUrl] = useState(null);
+  const [base64DataUrl, setBase64DataUrl] = useState(null);
 
   const [canCreate, setCanCreate] = useState(undefined);
   const role = user?.role;
@@ -53,7 +53,6 @@ const [base64DataUrl, setBase64DataUrl] = useState(null);
       (role === "INSTRUCTOR" && !!user?.permissions?.canCreateCourses);
     setCanCreate(allowed);
   }, [user, role]);
-
 
   {
     canCreate === false && (
@@ -281,39 +280,42 @@ const [base64DataUrl, setBase64DataUrl] = useState(null);
 const onSubmit = async (data) => {
   setIsLoading(true);
   try {
-    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    if (token) api.defaults.headers.common.Authorization = `Bearer ${token}`;
 
     let thumbnailUrl = null;
     if (base64DataUrl) {
-      const upRes = await axios.post(
-        `${API_BASE}/api/uploads/base64`,
-        { dataUrl: base64DataUrl }, 
-        { headers }
-      );
+      const upRes = await api.post("/uploads/base64", { dataUrl: base64DataUrl });
       thumbnailUrl = upRes.data?.url || null;
     }
 
     const payload = {
       title: data.title,
-      thumbnail: thumbnailUrl, 
-      status: 'draft',
+      thumbnail: thumbnailUrl,
+      status: "published",
       category: data.category,
-      difficulty: data.difficulty,
       description: data.description,
     };
 
-    await axios.post(`${API_BASE}/api/courses`, payload, { headers });
+    const res = await coursesAPI.create(payload);
+    const created = res?.data ?? res;
 
-    toast.success('Course created successfully!');
-    navigate('/instructor');
+    if (!created?.id) {
+      console.warn("Create returned no id:", created);
+    }
+
+    toast.success("Course created successfully!");
+
+    if (user?.role === "SUPER_ADMIN") navigate("/superadmin");
+    else if (user?.role === "ADMIN") navigate("/admin");
+    else if (user?.role === "INSTRUCTOR") navigate("/instructor");
+    else navigate("/dashboard");
   } catch (err) {
     console.error(err);
-    toast.error('Failed to create course.');
+    toast.error(err?.response?.data?.message || "Failed to create course.");
   } finally {
     setIsLoading(false);
   }
 };
-
 
   const coursePreview = {
     title: watchedValues.title || "Course Title",
@@ -330,7 +332,17 @@ const onSubmit = async (data) => {
         <div className="mb-8">
           <div className="flex items-center space-x-4 mb-4">
             <button
-              onClick={() => navigate("/instructor")}
+              onClick={() => {
+                if (user?.role === "SUPER_ADMIN") {
+                  navigate("/superadmin");
+                } else if (user?.role === "ADMIN") {
+                  navigate("/admin");
+                } else if (user?.role === "INSTRUCTOR") {
+                  navigate("/instructor");
+                } else {
+                  navigate("/");
+                }
+              }}
               className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
             >
               <ArrowLeft size={20} />
@@ -415,7 +427,9 @@ const onSubmit = async (data) => {
                 )}
               </div>
 
-              <ImagePicker onFileAsBase64={(dataUrl) => setBase64DataUrl(dataUrl)} />
+              <ImagePicker
+                onFileAsBase64={(dataUrl) => setBase64DataUrl(dataUrl)}
+              />
             </div>
 
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -842,7 +856,17 @@ const onSubmit = async (data) => {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => navigate("/instructor")}
+                onClick={() => {
+                  if (user?.role === "SUPER_ADMIN") {
+                    navigate("/superadmin");
+                  } else if (user?.role === "ADMIN") {
+                    navigate("/admin");
+                  } else if (user?.role === "INSTRUCTOR") {
+                    navigate("/instructor");
+                  } else {
+                    navigate("/dashboard"); // fallback
+                  }
+                }}
               >
                 Cancel
               </Button>

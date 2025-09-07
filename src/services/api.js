@@ -100,15 +100,14 @@ export const authAPI = {
 // }
 
 export const coursesAPI = {
-  list: (params = {}) => api.get('/courses', { params }),
-  get: (id) => api.get(`/courses/${id}`),
-  create: (payload) => api.post('/courses', payload),
-  createFull: (payload) => api.post('/courses/full', payload),
-  update: (id, payload) => api.patch(`/courses/${id}`, payload),
-
+  list: (params = {}) => api.get("/courses", { params }),
+  get:  (id)          => api.get(`/courses/${id}`),
+  create:      (payload) => api.post("/courses", payload),
+  createFull:  (payload) => api.post("/courses/full", payload),
+  update:      (id, payload) => api.patch(`/courses/${id}`, payload),
   setInstructors: (id, instructorIds) =>
     api.post(`/courses/${id}/instructors`, { instructorIds }),
-}
+};
 
 
 export const chaptersAPI = {
