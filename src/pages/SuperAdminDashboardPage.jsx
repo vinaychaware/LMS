@@ -4,7 +4,11 @@ import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
 import Badge from "../components/ui/Badge";
 import Modal from "../components/ui/Modal";
-import Tabs, { TabsList, TabsTrigger, TabsContent } from "../components/ui/Tabs";
+import Tabs, {
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+} from "../components/ui/Tabs";
 import useAuthStore from "../store/useAuthStore";
 import toast from "react-hot-toast";
 import {
@@ -23,13 +27,11 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { Plus } from "lucide-react"; 
-
-
+import { Plus } from "lucide-react";
 
 // ✅ Backend base URL for superadmin routes
 
-const API_BASE = import.meta.env.VITE_API_URL ||'http://localhost:5000'
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 export default function SuperAdminDashboardPage() {
   const { token } = useAuthStore();
@@ -90,10 +92,10 @@ export default function SuperAdminDashboardPage() {
 
       const [overviewData, admins, instructors, students, courses] =
         await Promise.all([
-          fetchJSON(`${API_BASE}/api/superadmin/overview`), 
-          fetchJSON(`${API_BASE}/api/superadmin/admins`), 
-          fetchJSON(`${API_BASE}/api/superadmin/instructors`), 
-          fetchJSON(`${API_BASE}/api/superadmin/students`), 
+          fetchJSON(`${API_BASE}/api/superadmin/overview`),
+          fetchJSON(`${API_BASE}/api/superadmin/admins`),
+          fetchJSON(`${API_BASE}/api/superadmin/instructors`),
+          fetchJSON(`${API_BASE}/api/superadmin/students`),
           fetchJSON(`${API_BASE}/api/courses`),
         ]);
 
@@ -212,15 +214,13 @@ export default function SuperAdminDashboardPage() {
   const getCourseInstructors = (courseId) =>
     allInstructors.filter(
       (i) =>
-        Array.isArray(i.assignedCourses) &&
-        i.assignedCourses.includes(courseId)
+        Array.isArray(i.assignedCourses) && i.assignedCourses.includes(courseId)
     );
 
   const getCourseStudents = (courseId) =>
     allStudents.filter(
       (s) =>
-        Array.isArray(s.assignedCourses) &&
-        s.assignedCourses.includes(courseId)
+        Array.isArray(s.assignedCourses) && s.assignedCourses.includes(courseId)
     );
 
   const getFilteredUsers = (users) => {
@@ -277,32 +277,41 @@ export default function SuperAdminDashboardPage() {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
         {/* Header */}
-<div className="mb-6 lg:mb-8">
-  <div className="flex items-center justify-between">
-    {/* Left side: icon + title */}
-    <div className="flex items-center sm:items-start sm:flex-row gap-4">
-      <div className="w-12 h-12 flex-none bg-purple-100 rounded-full flex items-center justify-center">
-        <Shield size={24} className="text-purple-600" />
-      </div>
-      <div className="min-w-0">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 truncate">
-          Super Admin Dashboard
-        </h1>
-        <p className="text-gray-600 mt-1 text-sm sm:text-base">
-          System-wide management and analytics across all institutions
-        </p>
-      </div>
-    </div>
+        <div className="mb-6 lg:mb-8">
+          <div className="flex items-center justify-between">
+            {/* Left side: icon + title */}
+            <div className="flex items-center sm:items-start sm:flex-row gap-4">
+              <div className="w-12 h-12 flex-none bg-purple-100 rounded-full flex items-center justify-center">
+                <Shield size={24} className="text-purple-600" />
+              </div>
+              <div className="min-w-0">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 truncate">
+                  Super Admin Dashboard
+                </h1>
+                <p className="text-gray-600 mt-1 text-sm sm:text-base">
+                  System-wide management and analytics across all institutions
+                </p>
+              </div>
+            </div>
 
-    {/* Right side: button */}
-    <Link to="/courses/create">
-      <Button size="sm">
-        <Plus size={16} className="mr-2" />
-        Create Course
-      </Button>
-    </Link>
-  </div>
-</div>
+            {/* Right side: actions */}
+            <div className="flex gap-3">
+              <Link to="/courses/create">
+                <Button size="sm">
+                  <Plus size={16} className="mr-2" />
+                  Create Course
+                </Button>
+              </Link>
+
+              <Link to="/register"  state={{ allowWhenLoggedIn: true }}>
+                <Button size="sm">
+                  <Plus size={16} className="mr-2" />
+                  Add User
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
 
         {/* Stats */}
         <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6 mb-6 lg:mb-8">
@@ -946,45 +955,48 @@ export default function SuperAdminDashboardPage() {
                 </h3>
                 <div className="space-y-4">
                   {systemAnalytics?.performanceMetrics &&
-                    Object.entries(
-                      systemAnalytics.performanceMetrics
-                    ).map(([key, value]) => (
-                      <div
-                        key={key}
-                        className="flex items-center justify-between gap-3"
-                      >
-                        <span className="text-sm text-gray-600 capitalize truncate">
-                          {key.replace(/([A-Z])/g, " $1").toLowerCase()}
-                        </span>
-                        <div className="flex items-center gap-2 min-w-[140px]">
-                          <div className="w-20 bg-gray-200 rounded-full h-2">
-                            <div
-                              className={`h-2 rounded-full ${
-                                (Number(value) || 0) > 80
-                                  ? "bg-red-500"
-                                  : (Number(value) || 0) > 60
-                                  ? "bg-yellow-500"
-                                  : "bg-green-500"
-                              }`}
-                              style={{
-                                width: `${Math.min(Number(value) || 0, 100)}%`,
-                              }}
-                            />
-                          </div>
-                          <span className="text-sm font-medium text-gray-900">
-                            {typeof value === "number"
-                              ? `${value}${
-                                  key.toLowerCase().includes("usage")
-                                    ? "%"
-                                    : key.toLowerCase().includes("time")
-                                    ? "ms"
-                                    : ""
-                                }`
-                              : value}
+                    Object.entries(systemAnalytics.performanceMetrics).map(
+                      ([key, value]) => (
+                        <div
+                          key={key}
+                          className="flex items-center justify-between gap-3"
+                        >
+                          <span className="text-sm text-gray-600 capitalize truncate">
+                            {key.replace(/([A-Z])/g, " $1").toLowerCase()}
                           </span>
+                          <div className="flex items-center gap-2 min-w-[140px]">
+                            <div className="w-20 bg-gray-200 rounded-full h-2">
+                              <div
+                                className={`h-2 rounded-full ${
+                                  (Number(value) || 0) > 80
+                                    ? "bg-red-500"
+                                    : (Number(value) || 0) > 60
+                                    ? "bg-yellow-500"
+                                    : "bg-green-500"
+                                }`}
+                                style={{
+                                  width: `${Math.min(
+                                    Number(value) || 0,
+                                    100
+                                  )}%`,
+                                }}
+                              />
+                            </div>
+                            <span className="text-sm font-medium text-gray-900">
+                              {typeof value === "number"
+                                ? `${value}${
+                                    key.toLowerCase().includes("usage")
+                                      ? "%"
+                                      : key.toLowerCase().includes("time")
+                                      ? "ms"
+                                      : ""
+                                  }`
+                                : value}
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      )
+                    )}
                 </div>
               </Card>
             </div>
@@ -1165,7 +1177,9 @@ export default function SuperAdminDashboardPage() {
                 <Button
                   variant="outline"
                   onClick={() =>
-                    setEditingPermissions({ ...(selectedUser.permissions || {}) })
+                    setEditingPermissions({
+                      ...(selectedUser.permissions || {}),
+                    })
                   }
                 >
                   <RotateCcw size={16} className="mr-2" />
@@ -1227,7 +1241,9 @@ export default function SuperAdminDashboardPage() {
                 Full college creation interface coming soon!
               </p>
               <Button
-                onClick={() => toast("College creation functionality coming soon!")}
+                onClick={() =>
+                  toast("College creation functionality coming soon!")
+                }
               >
                 Create College
               </Button>

@@ -11,7 +11,7 @@ import AdminDashboardPage from './pages/AdminDashboardPage'
 import SuperAdminDashboardPage from './pages/SuperAdminDashboardPage'
 import CourseViewerPage from './pages/CourseViewerPage'
 import RegisterPage from './pages/RegisterPage'
-
+import { useLocation } from 'react-router-dom';
 // ✅ Import Terms & Privacy pages
 import Terms from './pages/TermsPage'
 import Privacy from './pages/PrivacyPage'
@@ -35,7 +35,9 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
 const PublicRoute = ({ children }) => {
   const { isAuthenticated, userRole } = useAuthStore()
 
-  if (isAuthenticated) {
+const location = useLocation();
+   const allowWhenLoggedIn = location.state?.allowWhenLoggedIn === true;
+  if (isAuthenticated && !allowWhenLoggedIn) {
     if (userRole === 'superadmin') {
       return <Navigate to="/superadmin" replace />
     } else if (userRole === 'admin') {

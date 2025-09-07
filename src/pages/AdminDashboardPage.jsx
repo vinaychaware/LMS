@@ -4,9 +4,7 @@ import {
   Users, 
   BookOpen, 
   GraduationCap, 
-  TrendingUp, 
   Award, 
-  Settings,
   Plus,
   Edit,
   Trash2,
@@ -77,34 +75,31 @@ const AdminDashboardPage = () => {
     try {
       setLoading(true)
       
-      // Get admin's college
+   
       const adminUser = mockData.users.find(u => u.id === user.id)
       const collegeData = mockData.colleges.find(c => c.id === adminUser?.collegeId)
       setCollege(collegeData)
-      
-      // Get college instructors
+   
       const collegeInstructors = mockData.users.filter(u => 
         u.role === 'instructor' && u.collegeId === adminUser?.collegeId
       )
       setInstructors(collegeInstructors)
       
-      // Get college students
       const collegeStudents = mockData.users.filter(u => 
         u.role === 'student' && u.collegeId === adminUser?.collegeId
       )
       setStudents(collegeStudents)
       
-      // Get college courses
       const collegeCourses = mockData.courses.filter(c => 
         c.collegeId === adminUser?.collegeId
       )
       setCourses(collegeCourses)
       
-      // Calculate stats
+   
       const activeUsers = [...collegeInstructors, ...collegeStudents].filter(u => u.isActive).length
       const totalUsers = collegeInstructors.length + collegeStudents.length
-      const completionRate = Math.floor(Math.random() * 30) + 70 // Mock completion rate
-      const averageGrade = Math.floor(Math.random() * 20) + 75 // Mock average grade
+      const completionRate = Math.floor(Math.random() * 30) + 70 
+      const averageGrade = Math.floor(Math.random() * 20) + 75 
       
       setStats({
         totalInstructors: collegeInstructors.length,
@@ -155,7 +150,7 @@ const AdminDashboardPage = () => {
       }
       
       if (action !== 'edit' && action !== 'view') {
-        await fetchAdminData() // Refresh data
+        await fetchAdminData() 
       }
     } catch (error) {
       toast.error(`Failed to ${action} user`)
@@ -303,7 +298,6 @@ const AdminDashboardPage = () => {
           </Card>
         )}
 
-        {/* Stats Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-6 gap-6 mb-8">
           <Card className="p-6">
             <div className="flex items-center">
@@ -405,7 +399,6 @@ const AdminDashboardPage = () => {
           </div>
         </div>
 
-        {/* Tab Content */}
         {activeTab === 'overview' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card>

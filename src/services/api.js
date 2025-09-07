@@ -39,27 +39,30 @@ const api = axios.create({
 api.interceptors.request.use((config) => {
   const token = useAuthStore.getState().token
   if (token) config.headers.Authorization = `Bearer ${token}`
-
-
-  config.headers['Cache-Control'] = 'no-cache'
-  config.headers['Pragma'] = 'no-cache'
-  config.headers['Expires'] = '0'
   return config
 })
 
 
+
+const AUTH_WHITELIST = ['/api/users/login', '/api/users/register']
+
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err?.response?.status === 401) {
-      useAuthStore.getState().logout?.()
+    const status = err?.response?.status
+    const url = err?.config?.url || ''
 
-      window.location.href = '/login'
+    if (status === 401 && !AUTH_WHITELIST.some(p => url.includes(p))) {
+      // clear auth
+      useAuthStore.getState().logout?.()
+      // avoid redirect loops
+      if (window.location.pathname !== '/login') {
+        window.location.assign('/login')
+      }
     }
     return Promise.reject(err)
   }
 )
-
 
 export async function fileToBase64(file) {
   if (!file) return ''
@@ -74,26 +77,39 @@ export async function fileToBase64(file) {
 
 export const authAPI = {
   register: (data) => api.post("/users/register", data),
-  login:    (data) => api.post("/users/login", data),     
+  login:    (data) => api.post("/users/login", data),
   me:       () => api.get("/users/me"),
   updateMe: (data) => api.put("/users/me", data),
   deleteMe: (data) => api.delete("/users/me", { data }),
 };
 
-export const coursesAPI = {
-  list: () => api.get('/courses'),
-  get: (id) => api.get(`/courses/${id}`),
+
+// export const coursesAPI = {
+//   list: () => api.get('/courses'),
+//   get: (id) => api.get(`/courses/${id}`),
 
 
-  create: (payload) => api.post('/courses', payload),
+//   create: (payload) => api.post('/courses', payload),
 
  
-  createFull: (payload) => api.post('/courses/full', payload),
+//   createFull: (payload) => api.post('/courses/full', payload),
 
+//   update: (id, payload) => api.patch(`/courses/${id}`, payload),
+//   setInstructors: (id, instructorIds) =>
+//     api.post(`/courses/${id}/instructors`, { instructorIds }),
+// }
+
+export const coursesAPI = {
+  list: (params = {}) => api.get('/courses', { params }),
+  get: (id) => api.get(`/courses/${id}`),
+  create: (payload) => api.post('/courses', payload),
+  createFull: (payload) => api.post('/courses/full', payload),
   update: (id, payload) => api.patch(`/courses/${id}`, payload),
+
   setInstructors: (id, instructorIds) =>
     api.post(`/courses/${id}/instructors`, { instructorIds }),
 }
+
 
 export const chaptersAPI = {
   listByCourse: (courseId) => api.get('/chapters', { params: { courseId } }),
@@ -101,6 +117,23 @@ export const chaptersAPI = {
   update: (id, payload) => api.patch(`/chapters/${id}`, payload),
   remove: (id) => api.delete(`/chapters/${id}`),
 }
+
+export const enrollmentsAPI = {
+  list: (params = {}) => api.get('/enrollments', { params }),
+
+  listByStudent: (studentId) =>
+    api.get('/enrollments', { params: { studentId } }),
+
+  listByCourseAdmin: (courseId) =>
+    api.get(`/courses/${courseId}/enrollments`),
+
+  enrollStudent: (courseId, studentId) =>
+    api.post(`/courses/${courseId}/enrollments`, { studentId }),
+
+  unenroll: (enrollmentId) =>
+    api.delete(`/enrollments/${enrollmentId}`),
+};
+
 
 export const assessmentsAPI = {
   listByChapter: (chapterId) => api.get('/assessments', { params: { chapterId } }),

@@ -17,7 +17,7 @@ import useAuthStore from '../store/useAuthStore'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
 import { authAPI } from "../services/api";  
-
+import RegisterPage from './RegisterPage'
 
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false)
@@ -390,7 +390,7 @@ const onSubmit = async (data) => {
           */}
 
           {/* Social Login Options */}
-          <div className="mt-8">
+          {/* <div className="mt-8">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-300" />
@@ -440,7 +440,7 @@ const onSubmit = async (data) => {
                 Microsoft
               </Button>
             </div>
-          </div>
+          </div> */}
 
           {/* Security Notice */}
           <div className="mt-6 p-3 bg-gray-50 rounded-lg">
