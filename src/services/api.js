@@ -96,7 +96,7 @@ export const coursesAPI = {
   update: (id, payload) => api.patch(`/courses/${id}`, payload),
   setInstructors: (id, instructorIds) =>
     api.post(`/courses/${id}/instructors`, { instructorIds }),
-    listForMeAsInstructor: () => api.get("/courses/me/list"),
+  listForMeAsInstructor: () => api.get("/courses/me/list"),
 };
 
 export const chaptersAPI = {
@@ -129,29 +129,23 @@ export const enrollmentsAPI = {
   listByStudent: (studentId) =>
     api.get("/enrollments", { params: { studentId } }),
 
-  listByCourseAdmin: (courseId) =>
-    api.get(`/courses/${courseId}/enrollments`),
+  listByCourseAdmin: (courseId) => api.get(`/courses/${courseId}/enrollments`),
 
   enrollStudent: (courseId, studentId) =>
     api.post(`/courses/${courseId}/enrollments`, { studentId }),
 
   unenroll: (enrollmentId) => api.delete(`/enrollments/${enrollmentId}`),
 
-
   listSelf: () => api.get("/enrollments/self"),
 };
 
 export const enrollmentRequestsAPI = {
-  create: (courseId) =>
-    api.post(`/courses/${courseId}/enrollment-requests`),
-  listMine: () =>
-    api.get('/enrollments/self'),
-  listForInstructor: () =>
-    api.get('/instructor/enrollment-requests'),
+  create: (courseId) => api.post(`/courses/${courseId}/enrollment-requests`),
+  listMine: () => api.get("/enrollments/self"),
+  listForInstructor: () => api.get("/instructor/enrollment-requests"),
   actOn: (requestId, action) =>
     api.patch(`/enrollment-requests/${requestId}`, { action }),
-}
-
+};
 
 export const instructorsAPI = {
   list: () => api.get("/courses/instructors-list"),
@@ -168,8 +162,17 @@ export const assessmentsAPI = {
   get: (id) => api.get(`/assessments/${id}`),
   createForChapter: (chapterId, payload) =>
     api.post(`/assessments/chapters/${chapterId}`, payload),
-  update: (id, payload) => api.patch(`/assessments/${id}`, payload),
+  update: (id, payload) => api.put(`/assessments/${id}`, payload),
   remove: (id) => api.delete(`/assessments/${id}`),
+};
+
+export const progressAPI = {
+  completeChapter: (chapterId) =>
+    api.post(`/progress/chapters/${chapterId}/complete`),
+  completedChapters: (courseId) =>
+    api.get(`/progress/course/${courseId}/completed`),
+  courseSummary: (courseId) => api.get(`/progress/course/${courseId}/summary`),
+   dashboard: () => api.get(`/progress/dashboard`),
 };
 
 export default api;

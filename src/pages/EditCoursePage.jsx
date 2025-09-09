@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { BookOpen, Plus, Trash2, Save, ArrowLeft, Eye } from "lucide-react";
 import { toast } from "react-hot-toast";
@@ -14,9 +14,24 @@ import api, {
   uploadsAPI,
   instructorsAPI,
   courseInstructorsAPI,
-  assessmentsAPI, // 👈 ensure this is exported from services/api
+  assessmentsAPI, // expects: listByChapter(chId), get(id), createForChapter(chId,payload), update(id,payload), remove(id)
 } from "../services/api";
 
+// ---------- utils ----------
+const unwrap = (res) =>
+  res?.data?.data ??
+  res?.data?.result ??
+  res?.data?.course ??
+  res?.data?.items ??
+  res?.data ??
+  res;
+
+const normalizeRole = (r) =>
+  String(r || "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "");
+
+// ---------- quiz helpers ----------
 const emptyQuizQuestion = () => ({
   id: crypto.randomUUID(),
   type: "single",
@@ -30,120 +45,232 @@ const emptyQuizQuestion = () => ({
   sampleAnswer: "",
 });
 
-export default function CreateCoursePage() {
+// tolerant mapper: API -> UI
+const mapAPIQuestionToUI = (q = {}) => {
+  const type = String(q.type || "subjective").toLowerCase();
+
+  const prompt = q.prompt ?? q.text ?? q.question ?? "";
+  const sampleAnswer = q.sampleAnswer ?? q.expectedAnswer ?? q.rubric ?? "";
+  const correctText =
+    q.correctText ?? q.answer ?? q.answerText ?? q.expected ?? "";
+
+  const rawOptions = Array.isArray(q.options) ? q.options : [];
+  const optionsAsObjects = rawOptions.map((opt, i) => {
+    if (typeof opt === "string") {
+      return { id: crypto.randomUUID(), text: opt, correct: false, _i: i };
+    }
+    return {
+      id: crypto.randomUUID(),
+      text: opt?.text ?? opt?.label ?? "",
+      correct: Boolean(opt?.correct ?? opt?.isCorrect ?? false),
+      _i: i,
+    };
+  });
+
+  const coIdx =
+    typeof q.correctOptionIndex === "number" ? q.correctOptionIndex : null;
+  const coIdxs = Array.isArray(q.correctOptionIndexes)
+    ? q.correctOptionIndexes
+    : Array.isArray(q.correctIndexes)
+    ? q.correctIndexes
+    : null;
+
+  let options = optionsAsObjects;
+
+  if (type === "single" && coIdx != null) {
+    options = options.map((o) => ({ ...o, correct: o._i === coIdx }));
+  }
+  if (type === "multiple" && coIdxs) {
+    const set = new Set(coIdxs);
+    options = options.map((o) => ({ ...o, correct: set.has(o._i) }));
+  }
+  options = options.map(({ _i, ...rest }) => rest);
+
+  const pairsSrc = Array.isArray(q.pairs)
+    ? q.pairs
+    : Array.isArray(q.matches)
+    ? q.matches
+    : [];
+  const pairs = pairsSrc.map((p) => ({
+    id: crypto.randomUUID(),
+    left: p?.left ?? p?.l ?? p?.a ?? "",
+    right: p?.right ?? p?.r ?? p?.b ?? "",
+  }));
+
+  const base = {
+    id: crypto.randomUUID(),
+    text: prompt,
+    sampleAnswer,
+    correctText,
+    pairs,
+  };
+
+  if (type === "single" || type === "multiple")
+    return { ...base, type, options };
+  if (type === "numerical") return { ...base, type, options: [] };
+  if (type === "match") return { ...base, type, options: [] };
+  return { ...base, type: "subjective", options: [] };
+};
+
+// tolerant mapper: UI -> API
+const mapUIQuestionsToAPI = (qs = []) =>
+  qs.map((q, idx) => {
+    const type = String(q.type || "subjective").toLowerCase();
+
+    if (type === "single" || type === "multiple") {
+      const cleanOpts = (q.options || []).map((o) => String(o.text || ""));
+      const correctIdxs = (q.options || [])
+        .map((o, i) => (o?.correct ? i : -1))
+        .filter((i) => i >= 0);
+
+      return {
+        prompt: q.text || "",
+        type,
+        options: cleanOpts,
+        correctOptionIndex: type === "single" ? correctIdxs[0] ?? null : null,
+        correctOptionIndexes: type === "multiple" ? correctIdxs : [],
+        points: q.points ?? 1,
+        order: q.order ?? idx + 1,
+      };
+    }
+
+    if (type === "numerical") {
+      const ans = q.correctText || q.sampleAnswer || "";
+      return {
+        prompt: q.text || "",
+        type: "numerical",
+        options: [],
+        correctText: ans,
+        answerText: ans, // for backends that use 'answerText'
+        points: q.points ?? 1,
+        order: q.order ?? idx + 1,
+      };
+    }
+
+    if (type === "match") {
+      const pairs = (q.pairs || [])
+        .filter((p) => (p.left || "").trim() || (p.right || "").trim())
+        .map((p) => ({ left: p.left ?? "", right: p.right ?? "" }));
+      return {
+        prompt: q.text || "",
+        type: "match",
+        options: [],
+        pairs,
+        matches: pairs, // for alt backends
+        points: q.points ?? 1,
+        order: q.order ?? idx + 1,
+      };
+    }
+
+    return {
+      prompt: q.text || "",
+      type: "subjective",
+      options: [],
+      sampleAnswer: q.sampleAnswer || "",
+      points: q.points ?? 1,
+      order: q.order ?? idx + 1,
+    };
+  });
+
+// ---------- component ----------
+export default function EditCoursePage() {
+  const { courseId } = useParams();
   const navigate = useNavigate();
 
   const token = useAuthStore((s) => s.token);
   const user = useAuthStore((s) => s.user);
 
-  const [isLoading, setIsLoading] = useState(false);
-  const [showPreview, setShowPreview] = useState(false);
-  const [courseImage, setCourseImage] = useState(null);
-  const [base64DataUrl, setBase64DataUrl] = useState(null);
-
-  const [canCreate, setCanCreate] = useState(undefined);
-
-  // --- role helpers (normalize: remove punctuation, uppercase)
-  const role = user?.role || "";
-  const normRole = (r) =>
-    String(r || "")
-      .toUpperCase()
-      .replace(/[^A-Z0-9]/g, "");
-  const roleNorm = normRole(role);
+  const roleNorm = normalizeRole(user?.role);
   const isSuperAdmin = roleNorm === "SUPERADMIN";
   const isAdminOnly = roleNorm === "ADMIN";
   const isAdmin = isSuperAdmin || isAdminOnly;
 
-  // --- instructor dropdown state (Admin/SA only)
+  const [isLoading, setIsLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [showPreview, setShowPreview] = useState(false);
+
+  const [base64DataUrl, setBase64DataUrl] = useState(null);
+  const [currentThumb, setCurrentThumb] = useState(null);
+
   const [instructorOptions, setInstructorOptions] = useState([]);
   const [selectedInstructorId, setSelectedInstructorId] = useState("");
 
-  useEffect(() => {
-    if (!user) return;
-    const allowed =
-      isSuperAdmin ||
-      isAdminOnly ||
-      (roleNorm === "INSTRUCTOR" && !!user?.permissions?.canCreateCourses);
-    setCanCreate(allowed);
-  }, [user, roleNorm, isSuperAdmin, isAdminOnly]);
-
-  // Load instructors (Admin/SA only)
-  useEffect(() => {
-    if (!isAdmin) return;
-    (async () => {
-      try {
-        if (token)
-          api.defaults.headers.common.Authorization = `Bearer ${token}`;
-        const { data } = await instructorsAPI.list(); // GET /courses/instructors-list (baseURL should already include /api)
-        setInstructorOptions(Array.isArray(data) ? data : []);
-      } catch (e) {
-        console.error("Failed to load instructors:", e);
-        toast.error("Failed to load instructors");
-      }
-    })();
-  }, [isAdmin, token]);
-
-  const [lessons, setLessons] = useState([
-    {
-      id: 1,
-      type: "text",
-      title: "",
-      content: "",
-      pdfFile: null,
-      quizTitle: "",
-      quizDurationMinutes: "",
-      questions: [emptyQuizQuestion()],
-    },
-  ]);
-
-  const addLesson = () => {
-    setLessons((prev) => [
-      ...prev,
-      {
-        id: Date.now(),
-        type: "text",
-        title: "",
-        content: "",
-        pdfFile: null,
-        quizTitle: "",
-        quizDurationMinutes: "",
-        questions: [emptyQuizQuestion()],
-      },
-    ]);
-  };
+  const [lessons, setLessons] = useState([]);
+  const [deletedChapterIds, setDeletedChapterIds] = useState([]);
 
   const {
     register,
     handleSubmit,
+    reset,
     watch,
     formState: { errors },
   } = useForm();
   const watchedValues = watch();
 
-  const removeLesson = (id) => {
+  const toggleAttachmentRemoval = (tempId, url) => {
     setLessons((prev) =>
-      prev.length > 1 ? prev.filter((l) => l.id !== id) : prev
-    );
-  };
-  const updateLesson = (id, field, value) => {
-    setLessons((prev) =>
-      prev.map((l) => (l.id === id ? { ...l, [field]: value } : l))
+      prev.map((l) => {
+        if (l.tempId !== tempId) return l;
+        const set = new Set(l.attachmentsToRemove || []);
+        if (set.has(url)) set.delete(url);
+        else set.add(url);
+        return { ...l, attachmentsToRemove: Array.from(set) };
+      })
     );
   };
 
-  const addQuestion = (lessonId) => {
+  const addLesson = () => {
+    setLessons((prev) => [
+      ...prev,
+      {
+        tempId: crypto.randomUUID(),
+        chapterId: null,
+        assessmentId: null,
+        type: "text",
+        title: "",
+        content: "",
+        attachments: [],
+        pdfFile: null,
+        quizTitle: "",
+        quizDurationMinutes: "",
+        questions: [emptyQuizQuestion()],
+        order: prev.length + 1,
+      },
+    ]);
+  };
+
+  const removeLesson = (tempId) => {
+    setLessons((prev) => {
+      const target = prev.find((l) => l.tempId === tempId);
+      if (!target) return prev;
+      const rest = prev.filter((l) => l.tempId !== tempId);
+      if (target.chapterId) {
+        setDeletedChapterIds((ids) => [...ids, target.chapterId]);
+      }
+      return rest.map((l, i) => ({ ...l, order: i + 1 }));
+    });
+  };
+
+  const updateLesson = (tempId, field, value) => {
+    setLessons((prev) =>
+      prev.map((l) => (l.tempId === tempId ? { ...l, [field]: value } : l))
+    );
+  };
+
+  const addQuestion = (tempId) => {
     setLessons((prev) =>
       prev.map((l) =>
-        l.id === lessonId
+        l.tempId === tempId
           ? { ...l, questions: [...l.questions, emptyQuizQuestion()] }
           : l
       )
     );
   };
-  const removeQuestion = (lessonId, qid) => {
+
+  const removeQuestion = (tempId, qid) => {
     setLessons((prev) =>
       prev.map((l) =>
-        l.id === lessonId
+        l.tempId === tempId
           ? {
               ...l,
               questions:
@@ -155,10 +282,11 @@ export default function CreateCoursePage() {
       )
     );
   };
-  const updateQuestion = (lessonId, qid, field, value) => {
+
+  const updateQuestion = (tempId, qid, field, value) => {
     setLessons((prev) =>
       prev.map((l) => {
-        if (l.id !== lessonId) return l;
+        if (l.tempId !== tempId) return l;
         const questions = l.questions.map((q) =>
           q.id === qid ? { ...q, [field]: value } : q
         );
@@ -167,10 +295,10 @@ export default function CreateCoursePage() {
     );
   };
 
-  const addOption = (lessonId, qid) => {
+  const addOption = (tempId, qid) => {
     setLessons((prev) =>
       prev.map((l) => {
-        if (l.id !== lessonId) return l;
+        if (l.tempId !== tempId) return l;
         const questions = l.questions.map((q) =>
           q.id === qid
             ? {
@@ -186,10 +314,11 @@ export default function CreateCoursePage() {
       })
     );
   };
-  const removeOption = (lessonId, qid, oid) => {
+
+  const removeOption = (tempId, qid, oid) => {
     setLessons((prev) =>
       prev.map((l) => {
-        if (l.id !== lessonId) return l;
+        if (l.tempId !== tempId) return l;
         const questions = l.questions.map((q) =>
           q.id === qid
             ? { ...q, options: q.options.filter((o) => o.id !== oid) }
@@ -199,10 +328,11 @@ export default function CreateCoursePage() {
       })
     );
   };
-  const updateOption = (lessonId, qid, oid, field, value) => {
+
+  const updateOption = (tempId, qid, oid, field, value) => {
     setLessons((prev) =>
       prev.map((l) => {
-        if (l.id !== lessonId) return l;
+        if (l.tempId !== tempId) return l;
         const questions = l.questions.map((q) => {
           if (q.id !== qid) return q;
           let options = q.options.map((o) =>
@@ -217,6 +347,165 @@ export default function CreateCoursePage() {
       })
     );
   };
+
+  useEffect(() => {
+    (async () => {
+      try {
+        setInitialLoading(true);
+        if (token)
+          api.defaults.headers.common.Authorization = `Bearer ${token}`;
+
+        // --- Course
+        const courseRes = await coursesAPI.get(courseId);
+        const c = unwrap(courseRes);
+        if (!c?.id) throw new Error("Course not found");
+
+        setCurrentThumb(c?.thumbnail || null);
+
+        // --- Instructor preload (Admin/SA only)
+        if (isAdmin) {
+          try {
+            const listRes = await instructorsAPI.list();
+            const list = unwrap(listRes);
+            const items = Array.isArray(list)
+              ? list
+              : Array.isArray(list?.items)
+              ? list.items
+              : [];
+            setInstructorOptions(items);
+            const preAssigned =
+              (Array.isArray(c?.instructors) &&
+                c.instructors[0]?.instructorId) ||
+              c?.instructorId ||
+              "";
+            setSelectedInstructorId(preAssigned || "");
+          } catch {
+            /* non-blocking */
+          }
+        }
+
+        // --- Form fields
+        reset({
+          title: c?.title || "",
+          category: c?.category || "",
+          description: c?.description || "",
+        });
+
+        // --- Chapters
+        let chapters = [];
+        if (Array.isArray(c?.chapters)) {
+          chapters = c.chapters;
+        } else {
+          const listRes = await chaptersAPI.listByCourse(courseId);
+          const maybe = unwrap(listRes);
+          chapters = Array.isArray(maybe)
+            ? maybe
+            : Array.isArray(maybe?.items)
+            ? maybe.items
+            : [];
+        }
+
+        // --- Build lessons (quiz/text)
+        const assembled = [];
+        chapters.sort((a, b) => (a?.order || 0) - (b?.order || 0));
+
+        for (const ch of chapters) {
+          let assessment = null;
+          try {
+            const aRes = await assessmentsAPI.listByChapter(ch.id);
+            const aMaybe =
+              aRes?.data?.data ??
+              aRes?.data?.result ??
+              aRes?.data?.items ??
+              aRes?.data ??
+              aRes;
+
+            const aList = Array.isArray(aMaybe)
+              ? aMaybe
+              : Array.isArray(aMaybe?.items)
+              ? aMaybe.items
+              : Array.isArray(aMaybe?.results)
+              ? aMaybe.results
+              : [];
+
+            assessment =
+              aList.find(
+                (x) => String(x?.scope || "").toLowerCase() === "chapter"
+              ) ||
+              aList[0] ||
+              null;
+
+            // hydrate questions if list doesn't include them
+            if (
+              assessment &&
+              !Array.isArray(assessment.questions) &&
+              assessmentsAPI.get
+            ) {
+              try {
+                const aOne = await assessmentsAPI.get(assessment.id);
+                const aFull = unwrap(aOne);
+                if (aFull?.id) assessment = aFull;
+              } catch {
+                /* ignore */
+              }
+            }
+          } catch {
+            /* ignore */
+          }
+
+          if (assessment) {
+            const durationMin = assessment?.timeLimitSeconds
+              ? Math.round(Number(assessment.timeLimitSeconds) / 60)
+              : "";
+
+            const uiQuestions = Array.isArray(assessment?.questions)
+              ? assessment.questions.map(mapAPIQuestionToUI)
+              : [];
+
+            assembled.push({
+              tempId: crypto.randomUUID(),
+              chapterId: ch.id,
+              assessmentId: assessment?.id || null,
+              type: "test",
+              title: "",
+              content: "",
+              attachments: ch?.attachments || [],
+              pdfFile: null,
+              quizTitle: assessment?.title || ch?.title || "",
+              quizDurationMinutes: durationMin,
+              questions: uiQuestions.length
+                ? uiQuestions
+                : [emptyQuizQuestion()],
+              order: ch?.order || assembled.length + 1,
+            });
+          } else {
+            assembled.push({
+              tempId: crypto.randomUUID(),
+              chapterId: ch.id,
+              assessmentId: null,
+              type: "text",
+              title: ch?.title || "",
+              content: ch?.content || "",
+              attachments: ch?.attachments || [],
+              pdfFile: null,
+              quizTitle: "",
+              quizDurationMinutes: "",
+              questions: [emptyQuizQuestion()],
+              order: ch?.order || assembled.length + 1,
+            });
+          }
+        }
+
+        setLessons(assembled);
+      } catch (err) {
+        console.error(err);
+        toast.error(err?.response?.data?.message || "Failed to load course.");
+        navigate(-1);
+      } finally {
+        setInitialLoading(false);
+      }
+    })();
+  }, [courseId, token, isAdmin, navigate, reset]);
 
   const validateBeforeSubmit = () => {
     for (const [i, l] of lessons.entries()) {
@@ -297,172 +586,171 @@ export default function CreateCoursePage() {
     return true;
   };
 
-  // map quiz UI questions -> backend question shape
-  const mapQuestionsForAPI = (qs = []) =>
-    qs.map((q, idx) => {
-      const type = String(q.type || "").toLowerCase();
-
-      if (type === "single" || type === "multiple") {
-        const options = (q.options || []).map((o) => o.text || "");
-        const correctIdxs = (q.options || [])
-          .map((o, i) => (o?.correct ? i : -1))
-          .filter((i) => i >= 0);
-
-        return {
-          prompt: q.text || "",
-          type,
-          options,
-          correctOptionIndex: type === "single" ? correctIdxs[0] ?? null : null,
-          correctOptionIndexes: type === "multiple" ? correctIdxs : [],
-          points: 1,
-          order: idx + 1,
-        };
-      }
-
-      if (type === "numerical") {
-        return {
-          prompt: q.text || "",
-          type: "numerical",
-          options: [],
-          correctText: q.correctText || "",
-          points: 1,
-          order: idx + 1,
-        };
-      }
-
-      if (type === "match") {
-        const pairs = (q.pairs || []).map((p) => ({
-          left: p?.left ?? "",
-          right: p?.right ?? "",
-        }));
-        return {
-          prompt: q.text || "",
-          type: "match",
-          options: [],
-          pairs,
-          points: 1,
-          order: idx + 1,
-        };
-      }
-
-      // subjective
-      return {
-        prompt: q.text || "",
-        type: "subjective",
-        options: [],
-        sampleAnswer: q.sampleAnswer || "",
-        points: 1,
-        order: idx + 1,
-      };
-    });
-
   const onSubmit = async (data) => {
     if (!validateBeforeSubmit()) return;
-
-    // Admins must assign an instructor
-    if (isAdmin && !selectedInstructorId) {
-      toast.error("Please select an instructor to assign.");
-      return;
-    }
 
     setIsLoading(true);
     try {
       if (token) api.defaults.headers.common.Authorization = `Bearer ${token}`;
 
-      // 1) Optional thumbnail upload
-      let thumbnailUrl = null;
+      // thumbnail
+      let thumbnailUrl = currentThumb || null;
       if (base64DataUrl) {
         const upRes = await api.post("/uploads/base64", {
           dataUrl: base64DataUrl,
         });
-        thumbnailUrl = upRes.data?.url || null;
+        thumbnailUrl = upRes?.data?.url || thumbnailUrl;
       }
 
-      // 2) Create Course
-      const coursePayload = {
+      // course
+      const payload = {
         title: data.title,
         thumbnail: thumbnailUrl,
-        status: "published", // or "draft"
         category: data.category,
         description: data.description,
-        managerId: null,
+        status: "published",
       };
-      const courseRes = await coursesAPI.create(coursePayload);
-      const course = courseRes?.data ?? courseRes;
-      if (!course?.id) throw new Error("Failed to create course");
+      await coursesAPI.update(courseId, payload);
 
-      // 2.5) Attach selected instructor (Admin/SA only)
+      // instructor
       if (isAdmin && selectedInstructorId) {
-        await courseInstructorsAPI.setForCourse(course.id, [
+        await courseInstructorsAPI.setForCourse(courseId, [
           selectedInstructorId,
         ]);
       }
 
-      // 3) Create chapters (and assessments for quiz chapters)
-      for (const [index, lesson] of lessons.entries()) {
-        const chapterPayload = {
-          title: lesson.type === "test" ? lesson.quizTitle : lesson.title,
-          order: index + 1,
-          isPublished: true,
-        };
+      // deletions
+      for (const chId of deletedChapterIds) {
+        try {
+          try {
+            const aRes = await assessmentsAPI.listByChapter(chId);
+            const arr = unwrap(aRes) || [];
+            for (const a of arr) {
+              if (a?.id) await assessmentsAPI.remove(a.id);
+            }
+          } catch {}
+          await chaptersAPI.remove(chId);
+        } catch (e) {
+          console.warn("Failed to remove chapter", chId, e);
+        }
+      }
 
-        if (lesson.type === "text") {
-          chapterPayload.content = lesson.content;
+      // upserts
+      for (const [idx, l] of lessons.entries()) {
+        const order = idx + 1;
 
-          if (lesson.pdfFile) {
-            const pdfUrl = await uploadsAPI.uploadFile(lesson.pdfFile);
-            chapterPayload.attachments = [pdfUrl];
+        if (l.type === "text") {
+          let attachments = Array.isArray(l.attachments)
+            ? [...l.attachments]
+            : [];
+          if (l.pdfFile) {
+            const pdfUrl = await uploadsAPI.uploadFile(l.pdfFile);
+            attachments = [...attachments, pdfUrl];
           }
 
-          await chaptersAPI.create(course.id, chapterPayload);
-        } else {
-          // Quiz chapter
-          const chRes = await chaptersAPI.create(course.id, chapterPayload);
-          const chapterId = chRes?.data?.id ?? chRes?.id ?? chRes;
-          if (!chapterId)
-            throw new Error("Chapter id missing for quiz creation");
+          const chapterPayload = {
+            title: l.title,
+            content: l.content,
+            attachments,
+            order,
+            isPublished: true,
+          };
 
-          const minutes = Number(lesson.quizDurationMinutes || 0);
-          await assessmentsAPI.createForChapter(chapterId, {
-            title:
-              lesson.quizTitle?.trim() ||
-              `Quiz for ${chapterPayload.title || `Chapter ${index + 1}`}`,
+          if (l.chapterId) {
+            await chaptersAPI.update(l.chapterId, chapterPayload);
+            if (l.assessmentId) {
+              try {
+                await assessmentsAPI.remove(l.assessmentId);
+              } catch {}
+            }
+          } else {
+            const chRes = await chaptersAPI.create(courseId, chapterPayload);
+            const newChId = chRes?.data?.id ?? chRes?.id ?? chRes;
+            l.chapterId = newChId;
+          }
+        } else {
+          const chapterPayload = {
+            title: l.quizTitle || `Quiz ${order}`,
+            order,
+            isPublished: true,
+          };
+
+          let chapterId = l.chapterId;
+          if (chapterId) {
+            await chaptersAPI.update(chapterId, chapterPayload);
+          } else {
+            const chRes = await chaptersAPI.create(courseId, chapterPayload);
+            chapterId = chRes?.data?.id ?? chRes?.id ?? chRes;
+            l.chapterId = chapterId;
+          }
+
+          const minutes = Number(l.quizDurationMinutes || 0);
+          const assessPayload = {
+            title: l.quizTitle?.trim() || chapterPayload.title,
             type: "quiz",
             scope: "chapter",
             timeLimitSeconds: minutes > 0 ? minutes * 60 : null,
             maxAttempts: 1,
             isPublished: true,
             order: 1,
-            questions: mapQuestionsForAPI(lesson.questions || []),
-          });
+            questions: mapUIQuestionsToAPI(l.questions || []),
+          };
+
+          if (l.assessmentId) {
+            await assessmentsAPI.update(l.assessmentId, assessPayload);
+          } else {
+            const aRes = await assessmentsAPI.createForChapter(
+              chapterId,
+              assessPayload
+            );
+            const newAid = aRes?.data?.id ?? aRes?.id ?? aRes;
+            l.assessmentId = newAid;
+          }
         }
       }
 
-      toast.success("Course, chapters, and quizzes created!");
+      toast.success("Course updated successfully.");
       if (isSuperAdmin) navigate("/superadmin");
       else if (isAdminOnly) navigate("/admin");
       else if (roleNorm === "INSTRUCTOR") navigate("/instructor");
       else navigate("/");
-    
+
     } catch (err) {
-      console.error("CreateCourse error:", err);
+      console.error("EditCourse error:", err);
       toast.error(
-        err?.response?.data?.message || "Failed to create the course."
+        err?.response?.data?.message || "Failed to update the course."
       );
     } finally {
       setIsLoading(false);
     }
   };
 
-  const coursePreview = {
-    title: watchedValues.title || "Course Title",
-    description:
-      watchedValues.description || "Course description will appear here...",
-    instructor: user?.fullName || "You",
-    lessons,
-    image:
-      courseImage || "https://via.placeholder.com/400x250?text=Course+Image",
-  };
+  const coursePreview = useMemo(
+    () => ({
+      title: watchedValues.title || "Course Title",
+      description:
+        watchedValues.description || "Course description will appear here...",
+      instructor: user?.fullName || "You",
+      lessons,
+      image:
+        currentThumb || "https://via.placeholder.com/400x250?text=Course+Image",
+    }),
+    [watchedValues, lessons, currentThumb, user?.fullName]
+  );
+
+  if (initialLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+          <div className="animate-pulse space-y-4">
+            <div className="h-6 bg-gray-200 rounded w-1/3" />
+            <div className="h-10 bg-gray-200 rounded w-1/2" />
+            <div className="h-64 bg-gray-200 rounded w-full" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -481,11 +769,9 @@ export default function CreateCoursePage() {
               <ArrowLeft size={20} />
             </button>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                Create New Course
-              </h1>
+              <h1 className="text-3xl font-bold text-gray-900">Edit Course</h1>
               <p className="text-gray-600">
-                Share your knowledge and start earning
+                Update details, chapters and quizzes
               </p>
             </div>
           </div>
@@ -560,7 +846,6 @@ export default function CreateCoursePage() {
                 )}
               </div>
 
-              {/* Instructor (Admin / Super Admin only) */}
               {isAdmin && (
                 <div className="mt-6">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -585,9 +870,30 @@ export default function CreateCoursePage() {
                 </div>
               )}
 
-              <ImagePicker
-                onFileAsBase64={(dataUrl) => setBase64DataUrl(dataUrl)}
-              />
+              <div className="mt-6">
+                <p className="text-sm text-gray-600 mb-2">Current Thumbnail:</p>
+                <div className="flex items-center space-x-4">
+                  {currentThumb ? (
+                    <img
+                      src={currentThumb}
+                      alt="Current thumbnail"
+                      className="h-24 w-40 object-cover rounded border"
+                    />
+                  ) : (
+                    <div className="h-24 w-40 bg-gray-100 rounded border flex items-center justify-center text-gray-400 text-sm">
+                      No thumbnail
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <ImagePicker
+                      onFileAsBase64={(dataUrl) => setBase64DataUrl(dataUrl)}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Upload to replace the current thumbnail.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -604,7 +910,7 @@ export default function CreateCoursePage() {
               <div className="space-y-4">
                 {lessons.map((lesson, idx) => (
                   <div
-                    key={lesson.id}
+                    key={lesson.tempId}
                     className="border border-gray-200 rounded-lg p-4"
                   >
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -617,7 +923,11 @@ export default function CreateCoursePage() {
                             type="text"
                             value={lesson.title}
                             onChange={(e) =>
-                              updateLesson(lesson.id, "title", e.target.value)
+                              updateLesson(
+                                lesson.tempId,
+                                "title",
+                                e.target.value
+                              )
                             }
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                             placeholder={`Chapter ${idx + 1}`}
@@ -634,7 +944,7 @@ export default function CreateCoursePage() {
                         <select
                           value={lesson.type}
                           onChange={(e) =>
-                            updateLesson(lesson.id, "type", e.target.value)
+                            updateLesson(lesson.tempId, "type", e.target.value)
                           }
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                         >
@@ -648,8 +958,7 @@ export default function CreateCoursePage() {
                         <Button
                           type="button"
                           variant="outline"
-                          onClick={() => removeLesson(lesson.id)}
-                          disabled={lessons.length === 1}
+                          onClick={() => removeLesson(lesson.tempId)}
                           className="w-full"
                         >
                           <Trash2 size={16} />
@@ -667,7 +976,11 @@ export default function CreateCoursePage() {
                             rows={3}
                             value={lesson.content}
                             onChange={(e) =>
-                              updateLesson(lesson.id, "content", e.target.value)
+                              updateLesson(
+                                lesson.tempId,
+                                "content",
+                                e.target.value
+                              )
                             }
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                             placeholder="Describe what this lesson covers..."
@@ -682,7 +995,7 @@ export default function CreateCoursePage() {
                             accept="application/pdf"
                             onChange={(e) =>
                               updateLesson(
-                                lesson.id,
+                                lesson.tempId,
                                 "pdfFile",
                                 e.target.files[0]
                               )
@@ -694,6 +1007,62 @@ export default function CreateCoursePage() {
                               Selected: {lesson.pdfFile.name}
                             </p>
                           )}
+                          {Array.isArray(lesson.attachments) &&
+                            lesson.attachments.length > 0 && (
+                              <div className="mt-3 space-y-2">
+                                <p className="text-sm font-medium text-gray-700">
+                                  Existing attachments
+                                </p>
+                                <ul className="space-y-1">
+                                  {lesson.attachments.map((url, i) => {
+                                    const willRemove = (
+                                      lesson.attachmentsToRemove || []
+                                    ).includes(url);
+                                    return (
+                                      <li
+                                        key={url + i}
+                                        className={`flex items-center justify-between rounded border px-3 py-2 text-sm ${
+                                          willRemove
+                                            ? "bg-red-50 border-red-200"
+                                            : "bg-gray-50 border-gray-200"
+                                        }`}
+                                      >
+                                        <a
+                                          href={url}
+                                          target="_blank"
+                                          rel="noreferrer"
+                                          className="truncate max-w-[75%] underline"
+                                        >
+                                          {url}
+                                        </a>
+                                        <button
+                                          type="button"
+                                          className={`px-2 py-1 rounded ${
+                                            willRemove
+                                              ? "bg-gray-200 text-gray-700"
+                                              : "bg-red-500 text-white"
+                                          }`}
+                                          onClick={() =>
+                                            toggleAttachmentRemoval(
+                                              lesson.tempId,
+                                              url
+                                            )
+                                          }
+                                        >
+                                          {willRemove ? "Undo" : "Remove"}
+                                        </button>
+                                      </li>
+                                    );
+                                  })}
+                                </ul>
+                                {lesson.attachmentsToRemove?.length > 0 && (
+                                  <p className="text-xs text-red-600">
+                                    {lesson.attachmentsToRemove.length}{" "}
+                                    attachment(s) will be removed on save.
+                                  </p>
+                                )}
+                              </div>
+                            )}
                         </div>
                       </div>
                     ) : (
@@ -708,7 +1077,7 @@ export default function CreateCoursePage() {
                               value={lesson.quizTitle}
                               onChange={(e) =>
                                 updateLesson(
-                                  lesson.id,
+                                  lesson.tempId,
                                   "quizTitle",
                                   e.target.value
                                 )
@@ -727,7 +1096,7 @@ export default function CreateCoursePage() {
                               value={lesson.quizDurationMinutes}
                               onChange={(e) =>
                                 updateLesson(
-                                  lesson.id,
+                                  lesson.tempId,
                                   "quizDurationMinutes",
                                   e.target.value
                                 )
@@ -752,7 +1121,7 @@ export default function CreateCoursePage() {
                                   type="button"
                                   variant="outline"
                                   onClick={() =>
-                                    removeQuestion(lesson.id, q.id)
+                                    removeQuestion(lesson.tempId, q.id)
                                   }
                                   disabled={lesson.questions.length === 1}
                                 >
@@ -769,7 +1138,7 @@ export default function CreateCoursePage() {
                                     value={q.type}
                                     onChange={(e) =>
                                       updateQuestion(
-                                        lesson.id,
+                                        lesson.tempId,
                                         q.id,
                                         "type",
                                         e.target.value
@@ -804,7 +1173,7 @@ export default function CreateCoursePage() {
                                     value={q.text}
                                     onChange={(e) =>
                                       updateQuestion(
-                                        lesson.id,
+                                        lesson.tempId,
                                         q.id,
                                         "text",
                                         e.target.value
@@ -825,7 +1194,9 @@ export default function CreateCoursePage() {
                                     <Button
                                       type="button"
                                       variant="outline"
-                                      onClick={() => addOption(lesson.id, q.id)}
+                                      onClick={() =>
+                                        addOption(lesson.tempId, q.id)
+                                      }
                                     >
                                       <Plus size={14} className="mr-1" />
                                       Add Option
@@ -844,7 +1215,7 @@ export default function CreateCoursePage() {
                                           checked={o.correct}
                                           onChange={(e) =>
                                             updateOption(
-                                              lesson.id,
+                                              lesson.tempId,
                                               q.id,
                                               o.id,
                                               "correct",
@@ -857,7 +1228,7 @@ export default function CreateCoursePage() {
                                           value={o.text}
                                           onChange={(e) =>
                                             updateOption(
-                                              lesson.id,
+                                              lesson.tempId,
                                               q.id,
                                               o.id,
                                               "text",
@@ -871,7 +1242,11 @@ export default function CreateCoursePage() {
                                           type="button"
                                           className="text-red-500 hover:text-red-600"
                                           onClick={() =>
-                                            removeOption(lesson.id, q.id, o.id)
+                                            removeOption(
+                                              lesson.tempId,
+                                              q.id,
+                                              o.id
+                                            )
                                           }
                                           title="Remove option"
                                         >
@@ -891,7 +1266,7 @@ export default function CreateCoursePage() {
                                     value={q.correctText || ""}
                                     onChange={(e) =>
                                       updateQuestion(
-                                        lesson.id,
+                                        lesson.tempId,
                                         q.id,
                                         "correctText",
                                         e.target.value
@@ -912,7 +1287,7 @@ export default function CreateCoursePage() {
                                       variant="outline"
                                       onClick={() =>
                                         updateQuestion(
-                                          lesson.id,
+                                          lesson.tempId,
                                           q.id,
                                           "pairs",
                                           [
@@ -941,7 +1316,7 @@ export default function CreateCoursePage() {
                                         value={p.left}
                                         onChange={(e) =>
                                           updateQuestion(
-                                            lesson.id,
+                                            lesson.tempId,
                                             q.id,
                                             "pairs",
                                             (q.pairs || []).map((x) =>
@@ -959,7 +1334,7 @@ export default function CreateCoursePage() {
                                         value={p.right}
                                         onChange={(e) =>
                                           updateQuestion(
-                                            lesson.id,
+                                            lesson.tempId,
                                             q.id,
                                             "pairs",
                                             (q.pairs || []).map((x) =>
@@ -980,7 +1355,7 @@ export default function CreateCoursePage() {
                                         className="text-red-500 hover:text-red-600"
                                         onClick={() =>
                                           updateQuestion(
-                                            lesson.id,
+                                            lesson.tempId,
                                             q.id,
                                             "pairs",
                                             (q.pairs || []).filter(
@@ -1005,7 +1380,7 @@ export default function CreateCoursePage() {
                                     value={q.sampleAnswer || ""}
                                     onChange={(e) =>
                                       updateQuestion(
-                                        lesson.id,
+                                        lesson.tempId,
                                         q.id,
                                         "sampleAnswer",
                                         e.target.value
@@ -1023,7 +1398,7 @@ export default function CreateCoursePage() {
                         <Button
                           type="button"
                           variant="outline"
-                          onClick={() => addQuestion(lesson.id)}
+                          onClick={() => addQuestion(lesson.tempId)}
                         >
                           <Plus size={14} className="mr-2" />
                           Add Question
@@ -1050,7 +1425,7 @@ export default function CreateCoursePage() {
               </Button>
               <Button type="submit" loading={isLoading} disabled={isLoading}>
                 <Save size={16} className="mr-2" />
-                Create Course
+                Save Changes
               </Button>
             </div>
           </form>
@@ -1081,7 +1456,7 @@ export default function CreateCoursePage() {
                 <div className="space-y-3">
                   {coursePreview.lessons.map((l, i) => (
                     <div
-                      key={i}
+                      key={l.tempId}
                       className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg"
                     >
                       <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">

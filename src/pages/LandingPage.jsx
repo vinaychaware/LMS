@@ -125,11 +125,11 @@ Our platform equips students with the skills they need to succeed. Through indus
             Join thousands of learners who have already transformed their skills with Pugarch.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/register">
+            {/* <Link to="/register">
               <Button size="lg">
                 Create Free Account
               </Button>
-            </Link>
+            </Link> */}
             <Link to="/courses">
               <Button variant="outline" size="lg">
                 Explore Courses

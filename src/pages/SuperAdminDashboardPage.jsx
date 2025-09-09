@@ -28,8 +28,9 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Plus } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Pencil } from "lucide-react";
 
-// ✅ Backend base URL for superadmin routes
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
@@ -83,9 +84,6 @@ export default function SuperAdminDashboardPage() {
     return body;
   };
 
-  // -------------------------
-  // Load data
-  // -------------------------
   const fetchSystemData = async () => {
     try {
       setLoading(true);
@@ -156,9 +154,6 @@ export default function SuperAdminDashboardPage() {
     }
   };
 
-  // -------------------------
-  // Permissions
-  // -------------------------
   const handleUserPermissions = (user) => {
     setSelectedUser(user);
     setEditingPermissions({ ...(user.permissions || {}) });
@@ -203,9 +198,6 @@ export default function SuperAdminDashboardPage() {
     }
   };
 
-  // -------------------------
-  // Relationship helpers
-  // -------------------------
   const getAdminCourses = (adminId) =>
     allCourses.filter(
       (c) => c.creatorId === adminId || c.managerId === adminId
@@ -240,9 +232,6 @@ export default function SuperAdminDashboardPage() {
     return filtered;
   };
 
-  // -------------------------
-  // Placeholder college actions
-  // -------------------------
   const handleCollegeAction = async (_collegeId, action) => {
     switch (action) {
       case "view":
@@ -259,9 +248,31 @@ export default function SuperAdminDashboardPage() {
     }
   };
 
-  // -------------------------
-  // UI
-  // -------------------------
+  const navigate = useNavigate();
+  const user = useAuthStore((s) => s.user);
+  const normRole = (r) =>
+    String(r || "")
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "");
+  const roleNorm = normRole(user?.role);
+  const isSuperAdmin = roleNorm === "SUPERADMIN";
+  const isAdminOnly = roleNorm === "ADMIN";
+  const isAdmin = isSuperAdmin || isAdminOnly;
+
+  // If you want instructors with create permission to edit:
+  const canEditCourse = (course) => {
+    if (isAdmin) return true;
+    if (roleNorm === "INSTRUCTOR" && user?.permissions?.canCreateCourses)
+      return true;
+    // Optional: allow course manager or assigned instructor to edit
+    if (course?.managerId && course.managerId === user?.id) return true;
+    const instructors = getCourseInstructors(course.id) || [];
+    if (instructors.some((i) => i.id === user?.id)) return true;
+    return false;
+  };
+
+  const goEdit = (courseId) => navigate(`/courses/${courseId}/edit`);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
@@ -276,10 +287,8 @@ export default function SuperAdminDashboardPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
-        {/* Header */}
         <div className="mb-6 lg:mb-8">
           <div className="flex items-center justify-between">
-            {/* Left side: icon + title */}
             <div className="flex items-center sm:items-start sm:flex-row gap-4">
               <div className="w-12 h-12 flex-none bg-purple-100 rounded-full flex items-center justify-center">
                 <Shield size={24} className="text-purple-600" />
@@ -303,7 +312,7 @@ export default function SuperAdminDashboardPage() {
                 </Button>
               </Link>
 
-              <Link to="/register"  state={{ allowWhenLoggedIn: true }}>
+              <Link to="/register" state={{ allowWhenLoggedIn: true }}>
                 <Button size="sm">
                   <Plus size={16} className="mr-2" />
                   Add User
@@ -705,7 +714,7 @@ export default function SuperAdminDashboardPage() {
           </TabsContent>
 
           {/* Assignments */}
-          <TabsContent value="assignments">
+          {/* <TabsContent value="assignments">
             <div className="space-y-6">
               <Card className="p-5 sm:p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">
@@ -911,7 +920,239 @@ export default function SuperAdminDashboardPage() {
                 </div>
               </Card>
             </div>
-          </TabsContent>
+          </TabsContent> */}
+
+<TabsContent value="assignments">
+  <div className="space-y-6">
+    <Card className="p-5 sm:p-6">
+      <h3 className="text-lg font-semibold text-gray-900 mb-4">
+        Admin-Course Assignments
+      </h3>
+      <div className="space-y-4">
+        {allAdmins.map((admin) => {
+          const adminCourses = getAdminCourses(admin.id);
+          return (
+            <div
+              key={admin.id}
+              className="border border-gray-200 rounded-lg p-4"
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 flex-none">
+                    <img
+                      src={admin.avatar}
+                      alt={admin.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <h4 className="font-medium text-gray-900 truncate">
+                      {admin.name}
+                    </h4>
+                    <p className="text-sm text-gray-600 truncate">
+                      {admin.email}
+                    </p>
+                  </div>
+                </div>
+                <Badge variant="info" size="sm">
+                  {adminCourses.length} courses
+                </Badge>
+              </div>
+
+              {adminCourses.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {adminCourses.map((course) => {
+                    const instructors = getCourseInstructors(course.id);
+                    const students = getCourseStudents(course.id);
+                    return (
+                      <div
+                        key={course.id}
+                        className="p-3 bg-gray-50 rounded-lg"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <h5 className="font-medium text-gray-900 mb-1 truncate">
+                              {course.title}
+                            </h5>
+                            <div className="text-xs text-gray-600 space-y-1">
+                              <div className="truncate">
+                                Instructors:{" "}
+                                {instructors.map((i) => i.name).join(", ") || "None"}
+                              </div>
+                              <div>Students: {students.length}</div>
+                              <div>Status: {course.status}</div>
+                            </div>
+                          </div>
+
+                          {canEditCourse(course) && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => goEdit(course.id)}
+                              className="shrink-0"
+                            >
+                              <Pencil size={14} className="mr-1" />
+                              Edit
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500 italic">
+                  No courses assigned
+                </p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </Card>
+
+    <Card className="p-5 sm:p-6">
+      <h3 className="text-lg font-semibold text-gray-900 mb-4">
+        Course-User Assignments
+      </h3>
+      <div className="space-y-4">
+        {allCourses.map((course) => {
+          const instructors = getCourseInstructors(course.id);
+          const students = getCourseStudents(course.id);
+          return (
+            <div
+              key={course.id}
+              className="border border-gray-200 rounded-lg p-4"
+            >
+              <div className="flex flex-col md:flex-row md:items-start justify-between gap-3 mb-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex-none">
+                    <img
+                      src={course.thumbnail}
+                      alt={course.title}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <h4 className="font-medium text-gray-900 truncate">
+                      {course.title}
+                    </h4>
+                    <p className="text-xs text-gray-500 truncate">
+                      Managed by: {course.managerName || "—"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-2 flex-wrap items-center">
+                  <Badge variant="info" size="sm">
+                    {instructors.length} instructors
+                  </Badge>
+                  <Badge variant="success" size="sm">
+                    {students.length} students
+                  </Badge>
+
+                  {canEditCourse(course) && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => goEdit(course.id)}
+                      className="ml-auto"
+                    >
+                      <Pencil size={14} className="mr-1" />
+                      Edit
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <h5 className="text-sm font-medium text-gray-700 mb-2">
+                    Assigned Instructors:
+                  </h5>
+                  {instructors.length > 0 ? (
+                    <div className="space-y-1">
+                      {instructors.map((instructor) => (
+                        <div
+                          key={instructor.id}
+                          className="flex items-center gap-2 text-sm"
+                        >
+                          <div className="w-6 h-6 rounded-full overflow-hidden bg-gray-100 flex-none">
+                            <img
+                              src={instructor.avatar}
+                              alt={instructor.name}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <span className="text-gray-900 truncate">
+                            {instructor.name}
+                          </span>
+                          <div className="flex gap-1 flex-wrap">
+                            {instructor.permissions?.canCreateCourses && (
+                              <Badge variant="success" size="sm">
+                                Course
+                              </Badge>
+                            )}
+                            {instructor.permissions?.canCreateTests && (
+                              <Badge variant="warning" size="sm">
+                                Test
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500 italic">
+                      No instructors assigned
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <h5 className="text-sm font-medium text-gray-700 mb-2">
+                    Enrolled Students:
+                  </h5>
+                  {students.length > 0 ? (
+                    <div className="space-y-1">
+                      {students.slice(0, 3).map((student) => (
+                        <div
+                          key={student.id}
+                          className="flex items-center gap-2 text-sm"
+                        >
+                          <div className="w-6 h-6 rounded-full overflow-hidden bg-gray-100 flex-none">
+                            <img
+                              src={student.avatar}
+                              alt={student.name}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <span className="text-gray-900 truncate">
+                            {student.name}
+                          </span>
+                        </div>
+                      ))}
+                      {students.length > 3 && (
+                        <p className="text-xs text-gray-500">
+                          +{students.length - 3} more students
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500 italic">
+                      No students enrolled
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </Card>
+  </div>
+</TabsContent>
+
 
           {/* Analytics */}
           <TabsContent value="analytics">
@@ -1003,7 +1244,7 @@ export default function SuperAdminDashboardPage() {
           </TabsContent>
         </Tabs>
 
-        {/* Permissions Modal */}
+   
         <Modal
           isOpen={showPermissionsModal}
           onClose={() => {
@@ -1204,7 +1445,7 @@ export default function SuperAdminDashboardPage() {
           )}
         </Modal>
 
-        {/* College modals: placeholders until college API exists */}
+       
         <Modal
           isOpen={showCollegeModal}
           onClose={() => {

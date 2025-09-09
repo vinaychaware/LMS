@@ -16,7 +16,7 @@ import useAuthStore from "../store/useAuthStore";
 import Button from "../components/ui/Button";
 import Progress from "../components/ui/Progress";
 import Badge from "../components/ui/Badge";
-import { coursesAPI, chaptersAPI, FALLBACK_THUMB } from "../services/api";
+import { coursesAPI, chaptersAPI, FALLBACK_THUMB,progressAPI } from "../services/api";
 
 const makeHeaders = () => {
   const token = useAuthStore.getState().token;
@@ -46,6 +46,13 @@ const CourseViewerPage = () => {
   useEffect(() => {
     fetchData();
   }, [courseId]);
+
+  const isQuizUnlocked = (chapter) => {
+  if (!chapter?.hasQuiz) return false;
+  const prior = chapters
+    .filter(c => (c.order || 0) < (chapter.order || 0));
+  return prior.every(c => completedChapterIds.includes(c.id));
+};
 
   async function fetchData() {
     setLoading(true);
@@ -78,6 +85,10 @@ const CourseViewerPage = () => {
 
       setChapters(mappedChapters);
       if (mappedChapters.length) setCurrentChapter(mappedChapters[0]);
+
+         const ids = (await progressAPI.completedChapters(courseId)).data?.data ?? [];
+    setCompletedChapterIds(ids);
+
     } catch (err) {
       console.error("Course load failed:", err);
       toast.error("Failed to load course");
@@ -88,28 +99,29 @@ const CourseViewerPage = () => {
   }
 
   // Only load the quiz if the chapter HAS quiz AND the chapter is already completed (unlocked).
-  useEffect(() => {
-    const resetQuizState = () => {
-      setQuiz(null);
-      setQuizAnswers({});
-      setQuizSubmitted(false);
-      setQuizScore(null);
-    };
+useEffect(() => {
+  const resetQuizState = () => {
+    setQuiz(null);
+    setQuizAnswers({});
+    setQuizSubmitted(false);
+    setQuizScore(null);
+  };
 
-    if (!currentChapter?.hasQuiz) {
-      resetQuizState();
-      return;
-    }
+  if (!currentChapter?.hasQuiz) {
+    resetQuizState();
+    return;
+  }
 
-    const completed = isChapterCompleted(currentChapter.id);
-    if (!completed) {
-      // lock: ensure no quiz content is shown/loaded
-      resetQuizState();
-      return;
-    }
+  // Unlock rule: all previous chapters completed
+  if (!isQuizUnlocked(currentChapter)) {
+    resetQuizState();
+    return;
+  }
 
-    loadQuizForChapter(currentChapter.id);
-  }, [currentChapter?.id, currentChapter?.hasQuiz, completedChapterIds.join("|")]);
+  // Unlocked → load quiz automatically
+  loadQuizForChapter(currentChapter.id);
+}, [currentChapter?.id, currentChapter?.hasQuiz, completedChapterIds.join("|")]);
+
 
   async function loadQuizForChapter(chapterId) {
     setQuizLoading(true);
@@ -173,19 +185,17 @@ const CourseViewerPage = () => {
   const isChapterCompleted = (id) => completedChapterIds.includes(id);
 
   // UPDATED: accept options to prevent auto-advance (used when unlocking quiz)
-  const markChapterComplete = ({ advance = true } = {}) => {
-    if (!currentChapter) return;
-    if (!isChapterCompleted(currentChapter.id)) {
-      setCompletedChapterIds((prev) => [...prev, currentChapter.id]);
-      toast.success("Chapter completed!");
-      if (advance) {
-        const idx = chapters.findIndex((c) => c.id === currentChapter.id);
-        if (idx >= 0 && idx < chapters.length - 1) {
-          setCurrentChapter(chapters[idx + 1]);
-        }
-      }
-    }
-  };
+  const markChapterComplete = async ({ advance = true } = {}) => {
+  if (!currentChapter || isChapterCompleted(currentChapter.id)) return;
+  try {
+    await progressAPI.completeChapter(currentChapter.id);
+    setCompletedChapterIds((prev) => [...prev, currentChapter.id]);
+    toast.success("Chapter completed!");
+    if (advance) { /* your existing advance code */ }
+  } catch (e) {
+    toast.error("Failed to save progress");
+  }
+};
 
   const handleAnswerChange = (qid, value) => {
     setQuizAnswers((prev) => ({ ...prev, [qid]: value }));
@@ -342,58 +352,59 @@ const CourseViewerPage = () => {
       </div>
 
       {/* Main panel */}
-      <div className="flex-1 flex flex-col">
-        <div className="bg-white border-b border-gray-200 p-4 flex items-center justify-between">
-          {!sidebarOpen && (
-            <Button variant="ghost" size="sm" onClick={() => setSidebarOpen(true)}>
-              <BookOpen size={16} className="mr-2" />
-              Course Content
-            </Button>
-          )}
-          {currentChapter && (
-            <div className="flex-1 text-center">
-              <h2 className="text-lg font-semibold text-gray-900">{currentChapter.title}</h2>
-              <p className="text-sm text-gray-600">{course.title}</p>
-            </div>
-          )}
-          <div className="w-16" />
-        </div>
-
-        <div className="flex-1 bg-white">
-          {!currentChapter ? (
-            <EmptyPrompt />
-          ) : currentChapter.hasQuiz ? (
-            // QUIZ VIEW (locked until chapter completed)
-            isChapterCompleted(currentChapter.id) ? (
-              <QuizView
-                quiz={quiz}
-                quizLoading={quizLoading}
-                quizSubmitted={quizSubmitted}
-                quizScore={quizScore}
-                quizAnswers={quizAnswers}
-                onAnswerChange={handleAnswerChange}
-                onSubmit={submitQuiz}
-                completed={isChapterCompleted(currentChapter.id)}
-                onMarkComplete={() => markChapterComplete()}
-              />
-            ) : (
-              <LockedQuizPanel onUnlock={() => markChapterComplete({ advance: false })} />
-            )
-          ) : (
-            // TEXT CHAPTER VIEW
-            <TextChapterView
-              chapter={currentChapter}
-              completed={isChapterCompleted(currentChapter.id)}
-              onMarkComplete={() => markChapterComplete()}
-            />
-          )}
-        </div>
+    <div className="flex-1 flex flex-col">
+  <div className="bg-white border-b border-gray-200 p-4 flex items-center justify-between">
+    {!sidebarOpen && (
+      <Button variant="ghost" size="sm" onClick={() => setSidebarOpen(true)}>
+        <BookOpen size={16} className="mr-2" />
+        Course Content
+      </Button>
+    )}
+    {currentChapter && (
+      <div className="flex-1 text-center">
+        <h2 className="text-lg font-semibold text-gray-900">{currentChapter.title}</h2>
+        <p className="text-sm text-gray-600">{course.title}</p>
       </div>
+    )}
+    <div className="w-16" />
+  </div>
+
+  <div className="flex-1 bg-white">
+    {!currentChapter ? (
+      <EmptyPrompt />
+    ) : currentChapter.hasQuiz ? (
+      // QUIZ VIEW — auto-unlocked
+      isQuizUnlocked(currentChapter) ? (
+        <QuizView
+          quiz={quiz}
+          quizLoading={quizLoading}
+          quizSubmitted={quizSubmitted}
+          quizScore={quizScore}
+          quizAnswers={quizAnswers}
+          onAnswerChange={handleAnswerChange}
+          onSubmit={submitQuiz}
+          completed={isChapterCompleted(currentChapter.id)}
+          onMarkComplete={() => markChapterComplete()}
+        />
+      ) : (
+        <LockedQuizNote />  
+      )
+    ) : (
+      // TEXT CHAPTER VIEW
+      <TextChapterView
+        chapter={currentChapter}
+        completed={isChapterCompleted(currentChapter.id)}
+        onMarkComplete={() => markChapterComplete()}
+      />
+    )}
+  </div>
+</div>
+
     </div>
   );
 };
 
-/* ---------- Small subcomponents for clarity ---------- */
+
 
 function EmptyPrompt() {
   return (
@@ -407,23 +418,20 @@ function EmptyPrompt() {
   );
 }
 
-function LockedQuizPanel({ onUnlock }) {
+function LockedQuizNote() {
   return (
     <div className="max-w-3xl mx-auto p-6">
       <div className="border rounded-lg p-6 bg-gray-50 text-center">
         <Lock size={28} className="mx-auto mb-3 text-gray-600" />
         <h3 className="text-lg font-semibold text-gray-900 mb-2">Quiz locked</h3>
-        <p className="text-sm text-gray-600 mb-4">
-          You must mark this chapter as completed to unlock the quiz.
+        <p className="text-sm text-gray-600">
+          Complete the required previous chapter(s) to unlock this quiz.
         </p>
-        <Button onClick={onUnlock}>
-          <CheckCircle size={16} className="mr-2" />
-          Mark chapter complete to unlock
-        </Button>
       </div>
     </div>
   );
 }
+
 
 function TextChapterView({ chapter, completed, onMarkComplete }) {
   return (
