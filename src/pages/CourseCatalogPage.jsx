@@ -38,10 +38,19 @@ const CourseCatalogPage = () => {
   const [viewMode, setViewMode] = useState("grid");
   const [showFilters, setShowFilters] = useState(false);
   const [favorites, setFavorites] = useState([]);
-  const [pendingRequests, setPendingRequests] = useState(new Set()); // <— NEW
+  const [pendingRequests, setPendingRequests] = useState(new Set());
 
   const { user, isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
+
+  // Track small-screen vs large-screen to render the mobile slide-over
+  const [isMobileScreen, setIsMobileScreen] = useState(false);
+  useEffect(() => {
+    const handler = () => setIsMobileScreen(window.innerWidth < 1024); // < lg
+    handler();
+    window.addEventListener("resize", handler);
+    return () => window.removeEventListener("resize", handler);
+  }, []);
 
   const categories = [
     { id: "all", name: "All Categories", count: 0 },
@@ -75,7 +84,6 @@ const CourseCatalogPage = () => {
     fetchCourses();
   }, []);
 
-  // Load the student's pending requests to show "Requested" state
   useEffect(() => {
     if (!isAuthenticated) {
       setPendingRequests(new Set());
@@ -91,8 +99,7 @@ const CourseCatalogPage = () => {
         );
         setPendingRequests(ids);
       } catch (e) {
-        // non-blocking
-        // console.warn("Could not load pending requests", e);
+        // ignore
       }
     })();
   }, [isAuthenticated]);
@@ -129,10 +136,8 @@ const CourseCatalogPage = () => {
           price: Number(c.price ?? 0),
           estimatedDuration: c.estimatedDuration || "—",
           duration: c.estimatedDuration || "—",
-          // totalModules: Number(c.totalModules ?? 0),
           createdAt: c.createdAt || new Date().toISOString(),
           enrolledStudents: Number(c.studentCount ?? 0),
-
           instructor: {
             name: firstInstructor,
             avatar: `data:image/svg+xml;utf8,${encodeURIComponent(
@@ -150,10 +155,9 @@ const CourseCatalogPage = () => {
               </svg>`
             )}`,
           },
-
           progress: undefined,
           collegeId: c.collegeId,
-          enrollmentStatus: c.enrollmentStatus || "", // if your API sends it
+          enrollmentStatus: c.enrollmentStatus || "",
         };
       });
 
@@ -324,23 +328,23 @@ const CourseCatalogPage = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="bg-gradient-to-r from-primary-600 to-purple-600 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
           <div className="text-center">
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4">
               Discover Your Next Learning Adventure
             </h1>
-            <p className="text-lg sm:text-xl text-primary-100 max-w-2xl mx-auto mb-6 sm:mb-8 px-4">
+            <p className="text-sm sm:text-base text-primary-100 max-w-2xl mx-auto mb-6 sm:mb-8 px-4">
               Explore courses from expert instructors. Transform your skills and advance your career.
             </p>
             <div className="max-w-2xl mx-auto px-4">
               <div className="relative">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                 <input
                   type="text"
                   placeholder="Search for courses, instructors, or topics..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 sm:py-4 text-gray-900 bg-white rounded-xl shadow-lg focus:ring-4 focus:ring-white/20 focus:outline-none text-base sm:text-lg"
+                  className="w-full pl-11 pr-4 py-2 sm:py-3 text-gray-900 bg-white rounded-xl shadow-lg focus:ring-4 focus:ring-white/20 focus:outline-none text-sm sm:text-base"
                 />
               </div>
             </div>
@@ -348,35 +352,35 @@ const CourseCatalogPage = () => {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4 sm:mb-6">
-            <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <div className="mb-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div className="flex items-center gap-3 w-full md:w-auto">
+              {/* Filters button */}
               <Button
                 variant={showFilters ? "primary" : "outline"}
-                className="w-full sm:w-auto"
+                className="w-full md:w-auto"
                 onClick={() => setShowFilters(!showFilters)}
               >
                 <SlidersHorizontal size={16} className="mr-2" />
                 Filters
               </Button>
 
-              <div className="flex items-center justify-between sm:justify-start space-x-2">
-                <span className="text-sm text-gray-600">View:</span>
+              {/* view toggle */}
+              <div className="flex items-center justify-between sm:justify-start space-x-2 ml-auto md:ml-0">
+                <span className="text-sm text-gray-600 hidden sm:inline">View:</span>
                 <div className="flex border border-gray-300 rounded-lg overflow-hidden">
                   <button
                     onClick={() => setViewMode("grid")}
-                    className={`p-2 ${
-                      viewMode === "grid" ? "bg-primary-600 text-white" : "bg-white text-gray-600 hover:bg-gray-50"
-                    }`}
+                    className={`p-2 ${viewMode === "grid" ? "bg-primary-600 text-white" : "bg-white text-gray-600 hover:bg-gray-50"}`}
+                    aria-label="Grid view"
                   >
                     <Grid3X3 size={16} />
                   </button>
                   <button
                     onClick={() => setViewMode("list")}
-                    className={`p-2 ${
-                      viewMode === "list" ? "bg-primary-600 text-white" : "bg-white text-gray-600 hover:bg-gray-50"
-                    }`}
+                    className={`p-2 ${viewMode === "list" ? "bg-primary-600 text-white" : "bg-white text-gray-600 hover:bg-gray-50"}`}
+                    aria-label="List view"
                   >
                     <List size={16} />
                   </button>
@@ -384,13 +388,13 @@ const CourseCatalogPage = () => {
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
-              <div className="flex items-center justify-between sm:justify-start space-x-2">
-                <span className="text-sm text-gray-600">Sort by:</span>
+            <div className="flex items-center gap-3 mt-3 md:mt-0">
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-600 hidden sm:inline">Sort by:</span>
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="px-2 sm:px-3 py-1 sm:py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="px-2 sm:px-3 py-1 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 >
                   {sortOptions.map((option) => (
                     <option key={option.id} value={option.id}>
@@ -406,90 +410,56 @@ const CourseCatalogPage = () => {
             </div>
           </div>
 
-          {showFilters && (
-            <Card className="p-4 sm:p-6 mb-4 sm:mb-6">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0 mb-4">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900">Filter Courses</h3>
-                <div className="flex space-x-2">
-                  <Button variant="outline" size="sm" onClick={clearFilters}>
-                    Clear All
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => setShowFilters(false)}>
-                    <X size={16} />
-                  </Button>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-                  <select
-                    value={selectedCategory}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="w-full px-2 sm:px-3 py-1 sm:py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                  >
-                    {categories.map((category) => (
-                      <option key={category.id} value={category.id}>
-                        {category.name} {category.count > 0 && `(${category.count})`}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Level</label>
-                  <select
-                    value={selectedLevel}
-                    onChange={(e) => setSelectedLevel(e.target.value)}
-                    className="w-full px-2 sm:px-3 py-1 sm:py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                  >
-                    {levels.map((level) => (
-                      <option key={level.id} value={level.id}>
-                        {level.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Institution</label>
-                  <select
-                    value={selectedCollege}
-                    onChange={(e) => setSelectedCollege(e.target.value)}
-                    className="w-full px-2 sm:px-3 py-1 sm:py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                  >
-                    <option value="all">All Institutions</option>
-                    {mockData.colleges.map((college) => (
-                      <option key={college.id} value={college.id}>
-                        {college.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Price Range: ${priceRange[0]} - ${priceRange[1]}
-                  </label>
-                  <div className="space-y-2">
-                    <input
-                      type="range"
-                      min="0"
-                      max="500"
-                      value={priceRange[1]}
-                      onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
-                      className="w-full"
-                    />
-                    <div className="flex justify-between text-xs text-gray-500">
-                      <span>Free</span>
-                      <span>$500+</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+          {/* Desktop filters card (lg+) */}
+          {!isMobileScreen && showFilters && (
+            <Card className="p-4 sm:p-6 mb-4 sm:mb-6 mt-4">
+              <FilterForm
+                categories={categories}
+                levels={levels}
+                selectedCategory={selectedCategory}
+                setSelectedCategory={setSelectedCategory}
+                selectedLevel={selectedLevel}
+                setSelectedLevel={setSelectedLevel}
+                selectedCollege={selectedCollege}
+                setSelectedCollege={setSelectedCollege}
+                priceRange={priceRange}
+                setPriceRange={setPriceRange}
+                clearFilters={clearFilters}
+              />
             </Card>
           )}
         </div>
+
+        {/* Mobile slide-over filters */}
+        {isMobileScreen && showFilters && (
+          <div className="fixed inset-0 z-50">
+            <div className="absolute inset-0 bg-black/40" onClick={() => setShowFilters(false)} />
+            <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-xl p-4 max-h-[80%] overflow-auto">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium">Filter Courses</h3>
+                <button className="p-2" onClick={() => setShowFilters(false)} aria-label="Close filters">
+                  <X size={20} />
+                </button>
+              </div>
+              <FilterForm
+                categories={categories}
+                levels={levels}
+                selectedCategory={selectedCategory}
+                setSelectedCategory={setSelectedCategory}
+                selectedLevel={selectedLevel}
+                setSelectedLevel={setSelectedLevel}
+                selectedCollege={selectedCollege}
+                setSelectedCollege={setSelectedCollege}
+                priceRange={priceRange}
+                setPriceRange={setPriceRange}
+                clearFilters={() => {
+                  clearFilters();
+                  setShowFilters(false);
+                }}
+              />
+            </div>
+          </div>
+        )}
 
         {filteredCourses.length === 0 ? (
           <div className="text-center py-16">
@@ -515,7 +485,7 @@ const CourseCatalogPage = () => {
                   course={course}
                   isFavorite={favorites.includes(course.id)}
                   onToggleFavorite={() => toggleFavorite(course.id)}
-                  onEnroll={() => handleEnrollRequest(course)} // <— NEW
+                  onEnroll={() => handleEnrollRequest(course)}
                   isPending={
                     pendingRequests.has(course.id) ||
                     String(course.enrollmentStatus).toLowerCase() === "pending"
@@ -529,7 +499,7 @@ const CourseCatalogPage = () => {
                   course={course}
                   isFavorite={favorites.includes(course.id)}
                   onToggleFavorite={() => toggleFavorite(course.id)}
-                  onEnroll={() => handleEnrollRequest(course)} // <— NEW
+                  onEnroll={() => handleEnrollRequest(course)}
                   isPending={
                     pendingRequests.has(course.id) ||
                     String(course.enrollmentStatus).toLowerCase() === "pending"
@@ -546,12 +516,107 @@ const CourseCatalogPage = () => {
   );
 };
 
+/* ---------------------------
+   FilterForm component (reusable)
+   --------------------------- */
+const FilterForm = ({
+  categories,
+  levels,
+  selectedCategory,
+  setSelectedCategory,
+  selectedLevel,
+  setSelectedLevel,
+  selectedCollege,
+  setSelectedCollege,
+  priceRange,
+  setPriceRange,
+  clearFilters,
+}) => {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+        <select
+          value={selectedCategory}
+          onChange={(e) => setSelectedCategory(e.target.value)}
+          className="w-full px-2 sm:px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+        >
+          {categories.map((category) => (
+            <option key={category.id} value={category.id}>
+              {category.name} {category.count > 0 && `(${category.count})`}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Level</label>
+        <select
+          value={selectedLevel}
+          onChange={(e) => setSelectedLevel(e.target.value)}
+          className="w-full px-2 sm:px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+        >
+          {levels.map((level) => (
+            <option key={level.id} value={level.id}>
+              {level.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Institution</label>
+        <select
+          value={selectedCollege}
+          onChange={(e) => setSelectedCollege(e.target.value)}
+          className="w-full px-2 sm:px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+        >
+          <option value="all">All Institutions</option>
+          {mockData.colleges.map((college) => (
+            <option key={college.id} value={college.id}>
+              {college.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Price Range: ${priceRange[0]} - ${priceRange[1]}
+        </label>
+        <div className="space-y-2">
+          <input
+            type="range"
+            min="0"
+            max="500"
+            value={priceRange[1]}
+            onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
+            className="w-full"
+          />
+          <div className="flex justify-between text-xs text-gray-500">
+            <span>Free</span>
+            <span>$500+</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 mt-3">
+          <Button variant="outline" size="sm" onClick={clearFilters}>
+            Clear All
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ---------------------------
+   CourseCard (grid item) - responsive
+   --------------------------- */
 const CourseCard = ({
   course,
   isFavorite,
   onToggleFavorite,
-  onEnroll,     // <— NEW
-  isPending,    // <— NEW
+  onEnroll,
+  isPending,
   getCategoryColor,
   getLevelColor,
 }) => {
@@ -560,7 +625,8 @@ const CourseCard = ({
 
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 group">
-      <div className="relative aspect-video bg-gradient-to-br from-primary-100 to-primary-200">
+      {/* Mobile: fixed height banner; Desktop (sm+): aspect-video */}
+      <div className="relative bg-gradient-to-br from-primary-100 to-primary-200 h-40 sm:aspect-video overflow-hidden">
         <img
           src={course.thumbnail}
           alt={course.title}
@@ -569,9 +635,8 @@ const CourseCard = ({
         <div className="absolute top-3 right-3 flex space-x-2">
           <button
             onClick={onToggleFavorite}
-            className={`p-2 rounded-full backdrop-blur-sm transition-colors ${
-              isFavorite ? "bg-red-500 text-white" : "bg-white/80 text-gray-600 hover:bg-white"
-            }`}
+            className={`p-2 rounded-full backdrop-blur-sm transition-colors ${isFavorite ? "bg-red-500 text-white" : "bg-white/80 text-gray-600 hover:bg-white"}`}
+            aria-label="Toggle favorite"
           >
             <Heart size={16} className={isFavorite ? "fill-current" : ""} />
           </button>
@@ -586,9 +651,9 @@ const CourseCard = ({
         )}
       </div>
 
-      <Card.Content className="p-6">
+      <Card.Content className="p-4 sm:p-6">
         <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 flex-wrap">
             <Badge className={getCategoryColor(course.category)} size="sm">
               {course.category}
             </Badge>
@@ -603,7 +668,7 @@ const CourseCard = ({
           </div>
         </div>
 
-        <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-primary-600 transition-colors">
+        <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-primary-600 transition-colors">
           {course.title}
         </h3>
 
@@ -611,21 +676,21 @@ const CourseCard = ({
           <p className="text-gray-600 text-sm mb-4 line-clamp-2">{course.description}</p>
         )}
 
-        <div className="flex items-center space-x-2 mb-4">
-          <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200">
+        <div className="flex items-center space-x-2 mb-3">
+          <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
             <img
               src={course.instructor?.avatar}
               alt={course.instructor?.name}
               className="w-full h-full object-cover"
             />
           </div>
-          <div>
-            <span className="text-sm font-medium text-gray-700">{course.instructor?.name}</span>
-            {college && <p className="text-xs text-gray-500">{college.name}</p>}
+          <div className="min-w-0">
+            <span className="text-sm font-medium text-gray-700 truncate block">{course.instructor?.name}</span>
+            {college && <p className="text-xs text-gray-500 truncate">{college.name}</p>}
           </div>
         </div>
 
-        <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+        <div className="flex items-center justify-between text-sm text-gray-500 mb-4 flex-wrap">
           <div className="flex items-center space-x-1">
             <Clock size={14} />
             <span>{course.duration}</span>
@@ -634,10 +699,6 @@ const CourseCard = ({
             <Users size={14} />
             <span>{course.enrolledStudents} students</span>
           </div>
-          {/* <div className="flex items-center space-x-1">
-            <BookOpen size={14} />
-            <span>{course.totalModules} modules</span>
-          </div> */}
         </div>
 
         {course.progress !== undefined && (
@@ -650,40 +711,44 @@ const CourseCard = ({
           </div>
         )}
 
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3 flex-col sm:flex-row">
           <div className="text-xl font-bold text-gray-900">
             {course.price === 0 ? <span className="text-green-600">Free</span> : <span>${course.price}</span>}
           </div>
 
-          {/* BUTTON LOGIC UPDATED */}
-          {course.progress !== undefined ? (
-            <Link to={`/courses/${course.id}`}>
-              <Button size="sm" className="group">
-                <Play size={16} className="mr-1" />
-                Continue
+          <div className="w-full sm:w-auto">
+            {course.progress !== undefined ? (
+              <Link to={`/courses/${course.id}`}>
+                <Button size="sm" className="w-full sm:w-auto">
+                  <Play size={16} className="mr-1" />
+                  Continue
+                </Button>
+              </Link>
+            ) : isPending ? (
+              <Button size="sm" variant="outline" disabled className="w-full sm:w-auto">
+                Requested
               </Button>
-            </Link>
-          ) : isPending ? (
-            <Button size="sm" variant="outline" disabled>
-              Requested
-            </Button>
-          ) : (
-            <Button size="sm" onClick={onEnroll}>
-              Enroll
-            </Button>
-          )}
+            ) : (
+              <Button size="sm" onClick={onEnroll} className="w-full sm:w-auto">
+                Enroll
+              </Button>
+            )}
+          </div>
         </div>
       </Card.Content>
     </Card>
   );
 };
 
+/* ---------------------------
+   CourseListItem (list view) - responsive stacked
+   --------------------------- */
 const CourseListItem = ({
   course,
   isFavorite,
   onToggleFavorite,
-  onEnroll,   // <— NEW
-  isPending,  // <— NEW
+  onEnroll,
+  isPending,
   getCategoryColor,
   getLevelColor,
 }) => {
@@ -692,21 +757,17 @@ const CourseListItem = ({
 
   return (
     <Card className="overflow-hidden hover:shadow-md transition-shadow">
-      <div className="flex">
-        <div className="w-48 h-32 bg-gradient-to-br from-primary-100 to-primary-200 flex-shrink-0">
+      <div className="flex flex-col sm:flex-row">
+        <div className="w-full sm:w-48 h-48 sm:h-32 bg-gradient-to-br from-primary-100 to-primary-200 flex-shrink-0 overflow-hidden">
           <img src={course.thumbnail} alt={course.title} className="w-full h-full object-cover" />
         </div>
 
-        <div className="flex-1 p-6">
+        <div className="flex-1 p-4 sm:p-6">
           <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <div className="flex items-center space-x-2 mb-2">
-                <Badge className={getCategoryColor(course.category)} size="sm">
-                  {course.category}
-                </Badge>
-                <Badge className={getLevelColor(course.level)} size="sm">
-                  {course.level}
-                </Badge>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center space-x-2 mb-2 flex-wrap">
+                <Badge className={getCategoryColor(course.category)} size="sm">{course.category}</Badge>
+                <Badge className={getLevelColor(course.level)} size="sm">{course.level}</Badge>
                 <div className="flex items-center space-x-1">
                   <Star size={14} className="text-yellow-400 fill-current" />
                   <span className="text-sm font-medium text-gray-700">{course.rating ?? 0}</span>
@@ -714,7 +775,7 @@ const CourseListItem = ({
                 </div>
               </div>
 
-              <h3 className="text-xl font-semibold text-gray-900 mb-2 hover:text-primary-600 transition-colors">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2 hover:text-primary-600 transition-colors line-clamp-2">
                 {course.title}
               </h3>
 
@@ -722,23 +783,7 @@ const CourseListItem = ({
                 <p className="text-gray-600 mb-3 line-clamp-2">{course.description}</p>
               )}
 
-              <div className="flex items-center space-x-4 mb-3">
-                <div className="flex items-center space-x-2">
-                  <div className="w-6 h-6 rounded-full overflow-hidden bg-gray-200">
-                    <img
-                      src={course.instructor?.avatar}
-                      alt={course.instructor?.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <span className="text-sm font-medium text-gray-700">
-                    {course.instructor?.name}
-                  </span>
-                </div>
-                {college && <span className="text-sm text-gray-500">• {college.name}</span>}
-              </div>
-
-              <div className="flex items-center space-x-6 text-sm text-gray-500">
+              <div className="flex items-center space-x-4 text-sm text-gray-500">
                 <div className="flex items-center space-x-1">
                   <Clock size={14} />
                   <span>{course.duration}</span>
@@ -747,20 +792,15 @@ const CourseListItem = ({
                   <Users size={14} />
                   <span>{course.enrolledStudents} students</span>
                 </div>
-                {/* <div className="flex items-center space-x-1">
-                  <BookOpen size={14} />
-                  <span>{course.totalModules} modules</span>
-                </div> */}
+                {college && <span className="text-sm text-gray-500">• {college.name}</span>}
               </div>
             </div>
 
-            <div className="flex flex-col items-end space-y-3">
+            <div className="flex flex-col items-end space-y-3 mt-4 sm:mt-0">
               <div className="flex space-x-2">
                 <button
                   onClick={onToggleFavorite}
-                  className={`p-2 rounded-full transition-colors ${
-                    isFavorite ? "bg-red-100 text-red-600" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                  }`}
+                  className={`p-2 rounded-full transition-colors ${isFavorite ? "bg-red-100 text-red-600" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
                 >
                   <Heart size={16} className={isFavorite ? "fill-current" : ""} />
                 </button>
@@ -774,28 +814,29 @@ const CourseListItem = ({
                   {course.price === 0 ? <span className="text-green-600">Free</span> : <span>${course.price}</span>}
                 </div>
 
-                {/* BUTTON LOGIC UPDATED */}
-                {course.progress !== undefined ? (
-                  <Link to={`/courses/${course.id}`}>
-                    <Button size="sm" className="group">
-                      <Play size={16} className="mr-1" />
-                      Continue
+                <div className="w-full sm:w-auto">
+                  {course.progress !== undefined ? (
+                    <Link to={`/courses/${course.id}`}>
+                      <Button size="sm" className="w-full sm:w-auto">
+                        <Play size={16} className="mr-1" />
+                        Continue
+                      </Button>
+                    </Link>
+                  ) : isPending ? (
+                    <Button size="sm" variant="outline" disabled className="w-full sm:w-auto">
+                      Requested
                     </Button>
-                  </Link>
-                ) : isPending ? (
-                  <Button size="sm" variant="outline" disabled>
-                    Requested
-                  </Button>
-                ) : (
-                  <Button size="sm" onClick={onEnroll}>
-                    Enroll
-                  </Button>
-                )}
+                  ) : (
+                    <Button size="sm" onClick={onEnroll} className="w-full sm:w-auto">
+                      Enroll
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </div> 
     </Card>
   );
 };
