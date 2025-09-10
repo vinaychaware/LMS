@@ -73,20 +73,8 @@ export const authAPI = {
   me: () => api.get("/users/me"),
   updateMe: (data) => api.put("/users/me", data),
   deleteMe: (data) => api.delete("/users/me", { data }),
+    listUsers: (params = {}) => api.get("/users", { params }),
 };
-
-// export const coursesAPI = {
-//   list: () => api.get('/courses'),
-//   get: (id) => api.get(`/courses/${id}`),
-
-//   create: (payload) => api.post('/courses', payload),
-
-//   createFull: (payload) => api.post('/courses/full', payload),
-
-//   update: (id, payload) => api.patch(`/courses/${id}`, payload),
-//   setInstructors: (id, instructorIds) =>
-//     api.post(`/courses/${id}/instructors`, { instructorIds }),
-// }
 
 export const coursesAPI = {
   list: (params = {}) => api.get("/courses", { params }),
@@ -173,6 +161,15 @@ export const progressAPI = {
     api.get(`/progress/course/${courseId}/completed`),
   courseSummary: (courseId) => api.get(`/progress/course/${courseId}/summary`),
    dashboard: () => api.get(`/progress/dashboard`),
+};
+
+export const adminAPI = {
+  overview: () => api.get("/admin/overview"),
+  courses: () => api.get("/admin/courses"),
+  students: () => api.get("/admin/students"),        
+  instructors: () => api.get("/admin/instructors"),    
+  setInstructorPermissions: (id, payload) =>
+    api.patch(`/admin/instructors/${id}/permissions`, payload),
 };
 
 export default api;

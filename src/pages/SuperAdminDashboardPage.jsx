@@ -31,7 +31,6 @@ import { Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Pencil } from "lucide-react";
 
-
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 export default function SuperAdminDashboardPage() {
@@ -53,6 +52,7 @@ export default function SuperAdminDashboardPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterRole, setFilterRole] = useState("all");
   const [editingPermissions, setEditingPermissions] = useState({});
+  const [studentSearch, setStudentSearch] = useState("");
 
   useEffect(() => {
     fetchSystemData();
@@ -415,6 +415,14 @@ export default function SuperAdminDashboardPage() {
                 >
                   Course Assignments
                 </TabsTrigger>
+
+                <TabsTrigger
+                  value="students"
+                  className="whitespace-nowrap snap-start px-3 sm:px-4 py-2 text-xs sm:text-sm"
+                >
+                  Students
+                </TabsTrigger>
+
                 <TabsTrigger
                   value="analytics"
                   className="whitespace-nowrap snap-start px-3 sm:px-4 py-2 text-xs sm:text-sm"
@@ -713,8 +721,7 @@ export default function SuperAdminDashboardPage() {
             </div>
           </TabsContent>
 
-          {/* Assignments */}
-          {/* <TabsContent value="assignments">
+          <TabsContent value="assignments">
             <div className="space-y-6">
               <Card className="p-5 sm:p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">
@@ -763,18 +770,34 @@ export default function SuperAdminDashboardPage() {
                                   key={course.id}
                                   className="p-3 bg-gray-50 rounded-lg"
                                 >
-                                  <h5 className="font-medium text-gray-900 mb-1 truncate">
-                                    {course.title}
-                                  </h5>
-                                  <div className="text-xs text-gray-600 space-y-1">
-                                    <div className="truncate">
-                                      Instructors:{" "}
-                                      {instructors
-                                        .map((i) => i.name)
-                                        .join(", ") || "None"}
+                                  <div className="flex items-start justify-between gap-2">
+                                    <div className="min-w-0">
+                                      <h5 className="font-medium text-gray-900 mb-1 truncate">
+                                        {course.title}
+                                      </h5>
+                                      <div className="text-xs text-gray-600 space-y-1">
+                                        <div className="truncate">
+                                          Instructors:{" "}
+                                          {instructors
+                                            .map((i) => i.name)
+                                            .join(", ") || "None"}
+                                        </div>
+                                        <div>Students: {students.length}</div>
+                                        <div>Status: {course.status}</div>
+                                      </div>
                                     </div>
-                                    <div>Students: {students.length}</div>
-                                    <div>Status: {course.status}</div>
+
+                                    {canEditCourse(course) && (
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => goEdit(course.id)}
+                                        className="shrink-0"
+                                      >
+                                        <Pencil size={14} className="mr-1" />
+                                        Edit
+                                      </Button>
+                                    )}
                                   </div>
                                 </div>
                               );
@@ -822,13 +845,26 @@ export default function SuperAdminDashboardPage() {
                               </p>
                             </div>
                           </div>
-                          <div className="flex gap-2 flex-wrap">
+
+                          <div className="flex gap-2 flex-wrap items-center">
                             <Badge variant="info" size="sm">
                               {instructors.length} instructors
                             </Badge>
                             <Badge variant="success" size="sm">
                               {students.length} students
                             </Badge>
+
+                            {canEditCourse(course) && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => goEdit(course.id)}
+                                className="ml-auto"
+                              >
+                                <Pencil size={14} className="mr-1" />
+                                Edit
+                              </Button>
+                            )}
                           </div>
                         </div>
 
@@ -920,239 +956,148 @@ export default function SuperAdminDashboardPage() {
                 </div>
               </Card>
             </div>
-          </TabsContent> */}
+          </TabsContent>
 
-<TabsContent value="assignments">
-  <div className="space-y-6">
-    <Card className="p-5 sm:p-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">
-        Admin-Course Assignments
-      </h3>
-      <div className="space-y-4">
-        {allAdmins.map((admin) => {
-          const adminCourses = getAdminCourses(admin.id);
-          return (
-            <div
-              key={admin.id}
-              className="border border-gray-200 rounded-lg p-4"
-            >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 flex-none">
-                    <img
-                      src={admin.avatar}
-                      alt={admin.name}
-                      className="w-full h-full object-cover"
-                    />
+          <TabsContent value="students">
+            <div className="space-y-6">
+              {/* Search + quick filter card */}
+              <Card className="p-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center">
+                  <div className="sm:col-span-2">
+                    <div className="relative">
+                      <Input
+                        placeholder="Search students by name or email..."
+                        value={studentSearch}
+                        onChange={(e) => setStudentSearch(e.target.value)}
+                        className="w-full pr-10"
+                      />
+                      <Search className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <h4 className="font-medium text-gray-900 truncate">
-                      {admin.name}
-                    </h4>
-                    <p className="text-sm text-gray-600 truncate">
-                      {admin.email}
-                    </p>
-                  </div>
+                  <Badge variant="info" className="justify-center">
+                    {allStudents.length} total
+                  </Badge>
                 </div>
-                <Badge variant="info" size="sm">
-                  {adminCourses.length} courses
-                </Badge>
-              </div>
+              </Card>
 
-              {adminCourses.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {adminCourses.map((course) => {
-                    const instructors = getCourseInstructors(course.id);
-                    const students = getCourseStudents(course.id);
-                    return (
-                      <div
-                        key={course.id}
-                        className="p-3 bg-gray-50 rounded-lg"
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0">
-                            <h5 className="font-medium text-gray-900 mb-1 truncate">
-                              {course.title}
-                            </h5>
-                            <div className="text-xs text-gray-600 space-y-1">
-                              <div className="truncate">
-                                Instructors:{" "}
-                                {instructors.map((i) => i.name).join(", ") || "None"}
+              {/* Student list */}
+              <Card className="p-5 sm:p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  Student Directory
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {allStudents
+                    .filter((s) => {
+                      if (!studentSearch) return true;
+                      const q = studentSearch.toLowerCase();
+                      return (
+                        (s.name || "").toLowerCase().includes(q) ||
+                        (s.email || "").toLowerCase().includes(q)
+                      );
+                    })
+                    .map((student) => {
+                      const assigned = Array.isArray(student.assignedCourses)
+                        ? student.assignedCourses
+                        : [];
+                      const studentCourses =
+                        allCourses.filter((c) => assigned.includes(c.id)) || [];
+
+                      return (
+                        <div
+                          key={student.id}
+                          className="border border-gray-200 rounded-lg p-4"
+                        >
+                          <div className="flex items-start gap-4">
+                            <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-100 flex-none">
+                              <img
+                                src={student.avatar}
+                                alt={student.name}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center justify-between gap-2">
+                                <h4 className="font-medium text-gray-900 truncate">
+                                  {student.name || "Unnamed"}
+                                </h4>
+                                <Badge variant="secondary" size="sm">
+                                  Student
+                                </Badge>
                               </div>
-                              <div>Students: {students.length}</div>
-                              <div>Status: {course.status}</div>
+
+                              <p className="text-sm text-gray-600 truncate">
+                                {student.email}
+                              </p>
+
+                              <div className="mt-3 flex flex-wrap items-center gap-2">
+                                <Badge variant="info" size="sm">
+                                  {studentCourses.length} courses
+                                </Badge>
+                                {student?.status && (
+                                  <Badge
+                                    variant={
+                                      String(student.status).toLowerCase() ===
+                                      "active"
+                                        ? "success"
+                                        : "secondary"
+                                    }
+                                    size="sm"
+                                  >
+                                    {String(student.status)}
+                                  </Badge>
+                                )}
+                              </div>
+
+                              {studentCourses.length > 0 && (
+                                <div className="mt-3">
+                                  <p className="text-xs text-gray-500 mb-1">
+                                    Recent courses:
+                                  </p>
+                                  <div className="flex flex-wrap gap-2">
+                                    {studentCourses.slice(0, 3).map((c) => (
+                                      <Badge
+                                        key={c.id}
+                                        variant="outline"
+                                        size="sm"
+                                      >
+                                        {c.title}
+                                      </Badge>
+                                    ))}
+                                    {studentCourses.length > 3 && (
+                                      <span className="text-xs text-gray-500">
+                                        +{studentCourses.length - 3} more
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           </div>
 
-                          {canEditCourse(course) && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => goEdit(course.id)}
-                              className="shrink-0"
-                            >
-                              <Pencil size={14} className="mr-1" />
-                              Edit
-                            </Button>
-                          )}
+                          {/* Optional actions */}
+                          {/* <div className="mt-4 flex gap-2">
+                  <Button size="sm" variant="outline">
+                    View
+                  </Button>
+                  <Button size="sm" variant="outline">
+                    Message
+                  </Button>
+                </div> */}
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
                 </div>
-              ) : (
-                <p className="text-sm text-gray-500 italic">
-                  No courses assigned
-                </p>
-              )}
+
+                {allStudents.length === 0 && (
+                  <p className="text-sm text-gray-500 italic mt-2">
+                    No students found.
+                  </p>
+                )}
+              </Card>
             </div>
-          );
-        })}
-      </div>
-    </Card>
-
-    <Card className="p-5 sm:p-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">
-        Course-User Assignments
-      </h3>
-      <div className="space-y-4">
-        {allCourses.map((course) => {
-          const instructors = getCourseInstructors(course.id);
-          const students = getCourseStudents(course.id);
-          return (
-            <div
-              key={course.id}
-              className="border border-gray-200 rounded-lg p-4"
-            >
-              <div className="flex flex-col md:flex-row md:items-start justify-between gap-3 mb-3">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex-none">
-                    <img
-                      src={course.thumbnail}
-                      alt={course.title}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="min-w-0">
-                    <h4 className="font-medium text-gray-900 truncate">
-                      {course.title}
-                    </h4>
-                    <p className="text-xs text-gray-500 truncate">
-                      Managed by: {course.managerName || "—"}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex gap-2 flex-wrap items-center">
-                  <Badge variant="info" size="sm">
-                    {instructors.length} instructors
-                  </Badge>
-                  <Badge variant="success" size="sm">
-                    {students.length} students
-                  </Badge>
-
-                  {canEditCourse(course) && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => goEdit(course.id)}
-                      className="ml-auto"
-                    >
-                      <Pencil size={14} className="mr-1" />
-                      Edit
-                    </Button>
-                  )}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <h5 className="text-sm font-medium text-gray-700 mb-2">
-                    Assigned Instructors:
-                  </h5>
-                  {instructors.length > 0 ? (
-                    <div className="space-y-1">
-                      {instructors.map((instructor) => (
-                        <div
-                          key={instructor.id}
-                          className="flex items-center gap-2 text-sm"
-                        >
-                          <div className="w-6 h-6 rounded-full overflow-hidden bg-gray-100 flex-none">
-                            <img
-                              src={instructor.avatar}
-                              alt={instructor.name}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                          <span className="text-gray-900 truncate">
-                            {instructor.name}
-                          </span>
-                          <div className="flex gap-1 flex-wrap">
-                            {instructor.permissions?.canCreateCourses && (
-                              <Badge variant="success" size="sm">
-                                Course
-                              </Badge>
-                            )}
-                            {instructor.permissions?.canCreateTests && (
-                              <Badge variant="warning" size="sm">
-                                Test
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-gray-500 italic">
-                      No instructors assigned
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <h5 className="text-sm font-medium text-gray-700 mb-2">
-                    Enrolled Students:
-                  </h5>
-                  {students.length > 0 ? (
-                    <div className="space-y-1">
-                      {students.slice(0, 3).map((student) => (
-                        <div
-                          key={student.id}
-                          className="flex items-center gap-2 text-sm"
-                        >
-                          <div className="w-6 h-6 rounded-full overflow-hidden bg-gray-100 flex-none">
-                            <img
-                              src={student.avatar}
-                              alt={student.name}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                          <span className="text-gray-900 truncate">
-                            {student.name}
-                          </span>
-                        </div>
-                      ))}
-                      {students.length > 3 && (
-                        <p className="text-xs text-gray-500">
-                          +{students.length - 3} more students
-                        </p>
-                      )}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-gray-500 italic">
-                      No students enrolled
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </Card>
-  </div>
-</TabsContent>
-
+          </TabsContent>
 
           {/* Analytics */}
           <TabsContent value="analytics">
@@ -1244,7 +1189,6 @@ export default function SuperAdminDashboardPage() {
           </TabsContent>
         </Tabs>
 
-   
         <Modal
           isOpen={showPermissionsModal}
           onClose={() => {
@@ -1445,7 +1389,6 @@ export default function SuperAdminDashboardPage() {
           )}
         </Modal>
 
-       
         <Modal
           isOpen={showCollegeModal}
           onClose={() => {
