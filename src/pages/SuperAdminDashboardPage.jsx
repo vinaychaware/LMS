@@ -288,13 +288,14 @@ export default function SuperAdminDashboardPage() {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
         <div className="mb-6 lg:mb-8">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            {/* Left side */}
             <div className="flex items-center sm:items-start sm:flex-row gap-4">
               <div className="w-12 h-12 flex-none bg-purple-100 rounded-full flex items-center justify-center">
                 <Shield size={24} className="text-purple-600" />
               </div>
               <div className="min-w-0">
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 truncate">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 truncate">
                   Super Admin Dashboard
                 </h1>
                 <p className="text-gray-600 mt-1 text-sm sm:text-base">
@@ -303,17 +304,16 @@ export default function SuperAdminDashboardPage() {
               </div>
             </div>
 
-            {/* Right side: actions */}
-            <div className="flex gap-3">
+            <div className="flex flex-wrap sm:flex-nowrap gap-2 sm:gap-3">
               <Link to="/courses/create">
-                <Button size="sm">
+                <Button size="sm" className="w-full sm:w-auto">
                   <Plus size={16} className="mr-2" />
                   Create Course
                 </Button>
               </Link>
 
               <Link to="/register" state={{ allowWhenLoggedIn: true }}>
-                <Button size="sm">
+                <Button size="sm" className="w-full sm:w-auto">
                   <Plus size={16} className="mr-2" />
                   Add User
                 </Button>
@@ -390,19 +390,13 @@ export default function SuperAdminDashboardPage() {
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="overview">
+        <Tabs defaultValue="permissions">
           <div className="mb-4 sm:mb-6 sticky top-0 z-10 bg-gray-50 -mx-4 px-4 sm:mx-0 sm:px-0">
             <div className="relative overflow-x-auto no-scrollbar">
               <TabsList
                 className="flex gap-2 min-w-max snap-x snap-mandatory"
                 aria-label="Dashboard sections"
               >
-                <TabsTrigger
-                  value="overview"
-                  className="whitespace-nowrap snap-start px-3 sm:px-4 py-2 text-xs sm:text-sm"
-                >
-                  System Overview
-                </TabsTrigger>
                 <TabsTrigger
                   value="permissions"
                   className="whitespace-nowrap snap-start px-3 sm:px-4 py-2 text-xs sm:text-sm"
@@ -422,100 +416,10 @@ export default function SuperAdminDashboardPage() {
                 >
                   Students
                 </TabsTrigger>
-
-                <TabsTrigger
-                  value="analytics"
-                  className="whitespace-nowrap snap-start px-3 sm:px-4 py-2 text-xs sm:text-sm"
-                >
-                  Analytics
-                </TabsTrigger>
               </TabsList>
             </div>
           </div>
 
-          {/* Overview */}
-          <TabsContent value="overview">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-              <Card className="p-5 sm:p-6">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">
-                  System Health
-                </h3>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">System Uptime</span>
-                    <Badge variant="success">
-                      {systemAnalytics?.overview.systemUptime || "99.9%"}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Active Users</span>
-                    <span className="font-medium">
-                      {systemAnalytics?.overview.activeUsers || 0}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">
-                      Course Completion Rate
-                    </span>
-                    <span className="font-medium">
-                      {systemAnalytics?.overview.avgCourseCompletion || 0}%
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">
-                      Monthly Revenue
-                    </span>
-                    <span className="font-medium">
-                      ${systemAnalytics?.overview.totalRevenue || 0}
-                    </span>
-                  </div>
-                </div>
-              </Card>
-
-              <Card className="p-5 sm:p-6">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">
-                  Recent Activity
-                </h3>
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
-                    <Building2 size={16} className="text-green-600 flex-none" />
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
-                        System data loaded
-                      </p>
-                      <p className="text-xs text-gray-500 truncate">
-                        Overview & metrics fetched from API
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
-                    <Users size={16} className="text-blue-600 flex-none" />
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
-                        Users synced
-                      </p>
-                      <p className="text-xs text-gray-500 truncate">
-                        Admins, Instructors, Students
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-3 p-3 bg-purple-50 rounded-lg">
-                    <BookOpen size={16} className="text-purple-600 flex-none" />
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
-                        Courses loaded
-                      </p>
-                      <p className="text-xs text-gray-500 truncate">
-                        Assignments & counts available
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            </div>
-          </TabsContent>
-
-          {/* Permissions */}
           <TabsContent value="permissions">
             <div className="space-y-6">
               <Card className="p-4">
@@ -531,15 +435,29 @@ export default function SuperAdminDashboardPage() {
                       <Search className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
                     </div>
                   </div>
-                  <select
-                    value={filterRole}
-                    onChange={(e) => setFilterRole(e.target.value)}
-                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 w-full"
-                  >
-                    <option value="all">All Roles</option>
-                    <option value="admin">Admins</option>
-                    <option value="instructor">Instructors</option>
-                  </select>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setFilterRole("admin")}
+                      className={`px-4 py-2 rounded-lg border ${
+                        filterRole === "admin"
+                          ? "bg-primary-500 text-white border-primary-500"
+                          : "bg-white text-gray-700 border-gray-300"
+                      }`}
+                    >
+                      Admins
+                    </button>
+
+                    <button
+                      onClick={() => setFilterRole("instructor")}
+                      className={`px-4 py-2 rounded-lg border ${
+                        filterRole === "instructor"
+                          ? "bg-primary-500 text-white border-primary-500"
+                          : "bg-white text-gray-700 border-gray-300"
+                      }`}
+                    >
+                      Instructors
+                    </button>
+                  </div>
                 </div>
               </Card>
 
@@ -1095,95 +1013,6 @@ export default function SuperAdminDashboardPage() {
                     No students found.
                   </p>
                 )}
-              </Card>
-            </div>
-          </TabsContent>
-
-          {/* Analytics */}
-          <TabsContent value="analytics">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-              <Card className="p-5 sm:p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  Course Performance
-                </h3>
-                <div className="space-y-4">
-                  {allCourses.map((c) => {
-                    const breakdown = systemAnalytics?.collegeBreakdown?.[c.id];
-                    if (!breakdown) return null;
-                    return (
-                      <div
-                        key={c.id}
-                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                      >
-                        <div className="min-w-0">
-                          <h4 className="font-medium text-gray-900 truncate">
-                            {breakdown.title || c.title}
-                          </h4>
-                          <p className="text-sm text-gray-600">
-                            {breakdown.students} students •{" "}
-                            {breakdown.instructors} instructors
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-sm text-gray-500">
-                            Status: {breakdown.status || c.status}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </Card>
-
-              <Card className="p-5 sm:p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  System Performance
-                </h3>
-                <div className="space-y-4">
-                  {systemAnalytics?.performanceMetrics &&
-                    Object.entries(systemAnalytics.performanceMetrics).map(
-                      ([key, value]) => (
-                        <div
-                          key={key}
-                          className="flex items-center justify-between gap-3"
-                        >
-                          <span className="text-sm text-gray-600 capitalize truncate">
-                            {key.replace(/([A-Z])/g, " $1").toLowerCase()}
-                          </span>
-                          <div className="flex items-center gap-2 min-w-[140px]">
-                            <div className="w-20 bg-gray-200 rounded-full h-2">
-                              <div
-                                className={`h-2 rounded-full ${
-                                  (Number(value) || 0) > 80
-                                    ? "bg-red-500"
-                                    : (Number(value) || 0) > 60
-                                    ? "bg-yellow-500"
-                                    : "bg-green-500"
-                                }`}
-                                style={{
-                                  width: `${Math.min(
-                                    Number(value) || 0,
-                                    100
-                                  )}%`,
-                                }}
-                              />
-                            </div>
-                            <span className="text-sm font-medium text-gray-900">
-                              {typeof value === "number"
-                                ? `${value}${
-                                    key.toLowerCase().includes("usage")
-                                      ? "%"
-                                      : key.toLowerCase().includes("time")
-                                      ? "ms"
-                                      : ""
-                                  }`
-                                : value}
-                            </span>
-                          </div>
-                        </div>
-                      )
-                    )}
-                </div>
               </Card>
             </div>
           </TabsContent>
