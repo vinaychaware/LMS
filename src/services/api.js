@@ -32,8 +32,19 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  const token = useAuthStore.getState().token;
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  // 1. Try Zustand
+  let token = useAuthStore.getState().token;
+
+  // 2. Fallback to persisted storage
+  if (!token) {
+    token =
+      localStorage.getItem("auth_token") ||
+      sessionStorage.getItem("auth_token");
+  }
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
   return config;
 });
 
@@ -68,13 +79,38 @@ export async function fileToBase64(file) {
 }
 
 export const authAPI = {
-  register: (data) => api.post("/users/register", data),
-  login: (data) => api.post("/users/login", data),
+  register: (payload) => api.post("/users/register", payload),
+
+  registerBulk: (formData) =>
+    api.post("/users/register-bulk", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
+
+  firstLoginSetPassword: (payload) =>
+    api.post("/users/first-login/set-password", payload),
+
+  login: (payload) => api.post("/users/login", payload),
+
   me: () => api.get("/users/me"),
-  updateMe: (data) => api.put("/users/me", data),
-  deleteMe: (data) => api.delete("/users/me", { data }),
-    listUsers: (params = {}) => api.get("/users", { params }),
+
+  completeFirstLogin: (body, token) =>
+    axios.patch("/users/first-login", body, {
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+  // NEW helper for invite-based registration
+  inviteUser: ({ fullName, email, role, year, branch, mobile }) =>
+    api.post("/users/register", {
+      fullName,
+      email,
+      role: role?.toUpperCase() || "STUDENT",
+      year,
+      branch,
+      mobile,
+      sendInvite: true,
+    }),
+    
 };
+
 
 export const coursesAPI = {
   list: (params = {}) => api.get("/courses", { params }),

@@ -66,133 +66,149 @@ const StudentDashboardPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-const fetchStudentData = async () => {
-  try {
-    setLoading(true);
+  const fetchStudentData = async () => {
+    try {
+      setLoading(true);
 
-    // 1) Who am I?
-    const { data: me } = await authAPI.me();
-    const roleRaw = me?.role ?? me?.user?.role ?? user?.role ?? "";
-    const role = String(roleRaw).toUpperCase();
-    const studentId = String(me?.id ?? me?.user?.id ?? user?.id ?? "").trim();
+      // 1) Who am I?
+      const { data: me } = await authAPI.me();
+      const roleRaw = me?.role ?? me?.user?.role ?? user?.role ?? "";
+      const role = String(roleRaw).toUpperCase();
+      const studentId = String(me?.id ?? me?.user?.id ?? user?.id ?? "").trim();
 
-    const resetState = () => {
-      setAssignedCourses([]);
-      setCurrentProgress({});
-      setAvailableTests([]);
-      setCompletedTests([]);
-      setAiInterviewStatus({});
+      const resetState = () => {
+        setAssignedCourses([]);
+        setCurrentProgress({});
+        setAvailableTests([]);
+        setCompletedTests([]);
+        setAiInterviewStatus({});
+        setStats({
+          totalCourses: 0,
+          completedChapters: 0,
+          averageTestScore: 0,
+          totalTimeSpent: 0,
+          certificatesEarned: 0,
+        });
+      };
+
+      if (!studentId) {
+        toast.error("Could not identify your student account.");
+        resetState();
+        return;
+      }
+      if (!role.includes("STUDENT")) {
+        toast.error(
+          "This page is for students. Please log in with a student account."
+        );
+        resetState();
+        return;
+      }
+
+      // 2) Enrollments -> course ids
+      const { data: enrolls = [] } = await enrollmentsAPI.listByStudent(
+        studentId
+      );
+      const courseIds = enrolls.map((e) => e.courseId);
+      if (courseIds.length === 0) {
+        resetState();
+        return;
+      }
+
+      // 3) Courses
+      const { data: myCourses = [] } = await coursesAPI.list({
+        ids: courseIds.join(","),
+      });
+
+      // 4) Per-course details (chapters + server progress summaries)
+      const progressData = {};
+      const aiStatusData = {};
+      const courseWithCounts = [];
+
+      // For global stats
+      let totalChaptersDone = 0;
+      let weightedScoreSum = 0; // sum of (courseAvg% * testsTaken)
+      let totalTestsTaken = 0;
+
+      for (const course of myCourses) {
+        // a) chapters count
+        const { data: chapters = [] } = await chaptersAPI.listByCourse(
+          course.id
+        );
+
+        // b) server-side progress summary for this course
+        const { data: sumRes } = await progressAPI.courseSummary(course.id);
+        const summary = sumRes?.data ?? {
+          chapters: { done: 0, total: chapters.length },
+          modules: { done: 0, total: 0 },
+          tests: { averagePercent: 0, taken: 0 },
+        };
+
+        // c) list completed chapter ids (prefill viewer use-cases if you need)
+        // const completedIds = (await progressAPI.completedChapters(course.id)).data?.data ?? [];
+
+        // d) build per-course progress object you keep in state
+        const p = {
+          completedChapters: Array(summary.chapters?.done || 0).fill(0), // placeholder array if you still expect one
+          courseTestResult: {
+            averagePercent: summary.tests?.averagePercent || 0,
+            taken: summary.tests?.taken || 0,
+          },
+          aiInterviewResult: null, // keep as before (unless you compute this elsewhere)
+        };
+        progressData[course.id] = p;
+
+        // e) AI eligibility sample (keep your logic)
+        aiStatusData[course.id] = {
+          eligible: (summary.tests?.averagePercent || 0) >= 60, // example rule
+          completed: Boolean(p?.aiInterviewResult),
+          result: p?.aiInterviewResult || null,
+        };
+
+        // f) per-course card data
+        courseWithCounts.push({
+          ...course,
+          totalChapters: summary.chapters?.total ?? chapters.length,
+        });
+
+        // accumulate global stats
+        totalChaptersDone += summary.chapters?.done || 0;
+        const taken = summary.tests?.taken || 0;
+        const avg = summary.tests?.averagePercent || 0;
+        weightedScoreSum += avg * taken;
+        totalTestsTaken += taken;
+      }
+
+      setAssignedCourses(courseWithCounts);
+      setCurrentProgress(progressData);
+      setAiInterviewStatus(aiStatusData);
+
+      // 5) Completed tests list (optional: hydrate from attempts if you want)
+      setCompletedTests([]); // keep your placeholder for now
+      setAvailableTests([]); // until you wire assessments discovery
+
+      // 6) Global dashboard stats
       setStats({
-        totalCourses: 0,
-        completedChapters: 0,
-        averageTestScore: 0,
-        totalTimeSpent: 0,
-        certificatesEarned: 0,
+        totalCourses: courseWithCounts.length,
+        completedChapters: totalChaptersDone,
+        averageTestScore: totalTestsTaken
+          ? Math.round(weightedScoreSum / totalTestsTaken)
+          : 0,
+        totalTimeSpent: 0, // fill from server if you track it; else keep 0
+        certificatesEarned: Object.values(aiStatusData).filter(
+          (x) => x.completed
+        ).length,
       });
-    };
-
-    if (!studentId) {
-      toast.error("Could not identify your student account.");
-      resetState();
-      return;
+    } catch (error) {
+      console.error("Error fetching student data:", error);
+      toast.error(
+        error?.response?.data?.error ||
+          error.message ||
+          "Failed to load dashboard data"
+      );
+    } finally {
+      setLoading(false);
     }
-    if (!role.includes("STUDENT")) {
-      toast.error("This page is for students. Please log in with a student account.");
-      resetState();
-      return;
-    }
-
-    // 2) Enrollments -> course ids
-    const { data: enrolls = [] } = await enrollmentsAPI.listByStudent(studentId);
-    const courseIds = enrolls.map((e) => e.courseId);
-    if (courseIds.length === 0) {
-      resetState();
-      return;
-    }
-
-    // 3) Courses
-    const { data: myCourses = [] } = await coursesAPI.list({
-      ids: courseIds.join(","),
-    });
-
-    // 4) Per-course details (chapters + server progress summaries)
-    const progressData = {};
-    const aiStatusData = {};
-    const courseWithCounts = [];
-
-    // For global stats
-    let totalChaptersDone = 0;
-    let weightedScoreSum = 0; // sum of (courseAvg% * testsTaken)
-    let totalTestsTaken = 0;
-
-    for (const course of myCourses) {
-      // a) chapters count
-      const { data: chapters = [] } = await chaptersAPI.listByCourse(course.id);
-
-      // b) server-side progress summary for this course
-      const { data: sumRes } = await progressAPI.courseSummary(course.id);
-      const summary = sumRes?.data ?? {
-        chapters: { done: 0, total: chapters.length },
-        modules: { done: 0, total: 0 },
-        tests: { averagePercent: 0, taken: 0 },
-      };
-
-      // c) list completed chapter ids (prefill viewer use-cases if you need)
-      // const completedIds = (await progressAPI.completedChapters(course.id)).data?.data ?? [];
-
-      // d) build per-course progress object you keep in state
-      const p = {
-        completedChapters: Array(summary.chapters?.done || 0).fill(0), // placeholder array if you still expect one
-        courseTestResult: { averagePercent: summary.tests?.averagePercent || 0, taken: summary.tests?.taken || 0 },
-        aiInterviewResult: null, // keep as before (unless you compute this elsewhere)
-      };
-      progressData[course.id] = p;
-
-      // e) AI eligibility sample (keep your logic)
-      aiStatusData[course.id] = {
-        eligible: (summary.tests?.averagePercent || 0) >= 60, // example rule
-        completed: Boolean(p?.aiInterviewResult),
-        result: p?.aiInterviewResult || null,
-      };
-
-      // f) per-course card data
-      courseWithCounts.push({
-        ...course,
-        totalChapters: summary.chapters?.total ?? chapters.length,
-      });
-
-      // accumulate global stats
-      totalChaptersDone += summary.chapters?.done || 0;
-      const taken = summary.tests?.taken || 0;
-      const avg = summary.tests?.averagePercent || 0;
-      weightedScoreSum += avg * taken;
-      totalTestsTaken += taken;
-    }
-
-    setAssignedCourses(courseWithCounts);
-    setCurrentProgress(progressData);
-    setAiInterviewStatus(aiStatusData);
-
-    // 5) Completed tests list (optional: hydrate from attempts if you want)
-    setCompletedTests([]);  // keep your placeholder for now
-    setAvailableTests([]);  // until you wire assessments discovery
-
-    // 6) Global dashboard stats
-    setStats({
-      totalCourses: courseWithCounts.length,
-      completedChapters: totalChaptersDone,
-      averageTestScore: totalTestsTaken ? Math.round(weightedScoreSum / totalTestsTaken) : 0,
-      totalTimeSpent: 0, // fill from server if you track it; else keep 0
-      certificatesEarned: Object.values(aiStatusData).filter((x) => x.completed).length,
-    });
-  } catch (error) {
-    console.error("Error fetching student data:", error);
-    toast.error(error?.response?.data?.error || error.message || "Failed to load dashboard data");
-  } finally {
-    setLoading(false);
-  }
-};
-
+  };
 
   // 👉 Navigate to viewer (optionally choose first chapter)
   const goToCourse = async (courseId) => {
@@ -282,7 +298,10 @@ const fetchStudentData = async () => {
     const progress = currentProgress[courseId];
     if (!progress) return { type: "start", text: "Start Course" };
 
-    if (aiInterviewStatus[courseId]?.eligible && !aiInterviewStatus[courseId]?.completed) {
+    if (
+      aiInterviewStatus[courseId]?.eligible &&
+      !aiInterviewStatus[courseId]?.completed
+    ) {
       return { type: "ai-interview", text: "Take AI Interview" };
     }
 
@@ -290,9 +309,11 @@ const fetchStudentData = async () => {
       return { type: "course-test", text: "Take Final Test" };
     }
 
-    const availableCourseTests = availableTests.filter((t) => t.courseId === courseId);
+    const availableCourseTests = availableTests.filter(
+      (t) => t.courseId === courseId
+    );
     if (availableCourseTests.length > 0) {
-      return { type: "module-test", text: "Take Test" }; // label simplified
+      return { type: "module-test", text: "Take Test" };
     }
 
     return { type: "continue", text: "Continue Learning" };
@@ -309,7 +330,9 @@ const fetchStudentData = async () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading your learning dashboard...</p>
+          <p className="mt-4 text-gray-600">
+            Loading your learning dashboard...
+          </p>
         </div>
       </div>
     );
@@ -331,6 +354,12 @@ const fetchStudentData = async () => {
               <p className="text-sm sm:text-base text-gray-600">
                 Continue your learning journey and unlock new opportunities.
               </p>
+ <Button
+          className="ml-auto"
+          onClick={() => navigate("/first-login")}
+        >
+          Go to First Login
+        </Button>
             </div>
           </div>
         </div>
@@ -343,8 +372,12 @@ const fetchStudentData = async () => {
                 <BookOpen size={24} className="text-blue-600" />
               </div>
               <div className="ml-2 sm:ml-4">
-                <p className="text-xs sm:text-sm font-medium text-gray-600">Assigned Courses</p>
-                <p className="text-lg sm:text-2xl font-bold text-gray-900">{stats.totalCourses}</p>
+                <p className="text-xs sm:text-sm font-medium text-gray-600">
+                  Assigned Courses
+                </p>
+                <p className="text-lg sm:text-2xl font-bold text-gray-900">
+                  {stats.totalCourses}
+                </p>
               </div>
             </div>
           </Card>
@@ -355,8 +388,12 @@ const fetchStudentData = async () => {
                 <CheckCircle size={24} className="text-green-600" />
               </div>
               <div className="ml-2 sm:ml-4">
-                <p className="text-xs sm:text-sm font-medium text-gray-600">Chapters Done</p>
-                <p className="text-lg sm:text-2xl font-bold text-gray-900">{stats.completedChapters}</p>
+                <p className="text-xs sm:text-sm font-medium text-gray-600">
+                  Chapters Done
+                </p>
+                <p className="text-lg sm:text-2xl font-bold text-gray-900">
+                  {stats.completedChapters}
+                </p>
               </div>
             </div>
           </Card>
@@ -367,8 +404,12 @@ const fetchStudentData = async () => {
                 <Award size={24} className="text-yellow-600" />
               </div>
               <div className="ml-2 sm:ml-4">
-                <p className="text-xs sm:text-sm font-medium text-gray-600">Test Average</p>
-                <p className="text-lg sm:text-2xl font-bold text-gray-900">{stats.averageTestScore}%</p>
+                <p className="text-xs sm:text-sm font-medium text-gray-600">
+                  Test Average
+                </p>
+                <p className="text-lg sm:text-2xl font-bold text-gray-900">
+                  {stats.averageTestScore}%
+                </p>
               </div>
             </div>
           </Card>
@@ -379,8 +420,12 @@ const fetchStudentData = async () => {
                 <Clock size={24} className="text-indigo-600" />
               </div>
               <div className="ml-2 sm:ml-4">
-                <p className="text-xs sm:text-sm font-medium text-gray-600">Time Spent</p>
-                <p className="text-lg sm:text-2xl font-bold text-gray-900">{formatTimeSpent(stats.totalTimeSpent)}</p>
+                <p className="text-xs sm:text-sm font-medium text-gray-600">
+                  Time Spent
+                </p>
+                <p className="text-lg sm:text-2xl font-bold text-gray-900">
+                  {formatTimeSpent(stats.totalTimeSpent)}
+                </p>
               </div>
             </div>
           </Card>
@@ -391,8 +436,12 @@ const fetchStudentData = async () => {
                 <Trophy size={24} className="text-red-600" />
               </div>
               <div className="ml-2 sm:ml-4">
-                <p className="text-xs sm:text-sm font-medium text-gray-600">Certificates</p>
-                <p className="text-lg sm:text-2xl font-bold text-gray-900">{stats.certificatesEarned}</p>
+                <p className="text-xs sm:text-sm font-medium text-gray-600">
+                  Certificates
+                </p>
+                <p className="text-lg sm:text-2xl font-bold text-gray-900">
+                  {stats.certificatesEarned}
+                </p>
               </div>
             </div>
           </Card>
@@ -408,9 +457,16 @@ const fetchStudentData = async () => {
               <Card.Content>
                 {assignedCourses.length === 0 ? (
                   <div className="text-center py-8">
-                    <BookOpen size={48} className="mx-auto text-gray-400 mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No courses assigned yet</h3>
-                    <p className="text-gray-600">Contact your instructor to get assigned to courses.</p>
+                    <BookOpen
+                      size={48}
+                      className="mx-auto text-gray-400 mb-4"
+                    />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      No courses assigned yet
+                    </h3>
+                    <p className="text-gray-600">
+                      Contact your instructor to get assigned to courses.
+                    </p>
                   </div>
                 ) : (
                   <div className="space-y-6">
@@ -420,7 +476,10 @@ const fetchStudentData = async () => {
                       const nextAction = getNextAction(course.id);
 
                       return (
-                        <div key={course.id} className="border border-gray-200 rounded-lg p-4 sm:p-6 hover:shadow-sm transition-shadow">
+                        <div
+                          key={course.id}
+                          className="border border-gray-200 rounded-lg p-4 sm:p-6 hover:shadow-sm transition-shadow"
+                        >
                           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between space-y-4 sm:space-y-0 mb-4">
                             <div className="flex-1">
                               <div className="flex items-center space-x-3 mb-3">
@@ -436,7 +495,9 @@ const fetchStudentData = async () => {
                                     {course.title}
                                   </h3>
                                   <p className="text-sm text-gray-600">
-                                    by {course.instructorNames?.[0] || "Instructor"}
+                                    by{" "}
+                                    {course.instructorNames?.[0] ||
+                                      "Instructor"}
                                   </p>
                                 </div>
                               </div>
@@ -465,20 +526,28 @@ const fetchStudentData = async () => {
                                     nextAction.type === "course-test" ||
                                     nextAction.type === "module-test"
                                   ) {
-                                    const test = availableTests.find((t) => t.courseId === course.id);
+                                    const test = availableTests.find(
+                                      (t) => t.courseId === course.id
+                                    );
                                     if (test) startTest(test);
                                     else toast("No test available yet");
                                   } else {
                                     goToCourse(course.id);
                                   }
                                 }}
-                                disabled={nextAction.type === "start" && !progress}
+                                disabled={
+                                  nextAction.type === "start" && !progress
+                                }
                               >
-                                {nextAction.type === "ai-interview" && <Brain size={16} className="mr-1" />}
-                                {(nextAction.type === "course-test" || nextAction.type === "module-test") && (
+                                {nextAction.type === "ai-interview" && (
+                                  <Brain size={16} className="mr-1" />
+                                )}
+                                {(nextAction.type === "course-test" ||
+                                  nextAction.type === "module-test") && (
                                   <FileText size={16} className="mr-1" />
                                 )}
-                                {(nextAction.type === "continue" || nextAction.type === "start") && (
+                                {(nextAction.type === "continue" ||
+                                  nextAction.type === "start") && (
                                   <Play size={16} className="mr-1" />
                                 )}
                                 {nextAction.text}
@@ -488,23 +557,32 @@ const fetchStudentData = async () => {
 
                           <div className="space-y-3">
                             <div className="flex items-center justify-between text-xs sm:text-sm">
-                              <span className="text-gray-600">Overall Progress</span>
-                              <span className="font-medium text-gray-900">{courseProgress}%</span>
+                              <span className="text-gray-600">
+                                Overall Progress
+                              </span>
+                              <span className="font-medium text-gray-900">
+                                {courseProgress}%
+                              </span>
                             </div>
                             <Progress value={courseProgress} size="sm" />
 
                             <div className="grid grid-cols-2 gap-2 sm:gap-4 text-xs sm:text-sm">
                               <div className="text-center">
                                 <div className="font-medium text-gray-900">
-                                  {progress?.completedChapters?.length || 0}/{course.totalChapters}
+                                  {progress?.completedChapters?.length || 0}/
+                                  {course.totalChapters}
                                 </div>
                                 <div className="text-gray-500">Chapters</div>
                               </div>
                               <div className="text-center">
                                 <div className="font-medium text-gray-900">
-                                  {aiInterviewStatus[course.id]?.completed ? "1/1" : "0/1"}
+                                  {aiInterviewStatus[course.id]?.completed
+                                    ? "1/1"
+                                    : "0/1"}
                                 </div>
-                                <div className="text-gray-500">AI Interview</div>
+                                <div className="text-gray-500">
+                                  AI Interview
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -535,29 +613,54 @@ const fetchStudentData = async () => {
               <Card.Content>
                 {availableTests.length === 0 ? (
                   <div className="text-center py-4">
-                    <CheckCircle size={32} className="mx-auto text-green-500 mb-2" />
+                    <CheckCircle
+                      size={32}
+                      className="mx-auto text-green-500 mb-2"
+                    />
                     <p className="text-sm text-gray-600">No tests available</p>
-                    <p className="text-xs text-gray-500">Complete more chapters to unlock tests</p>
+                    <p className="text-xs text-gray-500">
+                      Complete more chapters to unlock tests
+                    </p>
                   </div>
                 ) : (
                   <div className="space-y-3">
                     {availableTests.map((test) => (
-                      <div key={test.id} className="p-3 sm:p-4 bg-blue-50 rounded-lg border border-blue-200">
+                      <div
+                        key={test.id}
+                        className="p-3 sm:p-4 bg-blue-50 rounded-lg border border-blue-200"
+                      >
                         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between space-y-2 sm:space-y-0 mb-2">
                           <div>
-                            <h4 className="text-sm sm:text-base font-medium text-gray-900">{test.title}</h4>
-                            <p className="text-xs text-gray-600">{test.courseTitle}</p>
-                            {test.moduleTitle && <p className="text-xs text-gray-500">Section: {test.moduleTitle}</p>}
+                            <h4 className="text-sm sm:text-base font-medium text-gray-900">
+                              {test.title}
+                            </h4>
+                            <p className="text-xs text-gray-600">
+                              {test.courseTitle}
+                            </p>
+                            {test.moduleTitle && (
+                              <p className="text-xs text-gray-500">
+                                Section: {test.moduleTitle}
+                              </p>
+                            )}
                           </div>
-                          <Badge variant="warning" size="sm" className="self-start">
+                          <Badge
+                            variant="warning"
+                            size="sm"
+                            className="self-start"
+                          >
                             test
                           </Badge>
                         </div>
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
                           <div className="text-xs text-gray-500 flex-1">
-                            {test.questions} questions • {test.duration} min • {test.passingScore}% to pass
+                            {test.questions} questions • {test.duration} min •{" "}
+                            {test.passingScore}% to pass
                           </div>
-                          <Button size="sm" onClick={() => startTest(test)} className="w-full sm:w-auto">
+                          <Button
+                            size="sm"
+                            onClick={() => startTest(test)}
+                            className="w-full sm:w-auto"
+                          >
                             Start Test
                           </Button>
                         </div>
@@ -578,48 +681,63 @@ const fetchStudentData = async () => {
               </Card.Header>
               <Card.Content>
                 <div className="space-y-3">
-                  {Object.entries(aiInterviewStatus).map(([courseId, status]) => {
-                    const course = assignedCourses.find((c) => c.id === courseId);
-                    if (!course) return null;
+                  {Object.entries(aiInterviewStatus).map(
+                    ([courseId, status]) => {
+                      const course = assignedCourses.find(
+                        (c) => c.id === courseId
+                      );
+                      if (!course) return null;
 
-                    return (
-                      <div key={courseId} className="p-3 rounded-lg border">
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0 mb-2">
-                          <h4 className="text-sm font-medium text-gray-900 flex-1">{course.title}</h4>
+                      return (
+                        <div key={courseId} className="p-3 rounded-lg border">
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0 mb-2">
+                            <h4 className="text-sm font-medium text-gray-900 flex-1">
+                              {course.title}
+                            </h4>
+                            {status.completed ? (
+                              <Badge variant="success" size="sm">
+                                Completed
+                              </Badge>
+                            ) : status.eligible ? (
+                              <Badge variant="warning" size="sm">
+                                Available
+                              </Badge>
+                            ) : (
+                              <Badge variant="default" size="sm">
+                                Locked
+                              </Badge>
+                            )}
+                          </div>
+
                           {status.completed ? (
-                            <Badge variant="success" size="sm">
-                              Completed
-                            </Badge>
+                            <div className="text-xs text-gray-600 mt-2">
+                              Score: {status.result?.overallScore ?? "--"}% •
+                              Completed{" "}
+                              {status.result?.completedAt
+                                ? new Date(
+                                    status.result.completedAt
+                                  ).toLocaleDateString()
+                                : "--"}
+                            </div>
                           ) : status.eligible ? (
-                            <Badge variant="warning" size="sm">
-                              Available
-                            </Badge>
+                            <Button
+                              size="sm"
+                              className="w-full sm:w-auto mt-2"
+                              onClick={() => startAIInterview(courseId)}
+                            >
+                              <Brain size={14} className="mr-1" />
+                              Start Interview
+                            </Button>
                           ) : (
-                            <Badge variant="default" size="sm">
-                              Locked
-                            </Badge>
+                            <div className="flex items-center text-xs text-gray-500 mt-2">
+                              <Lock size={12} className="mr-1" />
+                              Complete course test to unlock
+                            </div>
                           )}
                         </div>
-
-                        {status.completed ? (
-                          <div className="text-xs text-gray-600 mt-2">
-                            Score: {status.result?.overallScore ?? "--"}% • Completed{" "}
-                            {status.result?.completedAt ? new Date(status.result.completedAt).toLocaleDateString() : "--"}
-                          </div>
-                        ) : status.eligible ? (
-                          <Button size="sm" className="w-full sm:w-auto mt-2" onClick={() => startAIInterview(courseId)}>
-                            <Brain size={14} className="mr-1" />
-                            Start Interview
-                          </Button>
-                        ) : (
-                          <div className="flex items-center text-xs text-gray-500 mt-2">
-                            <Lock size={12} className="mr-1" />
-                            Complete course test to unlock
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                      );
+                    }
+                  )}
                 </div>
               </Card.Content>
             </Card>
@@ -634,23 +752,44 @@ const fetchStudentData = async () => {
               </Card.Header>
               <Card.Content>
                 {completedTests.length === 0 ? (
-                  <p className="text-gray-500 text-center py-4">No tests completed yet</p>
+                  <p className="text-gray-500 text-center py-4">
+                    No tests completed yet
+                  </p>
                 ) : (
                   <div className="space-y-3">
                     {completedTests.slice(0, 5).map((test) => (
-                      <div key={test.id} className="p-3 sm:p-4 bg-gray-50 rounded-lg">
+                      <div
+                        key={test.id}
+                        className="p-3 sm:p-4 bg-gray-50 rounded-lg"
+                      >
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-1 sm:space-y-0 mb-1">
-                          <h4 className="text-sm font-medium text-gray-900 flex-1">{test.title}</h4>
-                          <Badge variant={test.result.passed ? "success" : "danger"} size="sm" className="self-start sm:self-center">
+                          <h4 className="text-sm font-medium text-gray-900 flex-1">
+                            {test.title}
+                          </h4>
+                          <Badge
+                            variant={test.result.passed ? "success" : "danger"}
+                            size="sm"
+                            className="self-start sm:self-center"
+                          >
                             {test.result.score}%
                           </Badge>
                         </div>
-                        <p className="text-xs text-gray-600">{test.courseTitle}</p>
+                        <p className="text-xs text-gray-600">
+                          {test.courseTitle}
+                        </p>
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-1 sm:space-y-0 mt-2">
                           <span className="text-xs text-gray-500">
-                            {new Date(test.result.attemptedAt).toLocaleDateString()}
+                            {new Date(
+                              test.result.attemptedAt
+                            ).toLocaleDateString()}
                           </span>
-                          <span className={`text-xs font-medium ${test.result.passed ? "text-green-600" : "text-red-600"}`}>
+                          <span
+                            className={`text-xs font-medium ${
+                              test.result.passed
+                                ? "text-green-600"
+                                : "text-red-600"
+                            }`}
+                          >
                             {test.result.passed ? "PASSED" : "FAILED"}
                           </span>
                         </div>
@@ -673,15 +812,26 @@ const fetchStudentData = async () => {
                 <div className="space-y-4">
                   <div>
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-1 sm:space-y-0 mb-2">
-                      <span className="text-xs sm:text-sm font-medium text-gray-700">Complete all assigned courses</span>
+                      <span className="text-xs sm:text-sm font-medium text-gray-700">
+                        Complete all assigned courses
+                      </span>
                       <span className="text-xs sm:text-sm text-gray-500">
-                        {Object.values(aiInterviewStatus).filter((s) => s.completed).length}/{assignedCourses.length}
+                        {
+                          Object.values(aiInterviewStatus).filter(
+                            (s) => s.completed
+                          ).length
+                        }
+                        /{assignedCourses.length}
                       </span>
                     </div>
                     <Progress
                       value={
                         assignedCourses.length > 0
-                          ? (Object.values(aiInterviewStatus).filter((s) => s.completed).length / assignedCourses.length) * 100
+                          ? (Object.values(aiInterviewStatus).filter(
+                              (s) => s.completed
+                            ).length /
+                              assignedCourses.length) *
+                            100
                           : 0
                       }
                       size="sm"
@@ -691,22 +841,38 @@ const fetchStudentData = async () => {
 
                   <div>
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-1 sm:space-y-0 mb-2">
-                      <span className="text-xs sm:text-sm font-medium text-gray-700">Maintain 80%+ test average</span>
-                      <span className="text-xs sm:text-sm text-gray-500">{stats.averageTestScore}%</span>
+                      <span className="text-xs sm:text-sm font-medium text-gray-700">
+                        Maintain 80%+ test average
+                      </span>
+                      <span className="text-xs sm:text-sm text-gray-500">
+                        {stats.averageTestScore}%
+                      </span>
                     </div>
                     <Progress
                       value={Math.min((stats.averageTestScore / 80) * 100, 100)}
                       size="sm"
-                      variant={stats.averageTestScore >= 80 ? "success" : "warning"}
+                      variant={
+                        stats.averageTestScore >= 80 ? "success" : "warning"
+                      }
                     />
                   </div>
 
                   <div>
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-1 sm:space-y-0 mb-2">
-                      <span className="text-xs sm:text-sm font-medium text-gray-700">Study 10 hours this week</span>
-                      <span className="text-xs sm:text-sm text-gray-500">{formatTimeSpent(stats.totalTimeSpent % 600)}/10h</span>
+                      <span className="text-xs sm:text-sm font-medium text-gray-700">
+                        Study 10 hours this week
+                      </span>
+                      <span className="text-xs sm:text-sm text-gray-500">
+                        {formatTimeSpent(stats.totalTimeSpent % 600)}/10h
+                      </span>
                     </div>
-                    <Progress value={Math.min(((stats.totalTimeSpent % 600) / 600) * 100, 100)} size="sm" />
+                    <Progress
+                      value={Math.min(
+                        ((stats.totalTimeSpent % 600) / 600) * 100,
+                        100
+                      )}
+                      size="sm"
+                    />
                   </div>
                 </div>
               </Card.Content>
@@ -731,14 +897,20 @@ const fetchStudentData = async () => {
                 className="w-20 h-20 rounded-lg object-cover"
               />
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">{selectedCourse.title}</h3>
-                <p className="text-gray-600">by {selectedCourse.instructorNames?.[0] || "Instructor"}</p>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  {selectedCourse.title}
+                </h3>
+                <p className="text-gray-600">
+                  by {selectedCourse.instructorNames?.[0] || "Instructor"}
+                </p>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4 text-center">
               <div className="p-3 bg-green-50 rounded-lg">
-                <div className="text-xl font-bold text-green-600">{selectedCourse.totalChapters}</div>
+                <div className="text-xl font-bold text-green-600">
+                  {selectedCourse.totalChapters}
+                </div>
                 <div className="text-sm text-green-800">Chapters</div>
               </div>
               <div className="p-3 bg-purple-50 rounded-lg">
@@ -749,7 +921,10 @@ const fetchStudentData = async () => {
 
             <div>
               <h4 className="font-medium text-gray-900 mb-3">Your Progress</h4>
-              <Progress value={getCourseProgress(selectedCourse.id)} size="md" />
+              <Progress
+                value={getCourseProgress(selectedCourse.id)}
+                size="md"
+              />
               <div className="mt-2 text-sm text-gray-600 text-center">
                 {getCourseProgress(selectedCourse.id)}% Complete
               </div>
@@ -782,16 +957,26 @@ const fetchStudentData = async () => {
       </Modal>
 
       {/* Test Modal */}
-      <Modal isOpen={showTestModal} onClose={() => setShowTestModal(false)} title={selectedTest?.title} size="lg">
+      <Modal
+        isOpen={showTestModal}
+        onClose={() => setShowTestModal(false)}
+        title={selectedTest?.title}
+        size="lg"
+      >
         {selectedTest && (
           <div className="space-y-6">
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
               <div className="flex items-center space-x-2 mb-2">
                 <AlertCircle size={16} className="text-yellow-600" />
-                <span className="font-medium text-yellow-800">Test Instructions</span>
+                <span className="font-medium text-yellow-800">
+                  Test Instructions
+                </span>
               </div>
               <ul className="text-sm text-yellow-700 space-y-1">
-                <li>• You have {selectedTest.duration} minutes to complete this test</li>
+                <li>
+                  • You have {selectedTest.duration} minutes to complete this
+                  test
+                </li>
                 <li>• {selectedTest.questions} questions total</li>
                 <li>• {selectedTest.passingScore}% score required to pass</li>
                 <li>• {selectedTest.maxAttempts} attempts allowed</li>
@@ -800,10 +985,18 @@ const fetchStudentData = async () => {
             </div>
 
             <div className="text-center">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Ready to start?</h3>
-              <p className="text-gray-600 mb-4">Once you begin, the timer will start and you cannot pause the test.</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Ready to start?
+              </h3>
+              <p className="text-gray-600 mb-4">
+                Once you begin, the timer will start and you cannot pause the
+                test.
+              </p>
               <div className="flex space-x-3 justify-center">
-                <Button variant="outline" onClick={() => setShowTestModal(false)}>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowTestModal(false)}
+                >
                   Cancel
                 </Button>
                 <Button
@@ -821,7 +1014,7 @@ const fetchStudentData = async () => {
               </div>
             </div>
           </div>
-        )} 
+        )}
       </Modal>
 
       {/* AI Interview Modal */}
@@ -836,11 +1029,14 @@ const fetchStudentData = async () => {
             <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
               <div className="flex items-center space-x-2 mb-2">
                 <Brain size={16} className="text-purple-600" />
-                <span className="font-medium text-purple-800">AI Interview Session</span>
+                <span className="font-medium text-purple-800">
+                  AI Interview Session
+                </span>
               </div>
               <p className="text-sm text-purple-700">
-                This AI-powered interview will assess your technical knowledge, problem-solving skills, and communication
-                abilities. The session will be recorded for evaluation.
+                This AI-powered interview will assess your technical knowledge,
+                problem-solving skills, and communication abilities. The session
+                will be recorded for evaluation.
               </p>
             </div>
 
@@ -850,8 +1046,12 @@ const fetchStudentData = async () => {
                 <div className="text-sm text-gray-600">Duration</div>
               </div>
               <div className="p-3 bg-gray-50 rounded-lg">
-                <div className="text-lg font-bold text-gray-900">3 Sections</div>
-                <div className="text-sm text-gray-600">Technical, Behavioral, Problem-solving</div>
+                <div className="text-lg font-bold text-gray-900">
+                  3 Sections
+                </div>
+                <div className="text-sm text-gray-600">
+                  Technical, Behavioral, Problem-solving
+                </div>
               </div>
               <div className="p-3 bg-gray-50 rounded-lg">
                 <div className="text-lg font-bold text-gray-900">70%</div>
@@ -860,10 +1060,18 @@ const fetchStudentData = async () => {
             </div>
 
             <div className="text-center">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Ready for your interview?</h3>
-              <p className="text-gray-600 mb-4">Make sure you're in a quiet environment with good lighting and audio.</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Ready for your interview?
+              </h3>
+              <p className="text-gray-600 mb-4">
+                Make sure you're in a quiet environment with good lighting and
+                audio.
+              </p>
               <div className="flex space-x-3 justify-center">
-                <Button variant="outline" onClick={() => setShowAIInterviewModal(false)}>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowAIInterviewModal(false)}
+                >
                   Not Ready
                 </Button>
                 <Button

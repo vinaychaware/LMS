@@ -7,7 +7,7 @@ const useAuthStore = create(
       user: null,
       token: null,
       isAuthenticated: false,
-      userRole: null, // 'student', 'instructor', 'admin'
+      userRole: null,
       
       login: (userData, token) => {
         set({

@@ -16,7 +16,8 @@ import { useLocation } from "react-router-dom";
 import Terms from "./pages/TermsPage";
 import Privacy from "./pages/PrivacyPage";
 import EditCoursePage from "./pages/EditCoursePage";
-
+import FirstLoginPage from "./pages/FirstLoginPage";
+import { useEffect } from "react";
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   const { isAuthenticated, userRole } = useAuthStore();
@@ -55,6 +56,7 @@ const PublicRoute = ({ children }) => {
 
 const App = () => {
   const { isAuthenticated } = useAuthStore();
+ 
 
   return (
     <div className="App">
@@ -70,6 +72,17 @@ const App = () => {
 
         {/* Auth Routes */}
         <Route
+          path="/first-login"
+          element={
+         
+            <ProtectedRoute allowedRoles={["student", "instructor", "admin", "superadmin"]}> 
+              <FirstLoginPage />
+             </ProtectedRoute>
+            
+          }
+        />
+
+        <Route
           path="/login"
           element={
             <PublicRoute>
@@ -77,6 +90,8 @@ const App = () => {
             </PublicRoute>
           }
         />
+
+        
 
         <Route
           path="/register"
