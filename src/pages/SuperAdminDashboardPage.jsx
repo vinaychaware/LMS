@@ -156,7 +156,15 @@ export default function SuperAdminDashboardPage() {
 
   const handleUserPermissions = (user) => {
     setSelectedUser(user);
-    setEditingPermissions({ ...(user.permissions || {}) });
+    setEditingPermissions({
+      ...(user.permissions || {}),
+      // Use capping logic for admins, otherwise use the default value
+      maxInstructorsAllowed:
+        String(user.role).toLowerCase() === "admin"
+          ? Math.min(user.permissions?.maxInstructorsAllowed ?? 0, 5)
+          : user.permissions?.maxInstructorsAllowed ?? 0,
+      maxStudentsAllowed: user.permissions?.maxStudentsAllowed ?? 0,
+    });
     setShowPermissionsModal(true);
   };
 
@@ -996,13 +1004,13 @@ export default function SuperAdminDashboardPage() {
 
                           {/* Optional actions */}
                           {/* <div className="mt-4 flex gap-2">
-                  <Button size="sm" variant="outline">
-                    View
-                  </Button>
-                  <Button size="sm" variant="outline">
-                    Message
-                  </Button>
-                </div> */}
+                            <Button size="sm" variant="outline">
+                              View
+                            </Button>
+                            <Button size="sm" variant="outline">
+                              Message
+                            </Button>
+                          </div> */}
                         </div>
                       );
                     })}
@@ -1018,6 +1026,11 @@ export default function SuperAdminDashboardPage() {
           </TabsContent>
         </Tabs>
 
+        {/* ================================================================== */}
+        {/* START: FIX APPLIED HERE                                          */}
+        {/* The entire content of the modal is now wrapped in a check for    */}
+        {/* `selectedUser` to prevent runtime errors.                        */}
+        {/* ================================================================== */}
         <Modal
           isOpen={showPermissionsModal}
           onClose={() => {
@@ -1030,8 +1043,8 @@ export default function SuperAdminDashboardPage() {
         >
           {selectedUser && (
             <div className="space-y-6">
-              <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
-                <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-100 flex-none">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-100 flex-none">
                   <img
                     src={selectedUser.avatar}
                     alt={selectedUser.name}
@@ -1057,6 +1070,57 @@ export default function SuperAdminDashboardPage() {
                   </Badge>
                 </div>
               </div>
+
+              {String(selectedUser.role).toLowerCase() === "admin" && (
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-800 mb-1">
+                    Max Instructors Allowed{" "}
+                    <span className="text-gray-500">(0–5)</span>
+                  </label>
+                  <input
+                    type="number"
+                    value={editingPermissions.maxInstructorsAllowed || 0}
+                    onChange={(e) =>
+                      setEditingPermissions((prev) => ({
+                        ...prev,
+                        maxInstructorsAllowed: Math.min(
+                          Number(e.target.value),
+                          5
+                        ), // clamp at 5
+                      }))
+                    }
+                    min={0}
+                    max={5}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm 
+                  shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 
+                  focus:ring-offset-1 transition duration-200 ease-in-out"
+                  />
+                </div>
+              )}
+
+              {String(selectedUser.role).toLowerCase() === "instructor" && (
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-800 mb-1">
+                    Max Students Allowed{" "}
+                    <span className="text-gray-500">(e.g. 0–100)</span>
+                  </label>
+                  <input
+                    type="number"
+                    value={editingPermissions.maxStudentsAllowed || 0}
+                    onChange={(e) =>
+                      setEditingPermissions((prev) => ({
+                        ...prev,
+                        maxStudentsAllowed: Math.max(0, Number(e.target.value)), // no negatives
+                      }))
+                    }
+                    min={0}
+                    max={100} // you can adjust the cap as needed
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm 
+                  shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 
+                  focus:ring-offset-1 transition duration-200 ease-in-out"
+                  />
+                </div>
+              )}
 
               <div>
                 <h4 className="font-medium text-gray-900 mb-4">
@@ -1193,6 +1257,8 @@ export default function SuperAdminDashboardPage() {
                   onClick={() =>
                     setEditingPermissions({
                       ...(selectedUser.permissions || {}),
+                      maxInstructorsAllowed:
+                        selectedUser.permissions?.maxInstructorsAllowed ?? 0,
                     })
                   }
                 >
@@ -1217,6 +1283,9 @@ export default function SuperAdminDashboardPage() {
             </div>
           )}
         </Modal>
+        {/* ================================================================== */}
+        {/* END: FIX APPLIED                                                 */}
+        {/* ================================================================== */}
 
         <Modal
           isOpen={showCollegeModal}

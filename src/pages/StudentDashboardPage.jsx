@@ -821,7 +821,7 @@ const fetchStudentData = async () => {
               </div>
             </div>
           </div>
-        )}
+        )} 
       </Modal>
 
       {/* AI Interview Modal */}
