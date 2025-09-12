@@ -44,15 +44,15 @@ const LandingPage = () => {
               “One platform to simplify teaching and supercharge learning with PugArch.”
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/courses">
+              {/* <Link to="/courses">
                 <Button size="lg" className="group">
                   Browse Courses
                   <ArrowRight size={20} className="ml-2 group-hover:translate-x-1 transition-transform" />
                 </Button>
-              </Link>
+              </Link> */}
               <Link to="/login">
                 <Button variant="outline" size="lg">
-                  Get Started Free
+                Login to you Account
                 </Button>
               </Link>
             </div>

@@ -907,130 +907,102 @@ export default function SuperAdminDashboardPage() {
               </Card>
 
               {/* Student list */}
-              <Card className="p-5 sm:p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  Student Directory
-                </h3>
+             <Card className="p-5 sm:p-6">
+  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+    Student Directory
+  </h3>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                  {allStudents
-                    .filter((s) => {
-                      if (!studentSearch) return true;
-                      const q = studentSearch.toLowerCase();
-                      return (
-                        (s.name || "").toLowerCase().includes(q) ||
-                        (s.email || "").toLowerCase().includes(q)
-                      );
-                    })
-                    .map((student) => {
-                      const assigned = Array.isArray(student.assignedCourses)
-                        ? student.assignedCourses
-                        : [];
-                      const studentCourses =
-                        allCourses.filter((c) => assigned.includes(c.id)) || [];
+  <div className="divide-y divide-gray-200 border border-gray-200 rounded-lg">
+    {allStudents
+      .filter((s) => {
+        if (!studentSearch) return true;
+        const q = studentSearch.toLowerCase();
+        return (
+          (s.name || "").toLowerCase().includes(q) ||
+          (s.email || "").toLowerCase().includes(q)
+        );
+      })
+      .map((student) => {
+        const assigned = Array.isArray(student.assignedCourses)
+          ? student.assignedCourses
+          : [];
+        const studentCourses =
+          allCourses.filter((c) => assigned.includes(c.id)) || [];
 
-                      return (
-                        <div
-                          key={student.id}
-                          className="border border-gray-200 rounded-lg p-4"
-                        >
-                          <div className="flex items-start gap-4">
-                            <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-100 flex-none">
-                              <img
-                                src={student.avatar}
-                                alt={student.name}
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
+        return (
+          <div
+            key={student.id}
+            className="flex items-center justify-between p-4"
+          >
+            {/* Avatar + name + email */}
+            <div className="flex items-center gap-4 min-w-0">
+              <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 flex-none">
+                <img
+                  src={student.avatar}
+                  alt={student.name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="min-w-0">
+                <h4 className="font-medium text-gray-900 truncate">
+                  {student.name || "Unnamed"}
+                </h4>
+                <p className="text-sm text-gray-600 truncate">
+                  {student.email}
+                </p>
+              </div>
+            </div>
 
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center justify-between gap-2">
-                                <h4 className="font-medium text-gray-900 truncate">
-                                  {student.name || "Unnamed"}
-                                </h4>
-                                <Badge variant="secondary" size="sm">
-                                  Student
-                                </Badge>
-                              </div>
-
-                              <p className="text-sm text-gray-600 truncate">
-                                {student.email}
-                              </p>
-
-                              <div className="mt-3 flex flex-wrap items-center gap-2">
-                                <Badge variant="info" size="sm">
-                                  {studentCourses.length} courses
-                                </Badge>
-                                {student?.status && (
-                                  <Badge
-                                    variant={
-                                      String(student.status).toLowerCase() ===
-                                      "active"
-                                        ? "success"
-                                        : "secondary"
-                                    }
-                                    size="sm"
-                                  >
-                                    {String(student.status)}
-                                  </Badge>
-                                )}
-                              </div>
-
-                              {studentCourses.length > 0 && (
-                                <div className="mt-3">
-                                  <p className="text-xs text-gray-500 mb-1">
-                                    Recent courses:
-                                  </p>
-                                  <div className="flex flex-wrap gap-2">
-                                    {studentCourses.slice(0, 3).map((c) => (
-                                      <Badge
-                                        key={c.id}
-                                        variant="outline"
-                                        size="sm"
-                                      >
-                                        {c.title}
-                                      </Badge>
-                                    ))}
-                                    {studentCourses.length > 3 && (
-                                      <span className="text-xs text-gray-500">
-                                        +{studentCourses.length - 3} more
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Optional actions */}
-                          {/* <div className="mt-4 flex gap-2">
-                            <Button size="sm" variant="outline">
-                              View
-                            </Button>
-                            <Button size="sm" variant="outline">
-                              Message
-                            </Button>
-                          </div> */}
-                        </div>
-                      );
-                    })}
-                </div>
-
-                {allStudents.length === 0 && (
-                  <p className="text-sm text-gray-500 italic mt-2">
-                    No students found.
-                  </p>
+            {/* Badges and courses */}
+            <div className="flex flex-col items-end gap-1 text-sm">
+              <div className="flex gap-2">
+                <Badge variant="info" size="sm">
+                  {studentCourses.length} courses
+                </Badge>
+                {student?.status && (
+                  <Badge
+                    variant={
+                      String(student.status).toLowerCase() === "active"
+                        ? "success"
+                        : "secondary"
+                    }
+                    size="sm"
+                  >
+                    {String(student.status)}
+                  </Badge>
                 )}
-              </Card>
+              </div>
+
+              {studentCourses.length > 0 && (
+                <div className="flex flex-wrap gap-1 justify-end">
+                  {studentCourses.slice(0, 3).map((c) => (
+                    <Badge key={c.id} variant="outline" size="sm">
+                      {c.title}
+                    </Badge>
+                  ))}
+                  {studentCourses.length > 3 && (
+                    <span className="text-xs text-gray-500">
+                      +{studentCourses.length - 3} more
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })}
+  </div>
+
+  {allStudents.length === 0 && (
+    <p className="text-sm text-gray-500 italic mt-2">No students found.</p>
+  )}
+</Card>
+
             </div>
           </TabsContent>
         </Tabs>
 
-        {/* ================================================================== */}
-        {/* START: FIX APPLIED HERE                                          */}
-        {/* The entire content of the modal is now wrapped in a check for    */}
-        {/* `selectedUser` to prevent runtime errors.                        */}
-        {/* ================================================================== */}
+       
         <Modal
           isOpen={showPermissionsModal}
           onClose={() => {
@@ -1086,7 +1058,7 @@ export default function SuperAdminDashboardPage() {
                         maxInstructorsAllowed: Math.min(
                           Number(e.target.value),
                           5
-                        ), // clamp at 5
+                        ),
                       }))
                     }
                     min={0}
@@ -1098,7 +1070,7 @@ export default function SuperAdminDashboardPage() {
                 </div>
               )}
 
-              {String(selectedUser.role).toLowerCase() === "instructor" && (
+              {String(selectedUser.role).toLowerCase() === "admin" && (
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-800 mb-1">
                     Max Students Allowed{" "}
@@ -1114,7 +1086,7 @@ export default function SuperAdminDashboardPage() {
                       }))
                     }
                     min={0}
-                    max={100} // you can adjust the cap as needed
+                    max={100} 
                     className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm 
                   shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 
                   focus:ring-offset-1 transition duration-200 ease-in-out"
@@ -1283,9 +1255,7 @@ export default function SuperAdminDashboardPage() {
             </div>
           )}
         </Modal>
-        {/* ================================================================== */}
-        {/* END: FIX APPLIED                                                 */}
-        {/* ================================================================== */}
+    
 
         <Modal
           isOpen={showCollegeModal}
